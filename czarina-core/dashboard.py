@@ -30,10 +30,17 @@ except ImportError:
     from rich.live import Live
 
 
-def load_config():
+def load_config(config_path=None):
     """Load configuration from config.sh"""
-    script_dir = Path(__file__).parent
-    config_file = script_dir / "config.sh"
+    if config_path is None:
+        script_dir = Path(__file__).parent
+        config_file = script_dir / "config.sh"
+    else:
+        config_file = Path(config_path)
+
+    if not config_file.exists():
+        print(f"Warning: Config file not found at {config_file}")
+        return {"PROJECT_ROOT": "/home/jhenry/Source/GRID/sark", "PROJECT_NAME": "Project"}, {}
 
     # Read config values from shell script
     config = {}
@@ -279,7 +286,7 @@ class SarkDashboard:
 
         # Calculate progress (working + PR + merged = progress)
         progress_count = working_workers + pr_workers + merged_workers
-        progress = (progress_count / total_workers) * 100
+        progress = (progress_count / total_workers) * 100 if total_workers > 0 else 0
 
         stats = f"""
 Total Workers: {total_workers}
@@ -350,9 +357,14 @@ Work Progress: {progress:.1f}%
 
 def main():
     # Load configuration
-    config, workers = load_config()
+    config_path = sys.argv[1] if len(sys.argv) > 1 else None
+    config, workers = load_config(config_path)
 
-    orchestrator_dir = Path(__file__).parent
+    if config_path:
+        orchestrator_dir = Path(config_path).parent
+    else:
+        orchestrator_dir = Path(__file__).parent
+
     repo_root = Path(config.get("PROJECT_ROOT", "/home/jhenry/Source/GRID/sark"))
     project_name = config.get("PROJECT_NAME", "Project")
 
