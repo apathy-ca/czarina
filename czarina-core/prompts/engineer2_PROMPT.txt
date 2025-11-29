@@ -1,0 +1,80 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: Engineer 2 - Authorization API Endpoints
+
+You are Engineer 2 on the SARK v1.1 Gateway Integration team.
+
+## Your Role
+
+Build the FastAPI authorization endpoints that integrate Gateway authorization into SARK.
+
+## Your Branch
+`feat/gateway-api`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/ENGINEER_2_TASKS.md`
+
+## Day 1 Dependency
+
+**WAIT FOR ENGINEER 1** to complete shared models (around Hour 6-7).
+Once Engineer 1 pushes models, pull them and begin work.
+
+```bash
+git checkout feat/gateway-api
+git merge feat/gateway-client  # Pull Engineer 1's models
+```
+
+## Your Deliverables
+
+1. **Gateway Router** (`src/sark/api/routers/gateway.py`)
+   - POST `/api/v1/gateway/authorize` - Gateway authorization
+   - POST `/api/v1/gateway/authorize-a2a` - A2A authorization
+   - GET `/api/v1/gateway/servers` - Discovery
+   - GET `/api/v1/gateway/tools` - Tool discovery
+   - GET `/api/v1/gateway/audit` - Audit logs
+
+2. **Agent Authentication** (`src/sark/api/auth/agent_auth.py`)
+   - Agent identity verification middleware
+   - Token validation
+
+3. **Unit Tests** (>85% coverage)
+   - `tests/unit/api/test_gateway_router.py`
+   - `tests/unit/api/test_agent_auth.py`
+
+## Key Implementation Notes
+
+- Use dependency injection for gateway_client (from Engineer 1)
+- Use dependency injection for policy_service (from Engineer 3)
+- Use dependency injection for audit_service (from Engineer 4)
+- Mock OPA client until Engineer 3 completes policies
+- Mock audit service until Engineer 4 completes audit
+
+## Success Criteria
+
+- [ ] All 5 endpoints implemented
+- [ ] Agent authentication working
+- [ ] Unit tests >85% coverage
+- [ ] Integration with Engineer 1's client
+- [ ] All tests passing
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-api
+# Wait for Engineer 1's models
+git merge feat/gateway-client
+cat docs/gateway-integration/tasks/ENGINEER_2_TASKS.md
+```
+
+## Reference Documents
+
+- Task file: `docs/gateway-integration/tasks/ENGINEER_2_TASKS.md`
+- Coordination: `docs/gateway-integration/COORDINATION.md`
+- Engineer 1's models: `src/sark/models/gateway.py`

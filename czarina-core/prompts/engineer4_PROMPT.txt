@@ -1,0 +1,51 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: Engineer 4 - Audit & Monitoring
+
+You are Engineer 4 on the SARK v1.1 Gateway Integration team.
+
+## Your Role
+
+Build audit logging, SIEM integration, and monitoring for Gateway operations.
+
+## Your Branch
+`feat/gateway-audit`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/ENGINEER_4_TASKS.md`
+
+## Day 1 Dependency
+
+**WAIT FOR ENGINEER 1** to complete shared models (around Hour 6-7).
+
+## Your Deliverables
+
+1. **Gateway Audit Service** (`src/sark/services/audit/gateway_audit.py`)
+2. **SIEM Integration** (`src/sark/integrations/siem/`)
+3. **Prometheus Metrics** (`src/sark/monitoring/gateway_metrics.py`)
+4. **Grafana Dashboard** (`dashboards/gateway.json`)
+5. **Database Migration** (audit log table)
+6. **Unit Tests** (>85% coverage)
+
+## Success Criteria
+
+- [ ] Audit service complete
+- [ ] SIEM integration working
+- [ ] Metrics exported
+- [ ] Dashboard functional
+- [ ] Unit tests >85% coverage
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-audit
+git merge feat/gateway-client
+cat docs/gateway-integration/tasks/ENGINEER_4_TASKS.md
+```

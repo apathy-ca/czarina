@@ -1,0 +1,102 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  WARNING: This is a task specification file, NOT a shell script
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# ENGINEER 1 - BONUS TASKS
+# Architectural Review & Model Validation
+
+## Context
+You have successfully completed the shared gateway models that all other engineers depend on. Excellent work! Your models in `src/sark/models/gateway.py` are now the foundation for the entire Gateway Integration.
+
+## Your Bonus Mission
+As the architect who defined the core data models, you are now responsible for ensuring architectural consistency across all worker implementations. You will perform cross-team code review and validation.
+
+## Bonus Tasks
+
+### Task 1: Cross-Team Model Usage Validation
+**Branch**: `feat/gateway-client` (continue on your existing branch)
+**Objective**: Review how other workers are using your models
+
+1. **Review Engineer 2's Gateway API Implementation**
+   - Check branch: `feat/gateway-api`
+   - Validate that FastAPI endpoints correctly use your Pydantic models
+   - Ensure proper request/response validation
+   - Look for any model usage anti-patterns
+   - File to create: `docs/gateway-integration/reviews/ENGINEER2_MODEL_REVIEW.md`
+
+2. **Review Engineer 3's OPA Policy Implementation**
+   - Check branch: `feat/gateway-policies`
+   - Ensure OPA policies align with your model structure
+   - Verify policy decisions match model validation rules
+   - Check that policy inputs/outputs match your model schemas
+   - File to create: `docs/gateway-integration/reviews/ENGINEER3_POLICY_REVIEW.md`
+
+3. **Review Engineer 4's Audit Implementation**
+   - Check branch: `feat/gateway-audit`
+   - Validate audit event models align with your gateway models
+   - Ensure monitoring metrics match model attributes
+   - Check SIEM integration uses correct model fields
+   - File to create: `docs/gateway-integration/reviews/ENGINEER4_AUDIT_REVIEW.md`
+
+### Task 2: Model Enhancement Recommendations
+**File**: `docs/gateway-integration/MODEL_ENHANCEMENTS.md`
+
+Based on your review of other workers' implementations:
+1. Identify any missing model fields or validators
+2. Propose additional helper methods that would benefit multiple teams
+3. Document any breaking changes needed (with migration path)
+4. Suggest performance optimizations
+
+### Task 3: Integration Example Creation
+**Directory**: `examples/gateway-integration/`
+**Objective**: Create working examples that demonstrate proper model usage
+
+Create:
+1. `examples/gateway-integration/basic_client.py` - Simple client using your models
+2. `examples/gateway-integration/server_registration.py` - Example server registration flow
+3. `examples/gateway-integration/tool_invocation.py` - Example tool invocation with validation
+4. `examples/gateway-integration/error_handling.py` - Example error scenarios and validation failures
+
+Each example should:
+- Use your models correctly
+- Include docstrings explaining the pattern
+- Show best practices
+- Include error handling
+
+### Task 4: Model Documentation Enhancement
+**File**: `docs/gateway-integration/MODELS_GUIDE.md`
+
+Create comprehensive model documentation:
+1. **Architecture Overview** - Why these models exist, their relationships
+2. **Field Reference** - Every field in every model, with usage examples
+3. **Validation Rules** - What's validated and why
+4. **Common Patterns** - How to properly compose models
+5. **Migration Guide** - For teams upgrading from any existing patterns
+
+## Success Criteria
+- [ ] All 3 worker implementation reviews completed with specific feedback
+- [ ] Model enhancement recommendations documented
+- [ ] 4 working integration examples created and tested
+- [ ] Comprehensive model guide written
+- [ ] All new files committed to `feat/gateway-client` branch
+- [ ] No breaking changes to existing models (unless critical)
+
+## Timeline
+Complete within 4-6 hours. This is lower priority than the critical path but important for ensuring quality and consistency.
+
+## Collaboration Notes
+- If you find critical issues in other workers' code, document them clearly in your review files
+- Propose fixes but DO NOT modify other workers' branches
+- Your reviews will be used by the Czar to guide other workers' corrections
+- Focus on architectural consistency, not nitpicking style issues
+
+## Command to Start
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout feat/gateway-client
+git pull origin feat/gateway-client
+```
+
+Then begin your cross-team reviews by examining the other feature branches.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

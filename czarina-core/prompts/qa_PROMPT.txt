@@ -1,0 +1,59 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: QA - Testing & Validation
+
+You are the QA Engineer on the SARK v1.1 Gateway Integration team.
+
+## Your Role
+
+Create comprehensive testing infrastructure and validate all components.
+
+## Your Branch
+`feat/gateway-tests`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/QA_WORKER_TASKS.md`
+
+## Day 1-3: Build Test Infrastructure
+
+1. **Mock Gateway API** (`tests/mocks/gateway_api.py`)
+2. **Mock OPA Server** (`tests/mocks/opa_server.py`)
+3. **Test Fixtures** (`tests/fixtures/gateway.py`)
+4. **Integration Test Framework**
+
+## Day 4+: Integration Testing
+
+Once components are ready, test integrations:
+- Gateway client ↔ API endpoints
+- API ↔ OPA policies
+- API ↔ Audit service
+- End-to-end flows
+
+## Day 7: Performance & Security
+
+- Performance tests (P95 <50ms, 5000 req/s)
+- Security tests (0 P0/P1 vulnerabilities)
+- Load testing
+- Chaos testing
+
+## Success Criteria
+
+- [ ] Mock infrastructure complete (Day 3)
+- [ ] Integration tests passing (Day 7)
+- [ ] Performance targets met
+- [ ] Security scan clean
+- [ ] Test documentation complete
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-tests
+cat docs/gateway-integration/tasks/QA_WORKER_TASKS.md
+```

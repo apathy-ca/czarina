@@ -1,0 +1,231 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  WARNING: This is a task specification file, NOT a shell script
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# ENGINEER 3 - BONUS TASKS
+# Advanced Policy Management & Governance
+
+## Context
+You have successfully created the core OPA policies for Gateway Integration! Your authorization and governance policies provide excellent security controls. Now let's enhance the policy framework with advanced features.
+
+## Your Bonus Mission
+Expand the policy framework with dynamic policies, policy testing infrastructure, policy migration tools, and advanced governance scenarios.
+
+## Bonus Tasks
+
+### Task 1: Advanced Policy Scenarios
+**Branch**: `feat/gateway-policies` (continue on your existing branch)
+**Directory**: `src/sark/policies/gateway/`
+
+Create advanced OPA policies:
+
+1. **Dynamic Rate Limiting Policy** (`dynamic_rate_limits.rego`)
+   - Rate limits that adjust based on server load
+   - Per-user and per-tool rate limiting
+   - Burst handling with token bucket algorithm
+   - Time-based rate limit windows (hourly, daily, monthly)
+   - Example policy data and test cases
+
+2. **Context-Aware Authorization** (`contextual_auth.rego`)
+   - Authorization based on time of day
+   - Authorization based on client IP/location
+   - Authorization based on user risk score
+   - Multi-factor requirements for sensitive tools
+   - Conditional step-up authentication
+
+3. **Tool Chaining Policies** (`tool_chain_governance.rego`)
+   - Maximum chain depth limits
+   - Forbidden tool combinations
+   - Required audit trails for tool chains
+   - Circular dependency detection
+   - Resource accumulation limits across chains
+
+4. **Data Governance Policies** (`data_governance.rego`)
+   - PII detection and handling requirements
+   - Data classification enforcement
+   - Data retention policy enforcement
+   - Cross-border data transfer restrictions
+   - Sensitive data redaction rules
+
+5. **Cost Control Policies** (`cost_control.rego`)
+   - Budget limits per user/project
+   - Resource quota enforcement
+   - Expensive operation approval requirements
+   - Cost attribution and chargebacks
+   - Budget alerts and throttling
+
+### Task 2: Policy Testing Framework
+**Directory**: `tests/policies/gateway/`
+
+Create comprehensive policy test infrastructure:
+
+1. **Policy Unit Tests** (`test_policy_units.py`)
+   - Test each policy in isolation
+   - Parameterized tests for edge cases
+   - Test data fixtures for common scenarios
+   - Negative test cases (should deny)
+   - Boundary condition tests
+
+2. **Policy Integration Tests** (`test_policy_integration.py`)
+   - Test policy composition and conflicts
+   - Test policy precedence and override rules
+   - Test policy bundles
+   - Test policy hot-reloading
+   - Test policy decision caching
+
+3. **Policy Performance Tests** (`test_policy_performance.py`)
+   - Measure policy evaluation latency
+   - Test policy evaluation under load
+   - Test policy cache effectiveness
+   - Identify slow policy patterns
+   - Performance optimization recommendations
+
+4. **Policy Regression Tests** (`test_policy_regression.py`)
+   - Capture known authorization decisions
+   - Detect unintended policy changes
+   - Golden file testing for policy outputs
+   - Change impact analysis
+
+### Task 3: Policy Management Tools
+**Directory**: `tools/policy-management/`
+
+Create operational tools for policy management:
+
+1. **Policy Validator** (`validate_policies.py`)
+   - Syntax validation for all Rego files
+   - Policy conflict detection
+   - Policy completeness checks
+   - Best practice linting
+   - Documentation completeness validation
+
+2. **Policy Simulator** (`simulate_policy.py`)
+   - CLI tool to test policy decisions
+   - Interactive "what-if" scenarios
+   - Batch scenario testing
+   - Explanation of policy decisions
+   - Example:
+   ```bash
+   ./simulate_policy.py --policy gateway_auth \
+       --input '{"user": "alice", "tool": "sensitive_tool"}' \
+       --explain
+   ```
+
+3. **Policy Migration Tool** (`migrate_policies.py`)
+   - Upgrade policies to new schema versions
+   - Detect breaking changes
+   - Automated policy refactoring
+   - Migration validation
+   - Rollback support
+
+4. **Policy Coverage Reporter** (`policy_coverage.py`)
+   - Show which tools/users are covered by policies
+   - Identify policy gaps
+   - Coverage visualization
+   - Compliance reporting
+
+### Task 4: Policy Documentation & Examples
+**Directory**: `docs/policies/gateway/`
+
+Create comprehensive policy documentation:
+
+1. **`POLICY_ARCHITECTURE.md`**
+   - Policy decision flow
+   - Policy composition rules
+   - Policy precedence and conflicts
+   - Integration with gateway components
+   - Best practices for policy authoring
+
+2. **`POLICY_REFERENCE.md`**
+   - Complete reference for all policies
+   - Input/output schemas
+   - Decision trees and flowcharts
+   - Example requests and decisions
+   - Troubleshooting guide
+
+3. **`POLICY_COOKBOOK.md`**
+   - Common policy patterns and recipes
+   - Real-world policy examples
+   - Anti-patterns to avoid
+   - Performance optimization tips
+   - Security hardening guidelines
+
+4. **`POLICY_OPERATIONS.md`**
+   - How to deploy policies to production
+   - Policy update procedures
+   - Monitoring policy decisions
+   - Auditing policy changes
+   - Emergency policy rollback
+
+### Task 5: Policy Observability
+**Directory**: `src/sark/policies/observability/`
+
+Enhance policy observability:
+
+1. **Policy Decision Logging** (`decision_logger.py`)
+   - Structured logging for all policy decisions
+   - Include decision context and rationale
+   - Performance metrics per policy
+   - Integration with audit system
+
+2. **Policy Metrics** (`policy_metrics.py`)
+   - Prometheus metrics for policy decisions
+   - Deny/allow ratios per policy
+   - Policy evaluation latency metrics
+   - Policy cache hit rates
+   - Alert on suspicious patterns
+
+3. **Policy Decision Explainer** (`decision_explainer.py`)
+   - Generate human-readable explanations
+   - Show which rules matched/didn't match
+   - Highlight relevant policy sections
+   - Suggest fixes for denied requests
+
+### Task 6: Compliance & Governance
+**Directory**: `docs/compliance/gateway/`
+
+Create compliance documentation:
+
+1. **`COMPLIANCE_MATRIX.md`**
+   - Map policies to compliance requirements
+   - SOC2, GDPR, HIPAA, PCI-DSS coverage
+   - Evidence collection for auditors
+   - Compliance gaps and remediation
+
+2. **`GOVERNANCE_FRAMEWORK.md`**
+   - Policy governance structure
+   - Policy approval workflows
+   - Policy review cycles
+   - Change management procedures
+   - Stakeholder responsibilities
+
+## Success Criteria
+- [ ] 5+ advanced OPA policies created and tested
+- [ ] Comprehensive policy test framework with >90% coverage
+- [ ] 4 operational policy management tools created
+- [ ] Complete policy documentation suite
+- [ ] Policy observability and metrics implemented
+- [ ] Compliance documentation for major frameworks
+- [ ] All work committed to `feat/gateway-policies` branch
+- [ ] Integration tests passing with new policies
+
+## Timeline
+Complete within 6-8 hours. Prioritize advanced policies first, then testing framework, then tooling.
+
+## Tools & Libraries
+You may need:
+```bash
+pip install rego  # OPA Python SDK
+pip install graphviz  # For policy visualization
+pip install tabulate  # For policy reports
+```
+
+## Command to Start
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout feat/gateway-policies
+git pull origin feat/gateway-policies
+```
+
+Then begin creating your advanced policy features.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -1,0 +1,310 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  WARNING: This is a task specification file, NOT a shell script
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# ENGINEER 4 - BONUS TASKS
+# Monitoring, Metrics & Observability
+
+## Context
+Your primary audit task may have been completed by other workers during the initial coordination. No worries! I'm assigning you important bonus work focused on production observability, monitoring dashboards, and operational tooling.
+
+## Your Mission
+Build comprehensive monitoring, metrics, and observability infrastructure for the Gateway Integration. Make it production-ready with dashboards, alerts, and operational tools.
+
+## Bonus Tasks
+
+### Task 1: Prometheus Metrics Implementation
+**Branch**: `feat/gateway-audit` (use your existing branch)
+**Directory**: `src/sark/monitoring/gateway/`
+
+Create comprehensive metrics collection:
+
+1. **Gateway Metrics Collector** (`metrics.py`)
+   - Request counters (total, by tool, by user, by status)
+   - Latency histograms (request duration, tool execution time, policy evaluation time)
+   - Active connections gauge
+   - Tool invocation rate
+   - Error rates by type
+   - Cache hit/miss ratios
+   - Integration with Prometheus client library
+
+2. **Policy Metrics** (`policy_metrics.py`)
+   - Policy decision counters (allow/deny by policy)
+   - Policy evaluation latency
+   - Policy cache effectiveness
+   - Policy update frequency
+   - Policy errors and failures
+
+3. **Audit Metrics** (`audit_metrics.py`)
+   - Audit events written per second
+   - Audit log size and rotation
+   - SIEM integration health
+   - Failed audit writes
+   - Audit queue depth
+
+4. **Health Check Endpoints** (`health.py`)
+   - `/health` - Basic liveness check
+   - `/health/ready` - Readiness check (dependencies up)
+   - `/health/detailed` - Detailed component health
+   - Dependency status (OPA, SIEM, database, cache)
+
+### Task 2: Grafana Dashboards
+**Directory**: `monitoring/grafana/dashboards/`
+
+Create production-ready Grafana dashboard JSON files:
+
+1. **Gateway Overview Dashboard** (`gateway-overview.json`)
+   - Request rate over time
+   - Success/error rates
+   - P50/P95/P99 latencies
+   - Active connections
+   - Top tools by usage
+   - Top users by request count
+
+2. **Performance Dashboard** (`gateway-performance.json`)
+   - Request latency heatmap
+   - Tool execution time breakdown
+   - Policy evaluation overhead
+   - Cache performance
+   - Resource usage (CPU, memory)
+   - Slow request traces
+
+3. **Security Dashboard** (`gateway-security.json`)
+   - Authentication failures
+   - Authorization denials by policy
+   - Rate limit violations
+   - Suspicious activity patterns
+   - Failed requests by user
+   - Security alerts timeline
+
+4. **Operations Dashboard** (`gateway-operations.json`)
+   - System health status
+   - Error rates and types
+   - Audit log health
+   - SIEM integration status
+   - Alert summary
+   - Recent incidents
+
+### Task 3: Alert Rules
+**Directory**: `monitoring/prometheus/alerts/`
+
+Create Prometheus alert rule files:
+
+1. **Gateway Alerts** (`gateway_alerts.yml`)
+   - High error rate (>5% for 5 minutes)
+   - High latency (P95 > 2s for 5 minutes)
+   - Service down (no requests for 2 minutes)
+   - Low success rate (<95% for 10 minutes)
+   - Connection pool exhausted
+
+2. **Security Alerts** (`security_alerts.yml`)
+   - Unusual authentication failures
+   - High policy denial rate
+   - Rate limit abuse
+   - Privilege escalation attempts
+   - Suspicious user activity patterns
+
+3. **Infrastructure Alerts** (`infrastructure_alerts.yml`)
+   - High memory usage (>80%)
+   - High CPU usage (>80%)
+   - Disk space low (<20%)
+   - OPA service down
+   - SIEM integration failing
+
+4. **Business Alerts** (`business_alerts.yml`)
+   - Tool invocation SLA violations
+   - User quota exceeded
+   - Budget thresholds reached
+   - Unusual cost patterns
+
+### Task 4: Logging Infrastructure
+**Directory**: `src/sark/logging/gateway/`
+
+Enhance logging for production observability:
+
+1. **Structured Logger** (`structured_logger.py`)
+   - JSON formatted logs
+   - Request correlation IDs
+   - User/tool/session context
+   - Performance timing data
+   - Integration with standard logging
+
+2. **Log Aggregation Config** (`logging_config.py`)
+   - Log levels per component
+   - Log rotation policies
+   - Log shipping configuration
+   - Sampling for high-volume logs
+   - Sensitive data redaction
+
+3. **Distributed Tracing** (`tracing.py`)
+   - OpenTelemetry integration
+   - Trace spans for requests
+   - Tool invocation traces
+   - Policy evaluation traces
+   - Cross-service trace propagation
+
+### Task 5: Operational Tools
+**Directory**: `tools/operations/`
+
+Create CLI tools for operations teams:
+
+1. **Gateway Admin CLI** (`gateway-admin.py`)
+   ```bash
+   # Check gateway status
+   ./gateway-admin.py status
+
+   # List active sessions
+   ./gateway-admin.py sessions list
+
+   # View tool usage stats
+   ./gateway-admin.py tools stats --last 24h
+
+   # Drain connections for maintenance
+   ./gateway-admin.py drain --timeout 30s
+
+   # Reset user rate limits
+   ./gateway-admin.py rate-limits reset --user alice
+   ```
+
+2. **Metrics Query Tool** (`query-metrics.py`)
+   ```bash
+   # Query recent errors
+   ./query-metrics.py errors --last 1h
+
+   # Get latency percentiles
+   ./query-metrics.py latency --percentiles 50,95,99
+
+   # Show top users
+   ./query-metrics.py top-users --limit 10
+
+   # Export metrics report
+   ./query-metrics.py report --format json > report.json
+   ```
+
+3. **Health Check Tool** (`health-check.py`)
+   ```bash
+   # Check all components
+   ./health-check.py --verbose
+
+   # Check specific component
+   ./health-check.py --component opa
+
+   # Continuous monitoring
+   ./health-check.py --watch --interval 10s
+   ```
+
+4. **Log Analysis Tool** (`analyze-logs.py`)
+   ```bash
+   # Search logs
+   ./analyze-logs.py search --query "error" --last 1h
+
+   # Trace request by ID
+   ./analyze-logs.py trace --request-id abc123
+
+   # Find slow requests
+   ./analyze-logs.py slow-requests --threshold 2s --last 24h
+   ```
+
+### Task 6: Monitoring Documentation
+**Directory**: `docs/monitoring/gateway/`
+
+Document monitoring and operations:
+
+1. **`MONITORING_GUIDE.md`**
+   - Monitoring architecture overview
+   - Metrics catalog (all metrics with descriptions)
+   - Dashboard user guide
+   - Alert descriptions and runbooks
+   - Troubleshooting common issues
+
+2. **`OPERATIONS_RUNBOOK.md`**
+   - Daily operations checklist
+   - Incident response procedures
+   - Common scenarios and solutions
+   - Escalation procedures
+   - On-call playbook
+
+3. **`ALERTING_GUIDE.md`**
+   - Alert severity levels
+   - Alert routing and notifications
+   - Alert acknowledgment procedures
+   - False positive handling
+   - Alert tuning guidelines
+
+4. **`METRICS_REFERENCE.md`**
+   - Complete metrics catalog
+   - Prometheus query examples
+   - Grafana panel configurations
+   - Data retention policies
+   - Metrics aggregation rules
+
+### Task 7: Deployment & Configuration
+**Directory**: `deployment/monitoring/`
+
+Create deployment configurations:
+
+1. **Docker Compose Setup** (`docker-compose.monitoring.yml`)
+   - Prometheus container
+   - Grafana container
+   - Alert manager container
+   - Pre-configured with dashboards and alerts
+
+2. **Kubernetes Manifests** (`k8s/`)
+   - Prometheus deployment
+   - Grafana deployment
+   - Service monitors
+   - ConfigMaps for dashboards/alerts
+   - PersistentVolumes for data
+
+3. **Configuration Templates** (`configs/`)
+   - Prometheus configuration
+   - Grafana data sources
+   - Alert manager routing
+   - Environment-specific overrides
+
+## Success Criteria
+- [ ] Comprehensive Prometheus metrics implemented
+- [ ] 4 Grafana dashboards created and tested
+- [ ] Alert rules defined for all critical scenarios
+- [ ] Structured logging and tracing implemented
+- [ ] 4 operational CLI tools created
+- [ ] Complete monitoring documentation
+- [ ] Docker Compose and K8s deployment configs ready
+- [ ] All work committed to `feat/gateway-audit` branch
+- [ ] Integration tests for metrics collection
+
+## Timeline
+Complete within 6-8 hours. Prioritize metrics implementation and dashboards first, then alerts and operational tools.
+
+## Tools & Libraries
+Install required dependencies:
+```bash
+pip install prometheus-client  # Metrics
+pip install opentelemetry-api opentelemetry-sdk  # Tracing
+pip install grafana-client  # Dashboard management
+pip install click  # CLI tool framework
+```
+
+## Testing Your Work
+Test metrics locally:
+```bash
+# Start Prometheus locally
+docker run -p 9090:9090 prom/prometheus
+
+# View metrics endpoint
+curl http://localhost:8000/metrics
+
+# Test dashboards
+docker run -p 3000:3000 grafana/grafana
+```
+
+## Command to Start
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout feat/gateway-audit
+git pull origin feat/gateway-audit
+```
+
+Begin creating comprehensive monitoring infrastructure!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

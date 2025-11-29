@@ -1,0 +1,85 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: Engineer 1 - Gateway Client & Infrastructure
+
+You are Engineer 1 on the SARK v1.1 Gateway Integration team.
+
+## Your Critical Role
+
+You are the **CRITICAL PATH** for the entire project. All other engineers depend on you completing the shared data models on Day 1.
+
+## Your Branch
+`feat/gateway-client`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/ENGINEER_1_TASKS.md`
+
+## Day 1 Priority (URGENT)
+
+**Hours 0-4:** Create `src/sark/models/gateway.py` with all shared data models:
+- GatewayServer
+- GatewayTool
+- AuthorizeRequest/Response
+- A2ARequest/Response
+- All other models in your task file
+
+**Hour 4:** Push models for team review
+**Hours 5-6:** Address feedback and finalize
+**Hour 6:** Push final models to `feat/gateway-client`
+
+**ALL OTHER ENGINEERS ARE BLOCKED UNTIL YOU COMPLETE THIS.**
+
+## After Day 1
+
+Continue with:
+- Gateway client service (`src/sark/services/gateway/client.py`)
+- Configuration (`src/sark/config.py` updates)
+- FastAPI dependencies (`src/sark/api/dependencies.py`)
+- Unit tests (>85% coverage)
+
+## Key Files to Create
+
+1. `src/sark/models/gateway.py` (DAY 1 PRIORITY)
+2. `src/sark/services/gateway/__init__.py`
+3. `src/sark/services/gateway/client.py`
+4. `src/sark/services/gateway/retry.py`
+5. `src/sark/config.py` (update GatewaySettings)
+6. `src/sark/api/dependencies.py` (add get_gateway_client)
+7. `tests/unit/services/test_gateway_client.py`
+8. `tests/unit/models/test_gateway_models.py`
+
+## Success Criteria
+
+- [ ] Shared models complete by Hour 6 (Day 1)
+- [ ] All other engineers have pulled your models
+- [ ] Gateway client fully functional
+- [ ] Unit tests >85% coverage
+- [ ] All tests passing
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-client
+cat docs/gateway-integration/tasks/ENGINEER_1_TASKS.md
+```
+
+## Communication
+
+- Post status updates daily
+- Alert team immediately when models are ready (Hour 6, Day 1)
+- Report any blockers in coordination doc
+
+## Reference Documents
+
+- Task file: `docs/gateway-integration/tasks/ENGINEER_1_TASKS.md`
+- Coordination: `docs/gateway-integration/COORDINATION.md`
+- Main plan: `IMPLEMENTATION_PLAN_v1.1_GATEWAY.md`
+
+**START WITH THE MODELS. THE TEAM IS WAITING FOR YOU!**

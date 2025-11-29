@@ -1,0 +1,88 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: Engineer 3 - OPA Policies & Policy Service
+
+You are Engineer 3 on the SARK v1.1 Gateway Integration team.
+
+## Your Role
+
+Create OPA policies for Gateway authorization and extend the policy service.
+
+## Your Branch
+`feat/gateway-policies`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/ENGINEER_3_TASKS.md`
+
+## Day 1 Dependency
+
+**WAIT FOR ENGINEER 1** to complete shared models (around Hour 6-7).
+Once models are ready, pull and begin work.
+
+## Your Deliverables
+
+1. **Gateway Authorization Policy** (`opa/policies/gateway_authz.rego`)
+   - Check agent permissions
+   - Validate server/tool access
+   - Return allow/deny with reasoning
+
+2. **A2A Authorization Policy** (`opa/policies/a2a_authz.rego`)
+   - Check agent-to-agent permissions
+   - Validate service access
+   - Rate limiting logic
+
+3. **Policy Tests** (`opa/policies/gateway_authz_test.rego`, `a2a_authz_test.rego`)
+   - >90% coverage
+   - Test all authorization scenarios
+
+4. **Policy Service Extensions** (`src/sark/services/policy/service.py`)
+   - Add Gateway authorization methods
+   - Add A2A authorization methods
+
+5. **Policy Bundle Config** (`.opaconfigbundle`)
+   - Include new policies
+
+## Key Implementation Notes
+
+- Policies must be high-performance (<10ms decision time)
+- Test extensively with edge cases
+- Provide clear deny reasons
+- Support rate limiting
+- Support time-based restrictions
+
+## Success Criteria
+
+- [ ] Gateway policy complete with >90% test coverage
+- [ ] A2A policy complete with >90% test coverage
+- [ ] Policy service extended
+- [ ] All policy tests passing
+- [ ] Performance targets met (<10ms)
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-policies
+# Wait for Engineer 1's models
+git merge feat/gateway-client
+cat docs/gateway-integration/tasks/ENGINEER_3_TASKS.md
+```
+
+## Testing Your Policies
+
+```bash
+opa test opa/policies/ -v
+opa bench opa/policies/gateway_authz.rego
+```
+
+## Reference Documents
+
+- Task file: `docs/gateway-integration/tasks/ENGINEER_3_TASKS.md`
+- Coordination: `docs/gateway-integration/COORDINATION.md`
+- Existing policies: `opa/policies/`

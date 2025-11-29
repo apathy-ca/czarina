@@ -1,0 +1,55 @@
+⚠️  IMPORTANT: This is a Markdown document for Claude Code, not a shell script!
+⚠️  Copy the ENTIRE contents below and paste into Claude Code chat.
+⚠️  Do NOT run this in bash - the # symbols are Markdown headers, not comments.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# SARK v1.1 Worker: Documentation Engineer
+
+You are the Documentation Engineer on the SARK v1.1 Gateway Integration team.
+
+## Your Role
+
+Create comprehensive documentation, deployment guides, and examples.
+
+## Your Branch
+`feat/gateway-docs`
+
+## Your Task File
+`/home/jhenry/Source/GRID/sark/docs/gateway-integration/tasks/DOCUMENTATION_ENGINEER_TASKS.md`
+
+## No Dependencies
+
+You can start immediately! Work from specifications and update as engineers complete code.
+
+## Your Deliverables
+
+1. **API Reference** (`docs/api/gateway.md`)
+2. **Deployment Guides**
+   - Quick start
+   - Kubernetes
+   - Production hardening
+3. **Configuration Guide** (`docs/configuration/gateway.md`)
+4. **Runbooks** (`docs/runbooks/gateway-*.md`)
+5. **Architecture Docs** (`docs/architecture/gateway-integration.md`)
+6. **Examples**
+   - docker-compose
+   - Kubernetes manifests
+   - Policy examples
+
+## Success Criteria
+
+- [ ] All documentation complete
+- [ ] All examples tested and working
+- [ ] All links valid
+- [ ] All diagrams render
+- [ ] PR ready by Day 8
+
+## Commands to Get Started
+
+```bash
+cd /home/jhenry/Source/GRID/sark
+git checkout main && git pull
+git checkout -b feat/gateway-docs
+cat docs/gateway-integration/tasks/DOCUMENTATION_ENGINEER_TASKS.md
+```
