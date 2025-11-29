@@ -55,6 +55,51 @@ tmux new-window -t "$SESSION_NAME:2" -n "engineer2" -c "$SARK_DIR"
 
 ## Medium Priority
 
+### Investigate .claudeignore Not Auto-Approving File Access
+**Issue:** `.claudeignore` file with `**/*` pattern in `/home/jhenry/Source/GRID/.claudeignore` is not preventing permission prompts in all cases.
+
+**Observed Behavior:**
+- `.claudeignore` exists with pattern `**/*` to auto-approve all operations under GRID
+- Claude Code still asks for permission when:
+  - Launched with a file argument: `claude /path/to/file.md`
+  - Trying to read from subdirectories like `sark-v2/`
+- This happens even though operations are clearly under the GRID directory
+
+**Expected Behavior:**
+- All file reads, tool use, and operations under `/home/jhenry/Source/GRID/` should be auto-approved
+- No permission prompts should appear for any GRID subdirectory access
+
+**Impact:**
+- User must manually approve permissions when launching workers/Czar
+- Breaks automation for fully autonomous orchestration
+- Reduces confidence in "hands-off" operation
+
+**Possible Causes:**
+1. `.claudeignore` pattern matching may not work as expected
+2. File argument reads (`claude file.md`) might bypass `.claudeignore`
+3. Claude Code may have different permission scopes (initial load vs. runtime)
+4. Path resolution issues (relative vs. absolute paths)
+
+**Investigation Steps:**
+1. Test different `.claudeignore` patterns:
+   - `/home/jhenry/Source/GRID/**/*`
+   - `*`
+   - Explicit directory listings
+2. Check if `.claudeignore` applies to:
+   - Initial file loads (claude file.md)
+   - Runtime tool use (Bash, Read, Edit)
+   - Both scenarios
+3. Review Claude Code documentation for `.claudeignore` behavior
+4. Test with absolute vs. relative paths
+
+**Workaround:**
+- Manually select "Yes, allow reading from X during this session" when prompted
+- Accept that some manual intervention is needed at launch time
+
+**Assigned To:** _Unassigned_
+**Priority:** Medium
+**Effort:** 1-2 hours investigation + potential bug report
+
 _(Add future items here)_
 
 ---
