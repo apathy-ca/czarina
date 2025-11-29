@@ -1,0 +1,70 @@
+{
+  "id": "cursor",
+  "name": "Cursor",
+  "type": "desktop",
+  "vendor": "Anysphere",
+  "website": "https://cursor.sh",
+  "discovery": {
+    "pattern": "Direct file path",
+    "instruction": "In Cursor, open the worker file: {worker_file}",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "native",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "native",
+    "terminal_access": true,
+    "multi_file_edit": true,
+    "search": "native"
+  },
+  "launch": {
+    "command": "cursor",
+    "args": ["--goto", "{worker_file}"],
+    "requires_install": true,
+    "install_url": "https://cursor.sh"
+  },
+  "documentation": {
+    "getting_started": "Cursor works identically to Claude Code for Czarina. Open the worker file in your Cursor workspace and the AI will read and follow the instructions. Cursor is a VS Code fork with AI capabilities built-in.",
+    "tips": [
+      "Use Cmd/Ctrl+P to quickly open worker files",
+      "Cursor's git integration works seamlessly with Czarina branches",
+      "You can have multiple workers open in split view for parallel work",
+      "Cursor supports both Claude and GPT-4 - choose based on task complexity",
+      "Use Cmd/Ctrl+K for inline AI editing",
+      "The @-symbol references work similarly to Claude Code"
+    ],
+    "limitations": [
+      "Requires installation and API key configuration",
+      "Some features require Cursor Pro subscription"
+    ],
+    "examples": [
+      {
+        "title": "Open a worker task",
+        "description": "Navigate to and open a worker file",
+        "command": "Cmd/Ctrl+P → type worker filename → Enter"
+      },
+      {
+        "title": "Reference in chat",
+        "description": "Add worker file to AI context",
+        "command": "In Cursor chat: @filename then ask about the task"
+      },
+      {
+        "title": "Launch from command line",
+        "description": "Open Cursor with a specific worker file",
+        "command": "cursor --goto czarina-myproject/workers/engineer1.md"
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 15,
+    "prefers_single_file_prompts": false
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-11-29",
+    "tested_with": "0.42.0",
+    "compatibility": ">=1.0.0"
+  }
+}

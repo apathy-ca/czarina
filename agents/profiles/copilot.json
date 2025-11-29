@@ -1,0 +1,72 @@
+{
+  "id": "copilot",
+  "name": "GitHub Copilot",
+  "type": "hybrid",
+  "vendor": "GitHub/Microsoft",
+  "website": "https://github.com/features/copilot",
+  "discovery": {
+    "pattern": "Direct file path with manual reading",
+    "instruction": "In VS Code with Copilot, open {worker_file} and ask Copilot to read and follow the instructions",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "limited",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "cli",
+    "terminal_access": true,
+    "multi_file_edit": false,
+    "search": "native"
+  },
+  "launch": {
+    "command": "code",
+    "args": ["{worker_file}"],
+    "requires_install": true,
+    "install_url": "https://github.com/features/copilot"
+  },
+  "documentation": {
+    "getting_started": "GitHub Copilot can work with Czarina workflows through VS Code. Open the worker file and use Copilot Chat to ask it to read and follow the task instructions. Copilot Chat (@workspace feature) can reference the worker file context.",
+    "tips": [
+      "Use Copilot Chat with @workspace to include worker file in context",
+      "Open the worker file first, then ask Copilot to 'read this file and follow the instructions'",
+      "For git operations, use the Source Control panel or terminal with gh CLI",
+      "Copilot works best with incremental, focused tasks from the worker prompt",
+      "Use inline completions for code implementation, Chat for understanding instructions",
+      "Keep worker file open in a split pane for reference"
+    ],
+    "limitations": [
+      "Does not automatically read referenced files - requires explicit instruction",
+      "Best used in combination with manual workflow management",
+      "May need to break down complex worker prompts into smaller steps",
+      "PR creation requires gh CLI or manual GitHub workflow"
+    ],
+    "examples": [
+      {
+        "title": "Start a task with Copilot Chat",
+        "description": "Ask Copilot to help with a worker task",
+        "command": "Open worker file, then in Copilot Chat: '@workspace Read the worker file in the editor and help me complete these tasks'"
+      },
+      {
+        "title": "Reference worker context",
+        "description": "Include worker instructions in chat",
+        "command": "Copilot Chat: 'Based on @{worker_file}, implement the next task'"
+      },
+      {
+        "title": "Create PR using CLI",
+        "description": "Use gh CLI for PR creation as specified in worker prompt",
+        "command": "Terminal: gh pr create --title \"...\" --body \"...\""
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 10,
+    "prefers_single_file_prompts": true
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-11-29",
+    "tested_with": "1.156.0",
+    "compatibility": ">=1.0.0"
+  }
+}
