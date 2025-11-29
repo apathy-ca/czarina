@@ -1,23 +1,28 @@
 # Czarina Embedded Orchestration Guide
 
+## Works With Any AI Coding Assistant! 🌍
+
+Czarina embedded orchestration works with **Claude Code, Cursor, GitHub Copilot, Aider, and more!** Each agent can use its preferred workflow while following the same orchestration.
+
 ## The Problem with Remote Orchestration
 
-When using Claude Code Web (mobile/browser), you can't access:
+When working remotely or with different AI assistants, you can't always access:
 - The centralized orchestrator repository
 - Complex launch scripts
-- Dashboard monitors
+- Dashboard monitors (though this still works!)
 - tmux sessions
 
-**You just want to tell Claude: "You are Engineer 1" and have it work!**
+**You just want to tell your AI assistant: "You are Engineer 1" and have it work!**
 
 ## The Solution: Embedded Orchestration
 
 Czarina can **embed orchestration directly into your project repository**, making it:
-- ✅ Accessible from Claude Code Web
+- ✅ Accessible from any AI coding assistant
 - ✅ Self-contained (no external dependencies)
 - ✅ Simple ("You are Engineer 1" just works!)
 - ✅ Version-controlled with your code
 - ✅ Shareable via git clone
+- ✅ Agent-agnostic (use Claude, Cursor, Aider, Copilot, etc.)
 
 ## Quick Start
 
@@ -58,38 +63,69 @@ git commit -m "feat: Add Czarina orchestration"
 git push
 ```
 
-### Step 3: Use from Claude Code Web
+### Step 3: Use from Any AI Coding Assistant
 
-On your phone/tablet/browser, open Claude Code Web in your project.
+Choose your preferred AI assistant and use the appropriate discovery pattern:
 
-Just say:
+**Claude Code (Web or Desktop):**
 ```
 You are Engineer 1
 ```
 
-Claude will:
-1. Check `WORKERS.md` for instructions
-2. Read `czarina-<project>/workers/engineer1.md`
+**Cursor or Windsurf:**
+```
+@czarina-<project>/workers/engineer1.md
+
+Follow this prompt as the assigned worker.
+```
+
+**Aider:**
+```bash
+aider --read czarina-<project>/workers/engineer1.md
+```
+
+**GitHub Copilot:**
+```
+Read czarina-<project>/workers/engineer1.md and follow that worker prompt.
+```
+
+Your AI assistant will:
+1. Find the worker prompt file
+2. Read the complete task description
 3. Follow the git workflow
 4. Start working!
 
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for detailed setup for each agent.**
+
 ## The Magic: How It Works
 
-### For Humans (You on Mobile)
+### For Humans (Simple!)
 
-Three words:
+**With Claude Code:**
 ```
 You are Engineer 1
+```
+
+**With Cursor/Windsurf:**
+```
+@czarina-<project>/workers/engineer1.md
+```
+
+**With Aider:**
+```bash
+aider --read czarina-<project>/workers/engineer1.md
 ```
 
 That's it!
 
-### For Workers (Claude Agents)
+### For AI Workers (Any Agent)
 
-When told "You are Engineer 1":
+When given their worker identity:
 
 1. **Discover orchestration**
    ```bash
+   # Claude Code checks WORKERS.md automatically
+   # Other agents: user provides direct file path
    cat WORKERS.md  # → Points to czarina-sark-v2/
    ```
 
@@ -105,13 +141,15 @@ When told "You are Engineer 1":
    - Git workflow ✓
    - Dependencies ✓
 
-4. **Execute**
+4. **Execute** (same for all agents!)
    ```bash
    git checkout -b feat/my-component
    # work on deliverables
    git commit -m "feat(engineer1): implement X"
    gh pr create
    ```
+
+**All agents follow the same git workflow, tracked by the same dashboard!**
 
 ## Directory Structure
 
@@ -294,7 +332,46 @@ git commit -m "feat: Add Czarina orchestration"
 git push
 ```
 
-### Daily Use (Claude Code Web)
+## Multi-Agent Teams 🤝
+
+One of Czarina's superpowers: **different workers can use different AI assistants!**
+
+### Example Mixed-Agent Team
+
+```
+Engineer 1: Uses Claude Code (mobile-friendly, on the go)
+Engineer 2: Uses Cursor (desktop IDE, complex refactoring)
+QA 1: Uses Aider (CLI automation, test generation)
+Docs 1: Uses GitHub Copilot (GitHub-integrated workflow)
+```
+
+**They all work together seamlessly because:**
+- ✅ Same git workflow (branches, commits, PRs)
+- ✅ Same file-based prompts (markdown)
+- ✅ Same dashboard tracking (monitors git)
+- ✅ No agent-specific APIs or dependencies
+
+### How to Coordinate Mixed Teams
+
+1. **Embed once** - All agents read the same orchestration
+2. **Each picks their tool** - Worker chooses preferred AI assistant
+3. **Follow same workflow** - All use git branches, conventional commits, PRs
+4. **Monitor together** - Dashboard shows all workers regardless of agent
+
+### Discovery Patterns by Agent
+
+Share these patterns with your team:
+
+| Agent | Discovery Pattern | Example |
+|-------|------------------|---------|
+| Claude Code | "You are Engineer 1" | Direct assignment |
+| Cursor | @czarina-*/workers/engineer-1.md | File reference |
+| Aider | aider --read czarina-*/workers/engineer-1.md | CLI parameter |
+| Copilot | "Read czarina-*/workers/engineer-1.md" | Chat instruction |
+
+**Everyone ends up reading the same worker prompt file!**
+
+### Daily Use (Any Agent)
 
 ```
 # You open repo on phone

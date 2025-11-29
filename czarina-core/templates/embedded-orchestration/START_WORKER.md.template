@@ -1,0 +1,186 @@
+# 🎯 Czarina Worker Auto-Discovery
+
+## For {{AGENT_NAME}} Users
+
+When starting a {{AGENT_NAME}} session in this repository, the human will tell you your worker identity with a simple phrase like:
+
+> "You are Engineer 1"
+
+Your job is to:
+
+1. **Discover your worker ID** from the phrase
+2. **Load your specific prompt** from `czarina-{{PROJECT_SLUG}}/workers/`
+3. **Follow that prompt exactly**
+
+## Auto-Discovery Process
+
+### Step 1: Parse the Human's Input
+
+They might say:
+- "You are Engineer 1" → worker ID: `engineer-1`
+- "You are engineer 2" → worker ID: `engineer-2`
+- "You are QA 1" → worker ID: `qa-1`
+- "You are docs-1" → worker ID: `docs-1`
+
+**Pattern:** `<type> <number>` → `<type>-<number>`
+
+Common types: `engineer`, `qa`, `docs`
+
+### Step 2: Find Your Prompt File
+
+Your prompt is located at:
+```
+czarina-{{PROJECT_SLUG}}/workers/<worker-id>.md
+```
+
+Examples:
+- Engineer 1: `czarina-{{PROJECT_SLUG}}/workers/engineer-1.md`
+- QA 2: `czarina-{{PROJECT_SLUG}}/workers/qa-2.md`
+- Docs 1: `czarina-{{PROJECT_SLUG}}/workers/docs-1.md`
+
+### Step 3: Load and Follow Your Prompt
+
+Once you find your worker file:
+
+1. **Read the entire file** - It contains:
+   - Your task description
+   - Deliverables you need to create
+   - Git workflow instructions (CRITICAL!)
+   - Your assigned branch name
+   - Dependencies on other workers
+
+2. **Execute the prompt** - Follow it exactly:
+   - Create your branch first (from git workflow section)
+   - Work on your deliverables
+   - Make commits following the conventions
+   - Create a PR when done
+
+### Step 4: Verify Setup
+
+Before starting work, check:
+
+```bash
+# List available worker prompts
+ls czarina-{{PROJECT_SLUG}}/workers/
+
+# Read your specific prompt
+cat czarina-{{PROJECT_SLUG}}/workers/<your-worker-id>.md
+```
+
+## Quick Reference
+
+### If you're told: "You are Engineer 1"
+
+```bash
+# 1. Find your prompt
+cat czarina-{{PROJECT_SLUG}}/workers/engineer-1.md
+
+# 2. Extract your branch (it's in the prompt)
+# Example: feat/v2-component-name
+
+# 3. Create your branch
+git checkout -b feat/v2-component-name
+
+# 4. Start working on your deliverables
+# (Listed in your prompt)
+```
+
+### If Auto-Discovery Fails
+
+Ask the human:
+> "I found these workers: [list from ls czarina-{{PROJECT_SLUG}}/workers/]. Which one am I?"
+
+{{DISCOVERY_PATTERN}}
+
+## Helper Script
+
+You can also use the initialization script:
+
+```bash
+./czarina-{{PROJECT_SLUG}}/.worker-init engineer-1
+```
+
+This will:
+- Validate the worker ID
+- Display your full prompt
+- Show your branch and task info
+
+## Available Workers
+
+{{WORKER_LIST}}
+
+## Important Notes
+
+1. **Git workflow is CRITICAL** - Your prompt includes complete git instructions. Follow them exactly!
+
+2. **Branch name is pre-assigned** - Don't guess. It's specified in your prompt.
+
+3. **One worker = One branch** - Never work on another worker's branch.
+
+4. **PR when done** - Your prompt includes PR creation instructions.
+
+5. **Check dependencies** - Some workers depend on others. Your prompt lists these.
+
+## Troubleshooting
+
+### Can't find worker file?
+
+```bash
+# Check what's available
+ls -la czarina-{{PROJECT_SLUG}}/workers/
+```
+
+### Branch already exists?
+
+```bash
+# Check branch status
+git branch -a | grep <your-branch-name>
+
+# If it exists and has work, check it out
+git checkout <your-branch-name>
+
+# If it doesn't exist, create it
+git checkout -b <your-branch-name>
+```
+
+### Not sure what to do?
+
+Read your prompt file completely. It has EVERYTHING you need:
+```bash
+cat czarina-{{PROJECT_SLUG}}/workers/<your-worker-id>.md
+```
+
+## Example Session
+
+```
+Human: You are Engineer 2
+
+{{AGENT_NAME}}: I'll find my worker prompt...
+
+[Reads czarina-{{PROJECT_SLUG}}/workers/engineer-2.md]
+
+I'm Engineer 2 - HTTP/REST Adapter implementation.
+
+My assigned branch: feat/v2-http-adapter
+My deliverables:
+- src/adapters/http_adapter.py
+- tests/test_http_adapter.py
+- examples/http-example/
+
+Let me start by creating my branch:
+
+$ git checkout -b feat/v2-http-adapter
+
+[Proceeds to work on task...]
+```
+
+## Success Criteria
+
+You know you're set up correctly when:
+- ✅ You found and read your worker prompt file
+- ✅ You know your worker ID (e.g., engineer-1)
+- ✅ You know your branch name (from the prompt)
+- ✅ You know your deliverables (from the prompt)
+- ✅ You're ready to follow the git workflow
+
+**Now start working! 🚀**
