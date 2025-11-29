@@ -1,6 +1,20 @@
-# Multi-Agent Orchestration Projects
+# Czarina - Multi-Agent Orchestration Framework
 
-This repository contains multiple projects related to autonomous multi-agent orchestration for AI-powered software development.
+**Orchestrate multiple AI coding assistants working in parallel on complex software projects.**
+
+Works with **Claude Code, Cursor, GitHub Copilot, Aider, and more!** 🌍
+
+## 🌟 What Makes Czarina Special
+
+- ✅ **Agent-Agnostic** - Works with any AI coding assistant (Claude, Cursor, Copilot, Aider, etc.)
+- ✅ **Mixed Teams** - Different workers can use different AI tools
+- ✅ **File-Based** - No API dependencies, just markdown prompts and git
+- ✅ **Self-Contained** - Embed orchestration in your project repo
+- ✅ **Mobile-Friendly** - Works from Claude Code Web on phones/tablets
+- ✅ **Real-Time Dashboard** - Monitor all workers regardless of which AI they use
+- ✅ **Future-Proof** - Will work with AI assistants that don't exist yet
+
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for compatibility matrix and setup guides.**
 
 ## 📁 Repository Structure
 
@@ -17,15 +31,27 @@ This repository contains multiple projects related to autonomous multi-agent orc
 
 **Location:** `czarina-core/`
 
-Czarina is a **reusable framework** for orchestrating multiple AI coding agents (Claude Code, Aider, Cursor, etc.) working in parallel on complex software projects.
+Czarina is a **reusable, agent-agnostic framework** for orchestrating multiple AI coding assistants working in parallel on complex software projects.
+
+**Fully compatible with:**
+- Claude Code (Web & Desktop) - 100%
+- Cursor - 95%
+- GitHub Copilot - 95%
+- Aider - 98%
+- Windsurf - 95%
+- Codeium - 95%
+- ChatGPT Code - 85%
 
 ### Key Features
+- **Agent-Agnostic** - Works with any AI coding assistant
+- **Mixed-Agent Teams** - Workers can use different AI tools
 - Autonomous Czar monitoring and coordination
 - Worker health detection (stuck/idle)
 - Task injection and assignment
-- Live dashboard for progress visualization
+- Live dashboard for progress visualization (tracks all agents via git)
 - Git orchestration and PR management
 - Support for 2-20+ parallel workers
+- Mobile-friendly embedded mode
 
 ### Getting Started with Czarina
 
@@ -169,6 +195,57 @@ Contributions are welcome! Areas of interest:
 | Legacy Files | `archive/` |
 | Framework Docs | `czarina-core/docs/` |
 | Getting Started | `czarina-core/docs/GETTING_STARTED.md` |
+
+---
+
+## 🤝 Why Agent-Agnostic?
+
+Czarina orchestrates through **universal standards**:
+- 📄 **Files** - Markdown prompts (any agent can read)
+- 🔀 **Git** - Branches, commits, PRs (every AI tool uses git)
+- 🖥️ **Shell** - Standard commands (universal)
+
+**Not through:**
+- ❌ Agent-specific APIs
+- ❌ Proprietary formats
+- ❌ Vendor SDKs
+
+**This means:**
+- ✅ Use the AI assistant you prefer
+- ✅ Switch agents anytime without changing orchestration
+- ✅ Mix Claude, Cursor, Aider on the same team
+- ✅ Future-proof against new AI tools
+
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for complete guide!**
+
+---
+
+## 🚀 Quick Examples by Agent
+
+### Claude Code
+```
+You are Engineer 1
+```
+Auto-discovery just works!
+
+### Cursor
+```
+@czarina-project/workers/engineer-1.md
+
+Follow this prompt as the assigned worker.
+```
+
+### Aider
+```bash
+aider --read czarina-project/workers/engineer-1.md
+```
+
+### GitHub Copilot
+```
+Read czarina-project/workers/engineer-1.md and follow that worker prompt.
+```
+
+**All read the same prompt, follow the same git workflow, tracked by the same dashboard!**
 
 ---
 

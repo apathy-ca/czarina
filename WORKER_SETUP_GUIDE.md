@@ -1,8 +1,12 @@
 # Czarina Worker Setup Guide
 
+## Works With Any AI Coding Assistant! 🌍
+
+This guide applies to **all AI coding assistants** - Claude Code, Cursor, GitHub Copilot, Aider, and more. The orchestration is agent-agnostic!
+
 ## The Problem We Solved
 
-Previously, workers would commit directly to `main` because:
+Previously, AI workers would commit directly to `main` because:
 1. Worker prompts had NO git workflow instructions
 2. Branches weren't pre-created
 3. Dashboard couldn't track progress on `main`
@@ -94,9 +98,9 @@ This will:
 2. Inject git workflow instructions with worker-specific values
 3. Output complete prompts ready for workers
 
-### For Workers (Claude Agents)
+### For Workers (All AI Assistants)
 
-When you receive your worker prompt, you'll see clear git instructions:
+When you receive your worker prompt (regardless of which AI assistant you use), you'll see clear git instructions:
 
 ```markdown
 ## 🔀 Git Workflow Instructions
@@ -248,18 +252,68 @@ export CHECKPOINTS=(
 )
 ```
 
+## Multi-Agent Considerations
+
+### Using Different AI Assistants
+
+Workers can use **different AI coding assistants** on the same project!
+
+**How it works:**
+- ✅ All agents read the same markdown prompts
+- ✅ All agents follow the same git workflow
+- ✅ Dashboard tracks all agents via git (agent-agnostic)
+- ✅ PRs integrate work regardless of which agent created them
+
+**Example team:**
+```
+Engineer 1: Claude Code (web, mobile-friendly)
+Engineer 2: Cursor (desktop IDE, debugging)
+QA 1: Aider (CLI, automation)
+Docs 1: GitHub Copilot (GitHub integration)
+```
+
+### Agent-Specific Setup
+
+**No special setup needed!** The file-based architecture works with any agent.
+
+**Discovery patterns vary by agent:**
+- **Claude Code:** "You are Engineer 1" (auto-discovery)
+- **Cursor:** `@czarina-project/workers/engineer-1.md` (file reference)
+- **Aider:** `aider --read czarina-project/workers/engineer-1.md` (CLI)
+- **Copilot:** "Read czarina-project/workers/engineer-1.md" (chat)
+
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for detailed agent-specific instructions.**
+
+### Benefits of Agent-Agnostic Design
+
+1. **Team Flexibility**
+   - Each developer uses their preferred tool
+   - No need to standardize on one AI assistant
+   - New team members can use familiar tools
+
+2. **Future-Proof**
+   - Works with AI assistants that don't exist yet
+   - No vendor lock-in
+   - No API dependencies to break
+
+3. **Testing & Validation**
+   - Test with multiple agents
+   - Verify behavior across tools
+   - Increase confidence in prompts
+
 ## Summary
 
 **The Czarina workflow ensures:**
 1. ✅ Every worker has a dedicated branch
-2. ✅ Workers know exactly which branch to use
-3. ✅ Dashboard can track progress in real-time
-4. ✅ Work is isolated and reviewable
+2. ✅ Workers know exactly which branch to use (in their prompt)
+3. ✅ Dashboard can track progress in real-time (via git)
+4. ✅ Work is isolated and reviewable (via branches)
 5. ✅ Integration is controlled via PRs
+6. ✅ **Any AI coding assistant can participate** (agent-agnostic)
 
 **One command to set it all up:**
 ```bash
 ./czarina init <project>
 ```
 
-Then launch and monitor! 🚀
+Then launch with your preferred AI assistant and monitor! 🚀

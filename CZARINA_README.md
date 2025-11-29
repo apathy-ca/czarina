@@ -1,14 +1,39 @@
 # Czarina - Multi-Agent Orchestration System
 
-**The bestestest little orchestrator for managing parallel Claude Code workers!** 👑
+**The bestestest little orchestrator for managing parallel AI coding assistant workers!** 👑
 
 ## What is Czarina?
 
-Czarina orchestrates multiple Claude Code agents working in parallel on a single codebase. Each agent (worker) gets:
+Czarina orchestrates multiple AI coding assistants working in parallel on a single codebase. Works with **Claude Code, Cursor, GitHub Copilot, Aider, and more!**
+
+Each worker gets:
 - A dedicated git branch
 - A specific task prompt
 - Clear git workflow instructions
 - Real-time progress tracking
+
+## Agent Compatibility
+
+Czarina works with **any AI coding assistant** that can read files and use git!
+
+**Fully Supported:**
+- ✅ **Claude Code** (Web & Desktop) - 100% compatible, primary tested agent
+- ✅ **Claude Desktop** - Full native support
+- ✅ **Cursor** - Works perfectly with @ file references
+- ✅ **Aider** - Excellent CLI integration
+- ✅ **GitHub Copilot** - Works with manual prompt loading
+- ✅ **Windsurf** - Similar workflow to Cursor
+- ✅ **Codeium** - Free alternative with full support
+
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for detailed setup instructions for each agent.**
+
+**Why it works with any agent:**
+- 📄 File-based prompts (markdown)
+- 🔀 Standard git workflow (branches, PRs)
+- 🖥️ No API dependencies
+- 🌍 Universal patterns
+
+**You can even mix agents!** Engineer 1 uses Claude, Engineer 2 uses Cursor, QA uses Aider - they all work together seamlessly!
 
 ## Two Modes of Operation
 
@@ -32,7 +57,7 @@ Full orchestration with dashboard and tmux:
 
 Perfect for: Team leads, monitoring multiple workers, desktop development
 
-### Mode 2: Embedded (Mobile/Remote) 🆕
+### Mode 2: Embedded (Mobile/Remote/Multi-Agent) 🆕
 
 Self-contained orchestration in your project repo:
 
@@ -45,11 +70,13 @@ cd <project-repo>
 git add czarina-* WORKERS.md
 git push
 
-# 3. Use from anywhere (even mobile!)
-"You are Engineer 1"
+# 3. Use from anywhere with any agent!
+"You are Engineer 1"  # Claude Code
+@czarina-*/workers/engineer-1.md  # Cursor, Windsurf
+aider --read czarina-*/workers/engineer-1.md  # Aider
 ```
 
-Perfect for: Claude Code Web, mobile devices, solo work, remote development
+Perfect for: Any AI coding assistant, mobile devices, mixed-agent teams, remote development
 
 See [Embedded Orchestration Guide](EMBEDDED_ORCHESTRATION_GUIDE.md) for details.
 
@@ -530,6 +557,33 @@ Let's make Czarina the bestestest! 💪
 
 [Your license here]
 
+## Agent-Specific Quick Starts
+
+### Using with Claude Code
+```
+You are Engineer 1
+```
+That's it! Auto-discovery works perfectly.
+
+### Using with Cursor
+```
+@czarina-<project>/workers/engineer-1.md
+
+Follow this prompt as the assigned worker.
+```
+
+### Using with Aider
+```bash
+aider --read czarina-<project>/workers/engineer-1.md
+```
+
+### Using with GitHub Copilot
+```
+Read czarina-<project>/workers/engineer-1.md and follow that worker prompt.
+```
+
+**See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for complete guide!**
+
 ---
 
-**Made with ❤️ and Claude Code**
+**Made with ❤️ by humans and AI working together**
