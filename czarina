@@ -4,10 +4,11 @@ Czarina - Multi-Agent Orchestration CLI
 Simple interface for managing multi-agent orchestration projects
 
 Usage:
+    czarina list                    - List available projects
+    czarina init <project>          - Initialize git branches for project
     czarina dashboard <project>     - Launch project dashboard
     czarina launch <project>        - Launch project workers
     czarina status <project>        - Show project status
-    czarina list                    - List available projects
 """
 
 import sys
@@ -119,6 +120,23 @@ def cmd_status(project_name):
                 print(f"  • {worker_id:12} → {branch:30} ({description})")
 
 
+def cmd_init(project_name):
+    """Initialize git branches for project workers"""
+    orchestrator_dir = get_orchestrator_dir()
+    config_file = get_config_file(project_name)
+    init_script = orchestrator_dir / "czarina-core" / "init-branches.sh"
+
+    if not init_script.exists():
+        print(f"❌ Init script not found: {init_script}")
+        sys.exit(1)
+
+    print(f"🌿 Initializing git branches for: {project_name}")
+    print(f"   Config: {config_file}")
+    print()
+
+    subprocess.run(["bash", str(init_script), str(config_file)])
+
+
 def cmd_list():
     """List available projects"""
     orchestrator_dir = get_orchestrator_dir()
@@ -149,6 +167,7 @@ def show_usage():
     print(__doc__)
     print("\nExamples:")
     print("  czarina list")
+    print("  czarina init sark-v2")
     print("  czarina dashboard sark-v2")
     print("  czarina launch sark-v2")
     print("  czarina status sark-v2")
@@ -163,6 +182,11 @@ def main():
 
     if command == "list":
         cmd_list()
+    elif command == "init":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina init <project>")
+            sys.exit(1)
+        cmd_init(sys.argv[2])
     elif command == "dashboard":
         if len(sys.argv) < 3:
             print("❌ Usage: czarina dashboard <project>")
