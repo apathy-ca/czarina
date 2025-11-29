@@ -1,0 +1,78 @@
+{
+  "id": "aider",
+  "name": "Aider",
+  "type": "cli",
+  "vendor": "Paul Gauthier",
+  "website": "https://aider.chat",
+  "discovery": {
+    "pattern": "Command line argument",
+    "instruction": "Run: aider --read {worker_file}",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "native",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "cli",
+    "terminal_access": true,
+    "multi_file_edit": true,
+    "search": "native"
+  },
+  "launch": {
+    "command": "aider",
+    "args": ["--read", "{worker_file}"],
+    "requires_install": true,
+    "install_url": "https://aider.chat/docs/install.html"
+  },
+  "documentation": {
+    "getting_started": "Aider is a CLI-based AI pair programmer with excellent git integration. Launch Aider with the worker file as a read-only context, then ask it to implement the tasks. Aider automatically handles git commits and can work with multiple files.",
+    "tips": [
+      "Use --read flag to include worker file without letting Aider edit it",
+      "Aider automatically creates git commits as you work - perfect for Czarina workflow",
+      "Use /add to add files to the chat context as needed",
+      "Use /drop to remove files from context",
+      "Aider works best with incremental tasks - tackle worker prompts step-by-step",
+      "Use --model to choose between GPT-4, Claude, etc.",
+      "The /diff command shows pending changes before committing"
+    ],
+    "limitations": [
+      "CLI-only interface - no GUI",
+      "Requires API keys for AI models (OpenAI, Anthropic, etc.)",
+      "Best for developers comfortable with terminal workflows",
+      "PR creation requires gh CLI"
+    ],
+    "examples": [
+      {
+        "title": "Start a worker task",
+        "description": "Launch Aider with worker context",
+        "command": "aider --read czarina-myproject/workers/engineer1.md"
+      },
+      {
+        "title": "Use specific model",
+        "description": "Choose Claude Sonnet for the task",
+        "command": "aider --model claude-3-5-sonnet-20241022 --read czarina-myproject/workers/engineer1.md"
+      },
+      {
+        "title": "Add files to context",
+        "description": "Include source files for editing",
+        "command": "In Aider: /add src/main.py src/utils.py"
+      },
+      {
+        "title": "Create PR",
+        "description": "After completing work, create PR",
+        "command": "gh pr create --title \"feat: ...\" --body \"...\""
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 20,
+    "prefers_single_file_prompts": true
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-11-29",
+    "tested_with": "0.59.0",
+    "compatibility": ">=1.0.0"
+  }
+}

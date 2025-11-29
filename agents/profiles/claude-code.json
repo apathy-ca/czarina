@@ -1,0 +1,64 @@
+{
+  "id": "claude-code",
+  "name": "Claude Code",
+  "type": "desktop",
+  "vendor": "Anthropic",
+  "website": "https://claude.ai/claude-code",
+  "discovery": {
+    "pattern": "@ file reference",
+    "instruction": "In Claude Code, reference the worker file with: @{worker_file}",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "native",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "native",
+    "terminal_access": true,
+    "multi_file_edit": true,
+    "search": "native"
+  },
+  "launch": {
+    "command": "claude-code",
+    "args": [],
+    "requires_install": true,
+    "install_url": "https://claude.ai/claude-code"
+  },
+  "documentation": {
+    "getting_started": "Claude Code is the primary agent for Czarina. Simply reference the worker prompt file using @filepath and Claude will read and follow the instructions.",
+    "tips": [
+      "Use @ to reference worker files - Claude Code will read and understand the full context",
+      "Claude Code has native git integration - follow the git workflow in worker prompts",
+      "You can reference multiple files with @ if a worker needs cross-file context",
+      "Claude Code can create PRs directly using the gh CLI tool",
+      "Use Cmd/Ctrl+K to quickly find and reference files"
+    ],
+    "limitations": [
+      "Requires desktop application installation",
+      "Works best with well-structured markdown prompts"
+    ],
+    "examples": [
+      {
+        "title": "Start a worker task",
+        "description": "Begin work on an engineer task",
+        "command": "@czarina-myproject/workers/engineer1.md"
+      },
+      {
+        "title": "Reference multiple context files",
+        "description": "Include additional context for complex tasks",
+        "command": "@czarina-myproject/workers/engineer1.md @src/main.py @docs/architecture.md"
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 20,
+    "prefers_single_file_prompts": false
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-11-29",
+    "tested_with": "1.0.0",
+    "compatibility": ">=1.0.0"
+  }
+}

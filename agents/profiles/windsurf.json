@@ -1,0 +1,72 @@
+{
+  "id": "windsurf",
+  "name": "Windsurf",
+  "type": "desktop",
+  "vendor": "Codeium",
+  "website": "https://codeium.com/windsurf",
+  "discovery": {
+    "pattern": "@ file reference or direct open",
+    "instruction": "In Windsurf, reference the worker file with @ or open it directly in the editor",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "native",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "native",
+    "terminal_access": true,
+    "multi_file_edit": true,
+    "search": "native"
+  },
+  "launch": {
+    "command": "windsurf",
+    "args": ["{worker_file}"],
+    "requires_install": true,
+    "install_url": "https://codeium.com/windsurf"
+  },
+  "documentation": {
+    "getting_started": "Windsurf is Codeium's AI-native IDE with agentic capabilities. It works similarly to Cursor and Claude Code - simply reference the worker file using @ or open it directly. Windsurf's Cascade feature can autonomously execute multi-step tasks from worker prompts.",
+    "tips": [
+      "Use @ to reference worker files in Cascade chat",
+      "Windsurf's 'Flows' feature can automate multi-file changes",
+      "Cascade mode can autonomously work through task lists",
+      "Use Cmd/Ctrl+P to quickly navigate to worker files",
+      "Windsurf has strong git integration - follows Czarina workflow naturally",
+      "The Supercomplete feature helps with inline code generation",
+      "Can work in 'Autonomous Mode' for hands-off task execution"
+    ],
+    "limitations": [
+      "Newer tool with evolving features",
+      "Free tier has usage limits",
+      "Some advanced features require Pro subscription"
+    ],
+    "examples": [
+      {
+        "title": "Start autonomous task",
+        "description": "Let Windsurf work through worker prompt automatically",
+        "command": "Open worker file, select Cascade mode, say: 'Execute all tasks in this file'"
+      },
+      {
+        "title": "Reference worker file",
+        "description": "Add worker context to Cascade",
+        "command": "In Cascade: @czarina-myproject/workers/engineer1.md"
+      },
+      {
+        "title": "Use Flows for multi-file changes",
+        "description": "Orchestrate changes across multiple files",
+        "command": "Cascade: 'Create a Flow to implement the changes described in @{worker_file}'"
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 20,
+    "prefers_single_file_prompts": false
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2024-11-29",
+    "tested_with": "0.1.0",
+    "compatibility": ">=1.0.0"
+  }
+}
