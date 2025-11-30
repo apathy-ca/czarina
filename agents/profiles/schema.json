@@ -1,0 +1,242 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://czarina.dev/schemas/agent-profile.json",
+  "title": "Czarina Agent Profile",
+  "description": "Schema for defining AI coding assistant profiles in the Czarina orchestration system",
+  "type": "object",
+  "required": ["id", "name", "type", "discovery", "capabilities"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the agent (lowercase, hyphenated)",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "examples": ["claude-code", "cursor", "copilot"]
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name of the agent",
+      "minLength": 1,
+      "examples": ["Claude Code", "Cursor", "GitHub Copilot"]
+    },
+    "type": {
+      "type": "string",
+      "description": "Platform type of the agent",
+      "enum": ["web", "desktop", "cli", "hybrid"],
+      "examples": ["web", "desktop", "cli"]
+    },
+    "vendor": {
+      "type": "string",
+      "description": "Vendor/provider of the agent",
+      "examples": ["Anthropic", "Anysphere", "GitHub", "Microsoft"]
+    },
+    "website": {
+      "type": "string",
+      "description": "Official website URL",
+      "format": "uri"
+    },
+    "discovery": {
+      "type": "object",
+      "description": "How the agent discovers and references worker files",
+      "required": ["pattern", "instruction"],
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "description": "Pattern for how the agent references files",
+          "examples": [
+            "@ file reference",
+            "Direct file path",
+            "Command line argument"
+          ]
+        },
+        "instruction": {
+          "type": "string",
+          "description": "User-facing instruction for using worker files with this agent",
+          "examples": [
+            "In Claude Code, use: @{worker_file}",
+            "In Cursor, open: {worker_file}",
+            "Run: aider {worker_file}"
+          ]
+        },
+        "supports_context_files": {
+          "type": "boolean",
+          "description": "Whether the agent supports adding files to context",
+          "default": true
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Technical capabilities of the agent",
+      "required": ["file_reading", "git_support", "pr_creation"],
+      "properties": {
+        "file_reading": {
+          "type": "string",
+          "description": "File reading capability level",
+          "enum": ["native", "limited", "manual"],
+          "examples": ["native"]
+        },
+        "file_writing": {
+          "type": "string",
+          "description": "File writing capability level",
+          "enum": ["native", "limited", "manual"],
+          "default": "native"
+        },
+        "git_support": {
+          "type": "string",
+          "description": "Git integration level",
+          "enum": ["native", "cli", "limited", "manual"],
+          "examples": ["native", "cli"]
+        },
+        "pr_creation": {
+          "type": "string",
+          "description": "Pull request creation capability",
+          "enum": ["native", "cli", "manual"],
+          "examples": ["native", "cli", "manual"]
+        },
+        "terminal_access": {
+          "type": "boolean",
+          "description": "Whether the agent has terminal/command execution",
+          "default": true
+        },
+        "multi_file_edit": {
+          "type": "boolean",
+          "description": "Can edit multiple files in a single operation",
+          "default": true
+        },
+        "search": {
+          "type": "string",
+          "description": "Code search capability",
+          "enum": ["native", "limited", "manual"],
+          "default": "native"
+        }
+      }
+    },
+    "launch": {
+      "type": "object",
+      "description": "How to programmatically launch the agent (optional)",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command to launch the agent",
+          "examples": ["cursor", "code", "aider"]
+        },
+        "args": {
+          "type": "array",
+          "description": "Command-line arguments",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["--goto", "{worker_file}"], ["{worker_file}"]]
+        },
+        "requires_install": {
+          "type": "boolean",
+          "description": "Whether the agent requires installation",
+          "default": true
+        },
+        "install_url": {
+          "type": "string",
+          "description": "URL for installation instructions",
+          "format": "uri"
+        }
+      }
+    },
+    "documentation": {
+      "type": "object",
+      "description": "Agent-specific documentation and tips",
+      "properties": {
+        "getting_started": {
+          "type": "string",
+          "description": "Brief getting started guide for using Czarina with this agent",
+          "minLength": 1
+        },
+        "tips": {
+          "type": "array",
+          "description": "Helpful tips for using Czarina with this agent",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "limitations": {
+          "type": "array",
+          "description": "Known limitations or workarounds",
+          "items": {
+            "type": "string"
+          }
+        },
+        "examples": {
+          "type": "array",
+          "description": "Example commands or workflows",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Example title"
+              },
+              "description": {
+                "type": "string",
+                "description": "What this example demonstrates"
+              },
+              "command": {
+                "type": "string",
+                "description": "Example command or instruction"
+              }
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "description": "Agent-specific configuration options",
+      "properties": {
+        "prompt_style": {
+          "type": "string",
+          "description": "Preferred prompt formatting style",
+          "enum": ["markdown", "plain", "structured"],
+          "default": "markdown"
+        },
+        "max_context_files": {
+          "type": "integer",
+          "description": "Maximum recommended files to include in context",
+          "minimum": 1,
+          "default": 10
+        },
+        "prefers_single_file_prompts": {
+          "type": "boolean",
+          "description": "Whether agent works better with single consolidated prompt files",
+          "default": false
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata about the profile",
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "Profile version (semantic versioning)",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "default": "1.0.0"
+        },
+        "last_updated": {
+          "type": "string",
+          "description": "ISO 8601 date of last update",
+          "format": "date"
+        },
+        "tested_with": {
+          "type": "string",
+          "description": "Agent version this profile was tested with",
+          "examples": ["1.0.0", "0.42.0"]
+        },
+        "compatibility": {
+          "type": "string",
+          "description": "Czarina version compatibility",
+          "examples": [">=1.0.0", "^2.0.0"]
+        }
+      }
+    }
+  }
+}

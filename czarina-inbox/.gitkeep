@@ -1,0 +1,2 @@
+# This file ensures the czarina-inbox directory structure is tracked in git
+# Even if the subdirectories are empty

@@ -1,0 +1,374 @@
+# Czarina Repository Documentation Standards
+
+## 🎯 Purpose
+These rules ensure the Czarina codebase remains clean, well-documented, and maintainable for all contributors, especially AI Czars working autonomously.
+
+---
+
+## 📂 File Organization Rules
+
+### Root Directory
+**RULE:** The root directory should contain **ONLY**:
+- `README.md` - Main repository overview
+- `czarina` - Main executable
+- `.gitignore`, `LICENSE`, `.cursorrules` - Project config files
+- Core directories: `czarina-core/`, `czarina-inbox/`, `agents/`, `projects/`, `archive/`
+
+**DO NOT:**
+- ❌ Create documentation files in the root (`FEATURE_X.md`, `GUIDE_Y.md`, etc.)
+- ❌ Leave temporary analysis files (`ANALYSIS_*.md`, `SUMMARY_*.md`)
+- ❌ Create multiple README variations (`README-NEW.md`, `README-OLD.md`)
+
+### Where Documentation Goes
+
+```
+czarina-orchestrator/
+├── README.md                           # Main repo overview (mermaid diagrams!)
+├── docs/                               # Root-level documentation
+│   ├── guides/                         # User guides and tutorials
+│   ├── architecture/                   # Architecture decisions and diagrams
+│   ├── integration/                    # Integration and migration docs
+│   └── analysis/                       # Analysis and summary documents
+├── czarina-core/
+│   ├── README.md                       # Core framework overview
+│   └── docs/                           # Core framework documentation
+│       ├── GETTING_STARTED.md
+│       ├── DAEMON_SYSTEM.md
+│       └── ...
+├── czarina-inbox/
+│   ├── README.md                       # Inbox system guide
+│   ├── templates/                      # Submission templates
+│   ├── fixes/                          # Submitted fixes
+│   ├── feedback/                       # Submitted feedback
+│   └── sessions/                       # Session notes
+└── projects/
+    └── [project-name]/
+        ├── README.md                   # Project-specific docs
+        └── docs/                       # Project-specific documentation
+```
+
+---
+
+## 📝 Documentation Placement Rules
+
+### When Creating Documentation
+
+**IF:** Writing about Czarina framework internals
+**THEN:** Place in `czarina-core/docs/`
+**EXAMPLES:** DAEMON_SYSTEM.md, AGENT_TYPES.md, CZAR_GUIDE.md
+
+**IF:** Writing a user guide or tutorial
+**THEN:** Place in `docs/guides/`
+**EXAMPLES:** Getting started guides, how-to tutorials
+
+**IF:** Writing architecture or design decisions
+**THEN:** Place in `docs/architecture/`
+**EXAMPLES:** Architecture diagrams, design rationale
+
+**IF:** Writing integration or migration docs
+**THEN:** Place in `docs/integration/`
+**EXAMPLES:** Migration guides, integration plans
+
+**IF:** Writing analysis or summary documents
+**THEN:** Place in `docs/analysis/`
+**EXAMPLES:** Status reports, improvement summaries
+
+**IF:** Documenting a fix/improvement you made
+**THEN:** Use the inbox system: `czarina-inbox/fixes/`
+**EXAMPLES:** Bug fixes, improvements, session notes
+
+**IF:** It's project-specific documentation
+**THEN:** Place in `projects/[project-name]/docs/`
+**EXAMPLES:** SARK session notes, project-specific guides
+
+### Special Cases
+
+**Temporary analysis files during work:**
+- Keep them in a work directory or delete when done
+- If valuable, move to `docs/analysis/` with a clear name
+- Never commit files named `TEMP_*.md` or `SCRATCH_*.md`
+
+**README files:**
+- Only ONE README per directory
+- No `README-NEW.md`, `README-OLD.md`, `README-BACKUP.md`
+- Use git history if you need old versions
+
+---
+
+## 🎨 README Requirements
+
+### All README files must include:
+
+1. **Clear title and purpose**
+   ```markdown
+   # Component Name
+   Brief one-line description
+   ```
+
+2. **Mermaid diagrams where applicable**
+   - Architecture diagrams
+   - Flow charts for processes
+   - State diagrams for complex systems
+
+3. **Quick start section**
+   - How to use in 3-5 commands
+   - Common use cases
+
+4. **Table of contents** (if > 100 lines)
+
+5. **Links to related documentation**
+
+### Mermaid Diagram Standards
+
+**Use mermaid for:**
+- System architecture
+- Process flows
+- Worker interactions
+- Git workflows
+- Decision trees
+
+**Example:**
+```markdown
+## Architecture
+
+```mermaid
+graph TD
+    A[Czar] --> B[Worker 1]
+    A --> C[Worker 2]
+    B --> D[Git PR]
+    C --> D
+```
+\`\`\`
+
+**Keep diagrams:**
+- Clean and readable
+- Focused on one concept
+- Properly labeled
+- Consistently styled
+
+---
+
+## 🚀 Before You Commit
+
+### Pre-Commit Checklist
+
+**Documentation:**
+- [ ] No loose documentation files in root
+- [ ] All docs in appropriate directories
+- [ ] README files updated if structure changed
+- [ ] Mermaid diagrams rendered correctly
+- [ ] No broken links
+
+**Code:**
+- [ ] Code is in correct directory structure
+- [ ] No temporary/test files committed
+- [ ] Scripts are executable (`chmod +x`)
+- [ ] Config examples provided (not actual secrets)
+
+**Cleanup:**
+- [ ] Removed debug/analysis files
+- [ ] Deleted duplicate documentation
+- [ ] Moved archived files to `archive/`
+- [ ] No `TODO.md` files unless in issue tracker
+
+---
+
+## 🔧 Auto-Cleanup Commands
+
+Before committing, run these:
+
+```bash
+# Find documentation files that shouldn't be in root
+find . -maxdepth 1 -name "*.md" ! -name "README.md" -type f
+
+# Find temporary/scratch files
+find . -name "TEMP_*.md" -o -name "SCRATCH_*.md" -o -name "*-OLD.md"
+
+# Check for duplicate READMEs
+find . -name "README*.md" | grep -v "^./README.md$"
+```
+
+**Action:** Move or delete these files before committing.
+
+---
+
+## 📊 Documentation Quality Standards
+
+### Every document should answer:
+1. **What is this?** - Clear purpose statement
+2. **Who is this for?** - Target audience
+3. **How do I use it?** - Quick start or examples
+4. **Where can I learn more?** - Links to related docs
+
+### Writing Style:
+- ✅ Clear, concise, actionable
+- ✅ Use examples and code snippets
+- ✅ Include diagrams for complex concepts
+- ✅ Link to related documentation
+- ❌ No walls of text without structure
+- ❌ No orphaned documents (always linked from somewhere)
+- ❌ No outdated information (update or archive)
+
+---
+
+## 🎭 For AI Czars
+
+### When Working Autonomously:
+
+**DO:**
+- ✅ Follow directory structure strictly
+- ✅ Use inbox system for improvements
+- ✅ Add mermaid diagrams to READMEs
+- ✅ Update documentation when changing code
+- ✅ Create small, focused documents
+- ✅ Link documents together
+- ✅ Reference development patterns when encountering issues
+
+**DON'T:**
+- ❌ Create temporary analysis files in root
+- ❌ Leave documentation scattered
+- ❌ Create duplicate README files
+- ❌ Skip documentation updates
+- ❌ Make up your own directory structure
+
+### Development Patterns
+
+**Before starting work**, familiarize yourself with:
+- `czarina-core/patterns/ERROR_RECOVERY_PATTERNS.md` - Common errors and solutions
+- `czarina-core/patterns/MODE_CAPABILITIES.md` - Understanding role boundaries (Kilo Code)
+- `czarina-core/patterns/TOOL_USE_PATTERNS.md` - Efficient tool usage
+
+**When encountering errors:**
+1. Check ERROR_RECOVERY_PATTERNS.md first
+2. Follow documented recovery strategies
+3. Document new patterns you discover (use inbox)
+
+**Pattern benefits:**
+- 30-50% reduction in debugging time
+- 40-60% improvement in tool efficiency
+- Proven in real projects (The Symposium, SARK v2.0)
+
+**Discovered a new pattern? Share it!**
+1. Document in `czarina-inbox/patterns/`
+2. Check pending: `czarina patterns pending`
+3. Contribute upstream to help the community
+4. See: `czarina-core/patterns/PATTERN_CONTRIBUTION_GUIDE.md`
+
+**Backchannel:** Your discoveries flow to all Czarina instances worldwide 🌐
+
+### When in Doubt:
+
+1. Check this file (`.cursorrules`)
+2. Check development patterns (`czarina-core/patterns/`)
+3. Look at existing documentation structure
+4. Use the inbox system (`czarina-inbox/`)
+5. Ask the human if uncertain
+
+---
+
+## 🏗️ Creating New Components
+
+**When creating a new component:**
+
+1. **Create directory structure:**
+   ```bash
+   mkdir -p czarina-[component]/docs
+   ```
+
+2. **Create README.md with:**
+   - Title and purpose
+   - Mermaid architecture diagram
+   - Quick start
+   - Link to detailed docs
+
+3. **Create documentation:**
+   - Place in `czarina-[component]/docs/`
+   - Follow naming convention: `CONCEPT_NAME.md`
+   - Include examples and diagrams
+
+4. **Update main README:**
+   - Add component to structure diagram
+   - Link to component README
+   - Update quick links table
+
+---
+
+## 🎯 Success Metrics
+
+**The repository is clean when:**
+- Root directory has < 5 markdown files
+- All documentation is categorized
+- No duplicate or outdated files
+- Every README has mermaid diagrams
+- Links work and point to current docs
+- New contributors can navigate easily
+
+---
+
+## 🚨 Common Violations
+
+### ❌ WRONG:
+```bash
+# Creating analysis docs in root
+touch DAEMON_ANALYSIS.md
+touch INTEGRATION_SUMMARY.md
+touch IMPROVEMENTS_LIST.md
+
+# Duplicate READMEs
+touch README-NEW.md
+touch README-BACKUP.md
+
+# Temporary files left behind
+touch TEMP_NOTES.md
+touch SCRATCH_IDEAS.md
+```
+
+### ✅ RIGHT:
+```bash
+# Proper organization
+mkdir -p docs/analysis
+touch docs/analysis/daemon-integration.md
+
+# Use inbox for improvements
+touch czarina-inbox/sessions/2025-11-29-session-notes.md
+
+# Single README, use git for history
+# (just edit README.md)
+```
+
+---
+
+## 📋 Enforcement
+
+**These rules are enforced:**
+1. **By AI Czars** - Must follow before committing
+2. **By code review** - Humans check structure
+3. **By pre-commit hooks** - Automated checks (future)
+4. **By documentation** - This file and examples
+
+**If you see violations:**
+- Use inbox to report: `czarina-inbox/feedback/`
+- Or fix immediately and note in commit
+- Update this file if rules need clarification
+
+---
+
+## 🔄 Updating These Rules
+
+**To update `.cursorrules`:**
+1. Discuss changes in inbox or issues
+2. Update this file
+3. Update affected documentation
+4. Announce changes in commit message
+5. Update examples to match
+
+---
+
+**Version:** 1.0
+**Last Updated:** 2025-11-29
+**Status:** Active - All Czars must follow
+**Enforcement:** Immediate - Apply to all new commits
+
+---
+
+> **Remember:** Clean documentation = Happy developers = Better Czarina! 🎯

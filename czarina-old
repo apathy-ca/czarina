@@ -1,0 +1,492 @@
+#!/usr/bin/env python3
+"""
+Czarina - Multi-Agent Orchestration CLI
+Simple interface for managing multi-agent orchestration projects
+
+Usage:
+    czarina list                    - List available projects
+    czarina init <project>          - Initialize git branches for project
+    czarina embed <project>         - Embed orchestration into project repo
+    czarina dashboard <project>     - Launch project dashboard
+    czarina launch <project>        - Launch project workers
+    czarina status <project>        - Show project status
+    czarina daemon start <project>  - Start autonomous daemon for project
+    czarina daemon stop <project>   - Stop daemon for project
+    czarina daemon logs <project>   - Show daemon logs for project
+    czarina daemon status <project> - Check if daemon is running
+"""
+
+import sys
+import subprocess
+import json
+from pathlib import Path
+
+
+def get_orchestrator_dir():
+    """Get the orchestrator root directory"""
+    return Path(__file__).parent.resolve()
+
+
+def get_project_dir(project_name):
+    """Get project directory"""
+    orchestrator_dir = get_orchestrator_dir()
+    project_dir = orchestrator_dir / "projects" / f"{project_name}-orchestration"
+
+    if not project_dir.exists():
+        print(f"❌ Project '{project_name}' not found")
+        print(f"   Expected: {project_dir}")
+        sys.exit(1)
+
+    return project_dir
+
+
+def get_config_file(project_name):
+    """Get project config.sh file"""
+    project_dir = get_project_dir(project_name)
+    config_file = project_dir / "config.sh"
+
+    if not config_file.exists():
+        print(f"❌ Config file not found: {config_file}")
+        sys.exit(1)
+
+    return config_file
+
+
+def cmd_dashboard(project_name):
+    """Launch dashboard for project"""
+    orchestrator_dir = get_orchestrator_dir()
+    config_file = get_config_file(project_name)
+    dashboard_script = orchestrator_dir / "czarina-core" / "dashboard.py"
+
+    print(f"🎯 Czarina Dashboard - {project_name}")
+    print(f"   Config: {config_file}")
+    print(f"   Press Ctrl+C to exit")
+    print()
+
+    try:
+        subprocess.run(
+            ["python3", str(dashboard_script), str(config_file)],
+            cwd=str(orchestrator_dir)
+        )
+    except KeyboardInterrupt:
+        print("\n✅ Dashboard stopped")
+
+
+def cmd_launch(project_name):
+    """Launch workers for project"""
+    project_dir = get_project_dir(project_name)
+
+    # Look for launch scripts
+    launch_scripts = list(project_dir.glob("launch*.sh"))
+
+    if not launch_scripts:
+        print(f"❌ No launch scripts found in {project_dir}")
+        sys.exit(1)
+
+    if len(launch_scripts) == 1:
+        launch_script = launch_scripts[0]
+    else:
+        print("📋 Available launch scripts:")
+        for i, script in enumerate(launch_scripts, 1):
+            print(f"   {i}. {script.name}")
+
+        choice = input("\nSelect script (1-{}): ".format(len(launch_scripts)))
+        try:
+            launch_script = launch_scripts[int(choice) - 1]
+        except (ValueError, IndexError):
+            print("❌ Invalid selection")
+            sys.exit(1)
+
+    print(f"🚀 Launching workers with {launch_script.name}...")
+    subprocess.run(["bash", str(launch_script)], cwd=str(project_dir))
+
+
+def cmd_status(project_name):
+    """Show project status"""
+    project_dir = get_project_dir(project_name)
+    config_file = get_config_file(project_name)
+
+    # Source config and show worker info
+    result = subprocess.run(
+        ["bash", "-c", f"source {config_file} && printf '%s\\n' \"${{WORKER_DEFINITIONS[@]}}\""],
+        capture_output=True,
+        text=True
+    )
+
+    print(f"📊 Project: {project_name}")
+    print(f"   Location: {project_dir}")
+    print()
+    print("Workers:")
+
+    for line in result.stdout.strip().split('\n'):
+        if line:
+            parts = line.split('|')
+            if len(parts) >= 4:
+                worker_id, branch, task_file, description = parts[0], parts[1], parts[2], parts[3]
+                print(f"  • {worker_id:12} → {branch:30} ({description})")
+
+
+def cmd_init(project_name):
+    """Initialize git branches for project workers"""
+    orchestrator_dir = get_orchestrator_dir()
+    config_file = get_config_file(project_name)
+    init_script = orchestrator_dir / "czarina-core" / "init-branches.sh"
+
+    if not init_script.exists():
+        print(f"❌ Init script not found: {init_script}")
+        sys.exit(1)
+
+    print(f"🌿 Initializing git branches for: {project_name}")
+    print(f"   Config: {config_file}")
+    print()
+
+    subprocess.run(["bash", str(init_script), str(config_file)])
+
+
+def cmd_embed(project_name):
+    """Embed orchestration into project repository"""
+    orchestrator_dir = get_orchestrator_dir()
+    config_file = get_config_file(project_name)
+    embed_script = orchestrator_dir / "czarina-core" / "embed-orchestration.sh"
+
+    if not embed_script.exists():
+        print(f"❌ Embed script not found: {embed_script}")
+        sys.exit(1)
+
+    print(f"📦 Embedding orchestration into project: {project_name}")
+    print(f"   Config: {config_file}")
+    print()
+
+    subprocess.run(["bash", str(embed_script), str(config_file)])
+
+
+def get_embedded_orchestration_dir(project_name):
+    """Get embedded orchestration directory in project repo"""
+    # First try to find it via config
+    config_file = get_config_file(project_name)
+
+    result = subprocess.run(
+        ["bash", "-c", f"source {config_file} && echo $PROJECT_ROOT"],
+        capture_output=True,
+        text=True
+    )
+    project_root = Path(result.stdout.strip())
+
+    # Look for czarina-* directories
+    if project_root.exists():
+        for item in project_root.iterdir():
+            if item.is_dir() and item.name.startswith("czarina-"):
+                config_json = item / "config.json"
+                if config_json.exists():
+                    return item
+
+    return None
+
+
+def cmd_daemon_start(project_name):
+    """Start autonomous daemon for project"""
+    orchestrator_dir = get_orchestrator_dir()
+
+    # Try to find embedded orchestration directory
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if embedded_dir:
+        # Use embedded orchestration
+        daemon_script = orchestrator_dir / "czarina-core" / "daemon" / "start-daemon.sh"
+        print(f"🎭 Starting daemon for: {project_name}")
+        print(f"   Embedded: {embedded_dir}")
+        print()
+        subprocess.run(["bash", str(daemon_script), str(embedded_dir)])
+    else:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        print(f"   Run: czarina embed {project_name}")
+        sys.exit(1)
+
+
+def cmd_daemon_stop(project_name):
+    """Stop daemon for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    # Load project slug from config
+    config_json = embedded_dir / "config.json"
+    with open(config_json) as f:
+        config = json.load(f)
+
+    project_slug = config['project']['slug']
+    daemon_session = f"{project_slug}-daemon"
+
+    result = subprocess.run(
+        ["tmux", "has-session", "-t", daemon_session],
+        capture_output=True
+    )
+
+    if result.returncode == 0:
+        subprocess.run(["tmux", "kill-session", "-t", daemon_session])
+        print(f"✅ Daemon stopped: {daemon_session}")
+    else:
+        print(f"⚠️  Daemon is not running for: {project_name}")
+
+
+def cmd_daemon_logs(project_name):
+    """Show daemon logs for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    log_file = embedded_dir / "status" / "daemon.log"
+
+    if not log_file.exists():
+        print(f"⚠️  No daemon log file found: {log_file}")
+        print(f"   Has the daemon been started?")
+        sys.exit(1)
+
+    print(f"📋 Daemon logs for: {project_name}")
+    print(f"   Log file: {log_file}")
+    print()
+
+    try:
+        subprocess.run(["tail", "-f", str(log_file)])
+    except KeyboardInterrupt:
+        print("\n✅ Stopped viewing logs")
+
+
+def cmd_daemon_status(project_name):
+    """Check if daemon is running for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    # Load project slug from config
+    config_json = embedded_dir / "config.json"
+    with open(config_json) as f:
+        config = json.load(f)
+
+    project_slug = config['project']['slug']
+    daemon_session = f"{project_slug}-daemon"
+
+    result = subprocess.run(
+        ["tmux", "has-session", "-t", daemon_session],
+        capture_output=True
+    )
+
+    if result.returncode == 0:
+        print(f"✅ Daemon is running: {daemon_session}")
+        print(f"   View: tmux attach -t {daemon_session}")
+        print(f"   Logs: czarina daemon logs {project_name}")
+    else:
+        print(f"⚠️  Daemon is not running for: {project_name}")
+        print(f"   Start: czarina daemon start {project_name}")
+
+
+def cmd_list():
+    """List available projects"""
+    orchestrator_dir = get_orchestrator_dir()
+    projects_dir = orchestrator_dir / "projects"
+
+    print("📋 Available projects:")
+
+    for project_dir in sorted(projects_dir.iterdir()):
+        if project_dir.is_dir() and project_dir.name.endswith("-orchestration"):
+            project_name = project_dir.name.replace("-orchestration", "")
+            config_file = project_dir / "config.sh"
+
+            if config_file.exists():
+                # Read project name from config
+                result = subprocess.run(
+                    ["bash", "-c", f"source {config_file} && echo $PROJECT_NAME"],
+                    capture_output=True,
+                    text=True
+                )
+                full_name = result.stdout.strip()
+                print(f"  • {project_name:20} - {full_name}")
+            else:
+                print(f"  • {project_name:20} - (no config)")
+
+
+def cmd_patterns_update():
+    """Update development patterns from upstream"""
+    orchestrator_dir = get_orchestrator_dir()
+    script_path = orchestrator_dir / "czarina-core" / "patterns" / "update-patterns.sh"
+    subprocess.run(["bash", str(script_path)])
+
+
+def cmd_patterns_version():
+    """Show current pattern version"""
+    orchestrator_dir = get_orchestrator_dir()
+    version_file = orchestrator_dir / "czarina-core" / "patterns" / ".pattern-version"
+    if version_file.exists():
+        with open(version_file) as f:
+            lines = f.readlines()
+            version = lines[0].strip()
+            if len(lines) > 1:
+                updated = lines[1].strip()
+                print(f"📚 Pattern version: {version}")
+                print(f"📅 Last updated: {updated}")
+            else:
+                print(f"📚 Pattern version: {version}")
+    else:
+        print("📚 Patterns not yet downloaded")
+        print("💡 Run: czarina patterns update")
+
+
+def cmd_patterns_pending():
+    """List patterns ready to contribute upstream"""
+    orchestrator_dir = get_orchestrator_dir()
+    inbox_patterns = orchestrator_dir / "czarina-inbox" / "patterns"
+
+    if not inbox_patterns.exists():
+        inbox_patterns.mkdir(parents=True)
+
+    patterns = list(inbox_patterns.glob("*.md"))
+
+    if not patterns:
+        print("📝 No patterns pending contribution")
+        print("💡 Document patterns in: czarina-inbox/patterns/")
+        return
+
+    print("📝 Patterns ready to contribute:\n")
+    for pattern in sorted(patterns):
+        # Simple validation: check if has example and metrics
+        with open(pattern) as f:
+            content = f.read()
+            has_example = "```" in content or "Example" in content
+            has_metrics = any(word in content for word in ["Value:", "%", "reduction", "improvement"])
+
+            if has_example and has_metrics:
+                status = "✅ Ready"
+            elif has_example or has_metrics:
+                status = "⚠️  Needs improvement"
+            else:
+                status = "❌ Incomplete"
+
+        print(f"  {pattern.name:40} {status}")
+
+    print(f"\n💡 Use 'czarina patterns contribute' to submit upstream")
+
+
+def cmd_patterns_contribute():
+    """Show contribution guide"""
+    orchestrator_dir = get_orchestrator_dir()
+    guide = orchestrator_dir / "czarina-core" / "patterns" / "PATTERN_CONTRIBUTION_GUIDE.md"
+
+    if guide.exists():
+        # Show first 50 lines
+        with open(guide) as f:
+            lines = f.readlines()[:50]
+            print("".join(lines))
+            if len(lines) >= 50:
+                print(f"\n📖 Read full guide: {guide}")
+    else:
+        print("📖 Contribution guide not found")
+
+    print("\n📝 Quick start:")
+    print("  1. Document pattern in: czarina-inbox/patterns/")
+    print("  2. Check pending: czarina patterns pending")
+    print("  3. Follow guide to submit upstream")
+
+
+def show_usage():
+    """Show usage information"""
+    print(__doc__)
+    print("\nExamples:")
+    print("  czarina list")
+    print("  czarina init sark-v2")
+    print("  czarina embed sark-v2")
+    print("  czarina dashboard sark-v2")
+    print("  czarina launch sark-v2")
+    print("  czarina status sark-v2")
+    print("  czarina daemon start sark-v2")
+    print("  czarina daemon logs sark-v2")
+    print("  czarina patterns update")
+    print("  czarina patterns version")
+    print("  czarina patterns pending")
+    print("  czarina patterns contribute")
+
+
+def main():
+    if len(sys.argv) < 2:
+        show_usage()
+        sys.exit(1)
+
+    command = sys.argv[1]
+
+    if command == "list":
+        cmd_list()
+    elif command == "init":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina init <project>")
+            sys.exit(1)
+        cmd_init(sys.argv[2])
+    elif command == "embed":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina embed <project>")
+            sys.exit(1)
+        cmd_embed(sys.argv[2])
+    elif command == "dashboard":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina dashboard <project>")
+            sys.exit(1)
+        cmd_dashboard(sys.argv[2])
+    elif command == "launch":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina launch <project>")
+            sys.exit(1)
+        cmd_launch(sys.argv[2])
+    elif command == "status":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina status <project>")
+            sys.exit(1)
+        cmd_status(sys.argv[2])
+    elif command == "daemon":
+        if len(sys.argv) < 4:
+            print("❌ Usage: czarina daemon <start|stop|logs|status> <project>")
+            sys.exit(1)
+        subcommand = sys.argv[2]
+        project = sys.argv[3]
+        if subcommand == "start":
+            cmd_daemon_start(project)
+        elif subcommand == "stop":
+            cmd_daemon_stop(project)
+        elif subcommand == "logs":
+            cmd_daemon_logs(project)
+        elif subcommand == "status":
+            cmd_daemon_status(project)
+        else:
+            print(f"❌ Unknown daemon subcommand: {subcommand}")
+            print("   Valid: start, stop, logs, status")
+            sys.exit(1)
+    elif command == "patterns":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina patterns <update|version|pending|contribute>")
+            sys.exit(1)
+        subcommand = sys.argv[2]
+        if subcommand == "update":
+            cmd_patterns_update()
+        elif subcommand == "version":
+            cmd_patterns_version()
+        elif subcommand == "pending":
+            cmd_patterns_pending()
+        elif subcommand == "contribute":
+            cmd_patterns_contribute()
+        else:
+            print(f"❌ Unknown patterns subcommand: {subcommand}")
+            print("   Valid: update, version, pending, contribute")
+            sys.exit(1)
+    elif command in ["-h", "--help", "help"]:
+        show_usage()
+    else:
+        print(f"❌ Unknown command: {command}")
+        show_usage()
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

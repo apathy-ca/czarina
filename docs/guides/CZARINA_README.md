@@ -53,6 +53,71 @@ Perfect for: Claude Code Web, mobile devices, solo work, remote development
 
 See [Embedded Orchestration Guide](EMBEDDED_ORCHESTRATION_GUIDE.md) for details.
 
+## Using Different AI Coding Assistants
+
+Czarina works with **any AI coding assistant** that can read files and execute git commands!
+
+### Quick Launch with Any Agent
+
+Use the multi-agent launcher:
+
+```bash
+# Launch with Cursor
+./czarina-core/launch-agent.sh cursor engineer1
+
+# Launch with Aider
+./czarina-core/launch-agent.sh aider engineer1
+
+# Launch with GitHub Copilot
+./czarina-core/launch-agent.sh copilot engineer1
+
+# Launch with Windsurf
+./czarina-core/launch-agent.sh windsurf engineer1
+
+# Launch with Claude Code (default)
+./czarina-core/launch-agent.sh claude-code engineer1
+```
+
+### Supported Agents
+
+| Agent | Compatibility | Best For |
+|-------|--------------|----------|
+| **Claude Code** | 100% ✅ | Mobile/web, primary development |
+| **Cursor** | 95% ✅ | Desktop IDE, multi-file editing |
+| **Aider** | 98% ✅ | Full automation, CLI workflows |
+| **GitHub Copilot** | 95% ✅ | GitHub teams, VS Code users |
+| **Windsurf** | 95% ✅ | Modern AI-first IDE |
+| **Codeium** | 95% ✅ | Free alternative |
+| **Continue.dev** | 90% ✅ | Open source, local models |
+
+### Agent-Specific Guides
+
+Detailed guides for each agent:
+
+- 📘 [Using Czarina with Cursor](agents/guides/USING_WITH_CURSOR.md)
+- 🤖 [Using Czarina with Aider](agents/guides/USING_WITH_AIDER.md)
+- 💙 [Using Czarina with GitHub Copilot](agents/guides/USING_WITH_COPILOT.md)
+- 🌊 [Using Czarina with Windsurf](agents/guides/USING_WITH_WINDSURF.md)
+
+Or see the [Agent Compatibility Matrix](AGENT_COMPATIBILITY.md) for all supported agents.
+
+### Mixed Agent Teams
+
+You can use different agents for different workers!
+
+```bash
+# Engineer 1 uses Cursor
+./czarina-core/launch-agent.sh cursor engineer1
+
+# Engineer 2 uses Aider (automated)
+./czarina-core/launch-agent.sh aider engineer2
+
+# QA uses Claude Code
+./czarina-core/launch-agent.sh claude-code qa1
+```
+
+All agents work together through standard git workflows! 🎉
+
 ## Commands
 
 ### `czarina list`

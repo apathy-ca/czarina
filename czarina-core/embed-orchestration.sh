@@ -4,17 +4,39 @@
 
 set -euo pipefail
 
-# Usage: ./embed-orchestration.sh <config.sh path>
+# Usage: ./embed-orchestration.sh <config.sh path> [--agent=<agent-id>]
 
 if [ $# -lt 1 ]; then
-    echo "Usage: $0 <path-to-config.sh>"
+    echo "Usage: $0 <path-to-config.sh> [--agent=<agent-id>]"
+    echo ""
+    echo "Options:"
+    echo "  --agent=<agent-id>   Specify target AI agent (default: claude-code)"
+    echo "                       Available: claude-code, cursor, copilot, aider, windsurf"
     echo ""
     echo "Example:"
     echo "  $0 ../projects/sark-v2-orchestration/config.sh"
+    echo "  $0 ../projects/sark-v2-orchestration/config.sh --agent=cursor"
     exit 1
 fi
 
 CONFIG_FILE="$1"
+AGENT_ID="claude-code"  # Default agent
+
+# Parse optional --agent parameter
+if [ $# -ge 2 ]; then
+    for arg in "${@:2}"; do
+        case $arg in
+            --agent=*)
+                AGENT_ID="${arg#*=}"
+                shift
+                ;;
+            *)
+                echo "Unknown option: $arg"
+                exit 1
+                ;;
+        esac
+    done
+fi
 
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "❌ Config file not found: $CONFIG_FILE"
@@ -24,12 +46,35 @@ fi
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEMPLATE_DIR="$SCRIPT_DIR/templates/embedded-orchestration"
+AGENTS_DIR="$SCRIPT_DIR/../agents"
 
 # Source the config
 source "$CONFIG_FILE"
 
 # Get project config dir
 CONFIG_DIR="$(dirname "$CONFIG_FILE")"
+
+# Load agent profile
+PROFILE_LOADER="$AGENTS_DIR/profile-loader.py"
+if [ ! -f "$PROFILE_LOADER" ]; then
+    echo "❌ Agent profile loader not found: $PROFILE_LOADER"
+    exit 1
+fi
+
+# Validate agent profile exists
+if ! python3 "$PROFILE_LOADER" validate "$AGENT_ID" &>/dev/null; then
+    echo "❌ Invalid or unknown agent: $AGENT_ID"
+    echo ""
+    echo "Available agents:"
+    python3 "$PROFILE_LOADER" list
+    exit 1
+fi
+
+# Load agent profile data
+AGENT_PROFILE=$(python3 "$PROFILE_LOADER" load "$AGENT_ID")
+AGENT_NAME=$(echo "$AGENT_PROFILE" | python3 -c "import sys, json; print(json.load(sys.stdin)['name'])")
+AGENT_TYPE=$(echo "$AGENT_PROFILE" | python3 -c "import sys, json; print(json.load(sys.stdin)['type'])")
+AGENT_DISCOVERY_INSTRUCTION=$(echo "$AGENT_PROFILE" | python3 -c "import sys, json; print(json.load(sys.stdin)['discovery']['instruction'])")
 
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║        Embed Czarina Orchestration into Project           ║"
@@ -38,6 +83,7 @@ echo ""
 echo "Project: $PROJECT_NAME"
 echo "Repository: $PROJECT_ROOT"
 echo "Config: $CONFIG_FILE"
+echo "Agent: $AGENT_NAME ($AGENT_ID)"
 echo ""
 
 if [ ! -d "$PROJECT_ROOT" ]; then
@@ -119,6 +165,11 @@ cat > "$EMBED_DIR/config.json" <<EOF
     "slug": "$PROJECT_SLUG",
     "repository": "$PROJECT_ROOT",
     "orchestration_dir": "czarina-$PROJECT_SLUG"
+  },
+  "agent": {
+    "id": "$AGENT_ID",
+    "name": "$AGENT_NAME",
+    "type": "$AGENT_TYPE"
   },
   "workers": [$WORKERS_JSON
   ],
@@ -216,7 +267,17 @@ cat > "$PROJECT_ROOT/WORKERS.md" <<ROOTEOF
 
 This repository uses **Czarina** for multi-agent orchestration.
 
-## For Claude Code Web
+## Configured for: $AGENT_NAME
+
+This orchestration is optimized for **$AGENT_NAME**.
+
+### How to use with $AGENT_NAME
+
+$AGENT_DISCOVERY_INSTRUCTION
+
+**Worker files location:** \`czarina-$PROJECT_SLUG/workers/\`
+
+### General Instructions (All Agents)
 
 When a human tells you "You are Engineer 1" (or any worker), do this:
 
@@ -299,6 +360,13 @@ tree -L 2 "$EMBED_DIR" 2>/dev/null || ls -la "$EMBED_DIR"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+echo "🤖 Configured for: $AGENT_NAME"
+echo ""
+echo "   $AGENT_DISCOVERY_INSTRUCTION"
+echo ""
+echo "   Workers are in: czarina-$PROJECT_SLUG/workers/"
+echo ""
+if [ "$AGENT_ID" = "claude-code" ]; then
 echo "🎯 For Claude Code Web users:"
 echo ""
 echo "   Just say: \"You are Engineer 1\""
@@ -308,6 +376,7 @@ echo "   1. Auto-discover from: czarina-$PROJECT_SLUG/START_WORKER.md"
 echo "   2. Load worker prompt from: czarina-$PROJECT_SLUG/workers/"
 echo "   3. Follow git workflow and start working"
 echo ""
+fi
 echo "🖥️  For local development:"
 echo ""
 echo "   ./czarina-$PROJECT_SLUG/.worker-init engineer-1"

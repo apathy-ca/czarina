@@ -1,0 +1,10 @@
+{"window": 0, "worker": "ENGINEER-1", "status": "complete", "severity": "low"}
+{"window": 1, "worker": "ENGINEER-2", "status": "complete", "severity": "low"}
+{"window": 2, "worker": "ENGINEER-3", "status": "complete", "severity": "low"}
+{"window": 3, "worker": "ENGINEER-4", "status": "complete", "severity": "low"}
+{"window": 4, "worker": "ENGINEER-5", "status": "complete", "severity": "low"}
+{"window": 5, "worker": "ENGINEER-6", "status": "complete", "severity": "low"}
+{"window": 6, "worker": "QA-1", "status": "complete", "severity": "low"}
+{"window": 7, "worker": "QA-2", "status": "complete", "severity": "low"}
+{"window": 8, "worker": "DOCS-1", "status": "complete", "severity": "low"}
+{"window": 9, "worker": "DOCS-2", "status": "complete", "severity": "low"}
