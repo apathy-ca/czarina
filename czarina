@@ -10,10 +10,15 @@ Usage:
     czarina dashboard <project>     - Launch project dashboard
     czarina launch <project>        - Launch project workers
     czarina status <project>        - Show project status
+    czarina daemon start <project>  - Start autonomous daemon for project
+    czarina daemon stop <project>   - Stop daemon for project
+    czarina daemon logs <project>   - Show daemon logs for project
+    czarina daemon status <project> - Check if daemon is running
 """
 
 import sys
 import subprocess
+import json
 from pathlib import Path
 
 
@@ -155,6 +160,132 @@ def cmd_embed(project_name):
     subprocess.run(["bash", str(embed_script), str(config_file)])
 
 
+def get_embedded_orchestration_dir(project_name):
+    """Get embedded orchestration directory in project repo"""
+    # First try to find it via config
+    config_file = get_config_file(project_name)
+
+    result = subprocess.run(
+        ["bash", "-c", f"source {config_file} && echo $PROJECT_ROOT"],
+        capture_output=True,
+        text=True
+    )
+    project_root = Path(result.stdout.strip())
+
+    # Look for czarina-* directories
+    if project_root.exists():
+        for item in project_root.iterdir():
+            if item.is_dir() and item.name.startswith("czarina-"):
+                config_json = item / "config.json"
+                if config_json.exists():
+                    return item
+
+    return None
+
+
+def cmd_daemon_start(project_name):
+    """Start autonomous daemon for project"""
+    orchestrator_dir = get_orchestrator_dir()
+
+    # Try to find embedded orchestration directory
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if embedded_dir:
+        # Use embedded orchestration
+        daemon_script = orchestrator_dir / "czarina-core" / "daemon" / "start-daemon.sh"
+        print(f"🎭 Starting daemon for: {project_name}")
+        print(f"   Embedded: {embedded_dir}")
+        print()
+        subprocess.run(["bash", str(daemon_script), str(embedded_dir)])
+    else:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        print(f"   Run: czarina embed {project_name}")
+        sys.exit(1)
+
+
+def cmd_daemon_stop(project_name):
+    """Stop daemon for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    # Load project slug from config
+    config_json = embedded_dir / "config.json"
+    with open(config_json) as f:
+        config = json.load(f)
+
+    project_slug = config['project']['slug']
+    daemon_session = f"{project_slug}-daemon"
+
+    result = subprocess.run(
+        ["tmux", "has-session", "-t", daemon_session],
+        capture_output=True
+    )
+
+    if result.returncode == 0:
+        subprocess.run(["tmux", "kill-session", "-t", daemon_session])
+        print(f"✅ Daemon stopped: {daemon_session}")
+    else:
+        print(f"⚠️  Daemon is not running for: {project_name}")
+
+
+def cmd_daemon_logs(project_name):
+    """Show daemon logs for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    log_file = embedded_dir / "status" / "daemon.log"
+
+    if not log_file.exists():
+        print(f"⚠️  No daemon log file found: {log_file}")
+        print(f"   Has the daemon been started?")
+        sys.exit(1)
+
+    print(f"📋 Daemon logs for: {project_name}")
+    print(f"   Log file: {log_file}")
+    print()
+
+    try:
+        subprocess.run(["tail", "-f", str(log_file)])
+    except KeyboardInterrupt:
+        print("\n✅ Stopped viewing logs")
+
+
+def cmd_daemon_status(project_name):
+    """Check if daemon is running for project"""
+    embedded_dir = get_embedded_orchestration_dir(project_name)
+
+    if not embedded_dir:
+        print(f"❌ No embedded orchestration found for project: {project_name}")
+        sys.exit(1)
+
+    # Load project slug from config
+    config_json = embedded_dir / "config.json"
+    with open(config_json) as f:
+        config = json.load(f)
+
+    project_slug = config['project']['slug']
+    daemon_session = f"{project_slug}-daemon"
+
+    result = subprocess.run(
+        ["tmux", "has-session", "-t", daemon_session],
+        capture_output=True
+    )
+
+    if result.returncode == 0:
+        print(f"✅ Daemon is running: {daemon_session}")
+        print(f"   View: tmux attach -t {daemon_session}")
+        print(f"   Logs: czarina daemon logs {project_name}")
+    else:
+        print(f"⚠️  Daemon is not running for: {project_name}")
+        print(f"   Start: czarina daemon start {project_name}")
+
+
 def cmd_list():
     """List available projects"""
     orchestrator_dir = get_orchestrator_dir()
@@ -190,6 +321,8 @@ def show_usage():
     print("  czarina dashboard sark-v2")
     print("  czarina launch sark-v2")
     print("  czarina status sark-v2")
+    print("  czarina daemon start sark-v2")
+    print("  czarina daemon logs sark-v2")
 
 
 def main():
@@ -226,6 +359,24 @@ def main():
             print("❌ Usage: czarina status <project>")
             sys.exit(1)
         cmd_status(sys.argv[2])
+    elif command == "daemon":
+        if len(sys.argv) < 4:
+            print("❌ Usage: czarina daemon <start|stop|logs|status> <project>")
+            sys.exit(1)
+        subcommand = sys.argv[2]
+        project = sys.argv[3]
+        if subcommand == "start":
+            cmd_daemon_start(project)
+        elif subcommand == "stop":
+            cmd_daemon_stop(project)
+        elif subcommand == "logs":
+            cmd_daemon_logs(project)
+        elif subcommand == "status":
+            cmd_daemon_status(project)
+        else:
+            print(f"❌ Unknown daemon subcommand: {subcommand}")
+            print("   Valid: start, stop, logs, status")
+            sys.exit(1)
     elif command in ["-h", "--help", "help"]:
         show_usage()
     else:

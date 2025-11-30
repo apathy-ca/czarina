@@ -1,0 +1,171 @@
+#!/bin/bash
+# Czarina Worker Auto-Discovery and Initialization
+# This script helps workers discover their identity and load their prompt
+
+set -euo pipefail
+
+# Find the orchestration directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+ORCHESTRATION_DIR="$SCRIPT_DIR"
+
+# Color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Banner
+cat << 'EOF'
+╔════════════════════════════════════════════════════════════╗
+║              Czarina Worker Initialization                 ║
+╚════════════════════════════════════════════════════════════╝
+EOF
+
+echo ""
+
+# Function to list all workers
+list_workers() {
+    echo -e "${CYAN}Available workers:${NC}"
+    echo ""
+
+    # Parse config.json to list workers
+    if command -v jq &> /dev/null; then
+        jq -r '.workers[] | "  • \(.id | .-12) → \(.branch | .-30) (\(.description))"' "$ORCHESTRATION_DIR/config.json"
+    else
+        # Fallback without jq
+        for worker_file in "$ORCHESTRATION_DIR/workers"/*.md; do
+            if [ -f "$worker_file" ]; then
+                worker_id=$(basename "$worker_file" .md)
+                echo -e "  ${GREEN}•${NC} $worker_id"
+            fi
+        done
+    fi
+    echo ""
+}
+
+# Function to load a worker
+load_worker() {
+    local worker_id="$1"
+    local worker_file="$ORCHESTRATION_DIR/workers/${worker_id}.md"
+
+    if [ ! -f "$worker_file" ]; then
+        echo -e "${RED}❌ Worker not found: $worker_id${NC}"
+        echo ""
+        list_workers
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Found worker: $worker_id${NC}"
+    echo ""
+
+    # Extract worker info from config.json
+    if command -v jq &> /dev/null; then
+        local worker_info=$(jq -r ".workers[] | select(.id == \"$worker_id\")" "$ORCHESTRATION_DIR/config.json")
+        local branch=$(echo "$worker_info" | jq -r '.branch')
+        local description=$(echo "$worker_info" | jq -r '.description')
+
+        echo -e "${BLUE}Worker ID:${NC}     $worker_id"
+        echo -e "${BLUE}Branch:${NC}        $branch"
+        echo -e "${BLUE}Description:${NC}   $description"
+        echo -e "${BLUE}Prompt file:${NC}   $worker_file"
+    else
+        echo -e "${BLUE}Prompt file:${NC}   $worker_file"
+    fi
+
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    # Display the worker prompt
+    cat "$worker_file"
+
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    echo -e "${GREEN}🚀 Ready to work!${NC}"
+    echo ""
+    echo -e "${CYAN}Next steps:${NC}"
+    echo "  1. Follow the git workflow instructions above"
+    echo "  2. Start working on your assigned deliverables"
+    echo "  3. Create a PR when ready"
+    echo ""
+}
+
+# Function to discover worker from natural language
+discover_worker() {
+    local input="$*"
+
+    # Normalize input: lowercase, remove punctuation
+    input=$(echo "$input" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9 -]//g')
+
+    # Try to extract worker ID from phrases like:
+    # - "you are engineer 1"
+    # - "i am engineer-1"
+    # - "engineer1"
+    # - "qa 2"
+
+    # Pattern 1: "engineer 1" or "engineer-1" or "engineer1"
+    if [[ "$input" =~ (engineer|qa|docs)[_-]?([0-9]+) ]]; then
+        local worker_type="${BASH_REMATCH[1]}"
+        local worker_num="${BASH_REMATCH[2]}"
+        local worker_id="${worker_type}${worker_num}"
+
+        # Try with hyphen
+        if [ -f "$ORCHESTRATION_DIR/workers/${worker_type}-${worker_num}.md" ]; then
+            echo "${worker_type}-${worker_num}"
+            return 0
+        fi
+
+        # Try without hyphen
+        if [ -f "$ORCHESTRATION_DIR/workers/${worker_id}.md" ]; then
+            echo "${worker_id}"
+            return 0
+        fi
+    fi
+
+    # Pattern 2: Just the worker ID
+    if [ -f "$ORCHESTRATION_DIR/workers/${input}.md" ]; then
+        echo "$input"
+        return 0
+    fi
+
+    # Pattern 3: Worker ID with .md
+    input_base=$(echo "$input" | sed 's/\.md$//')
+    if [ -f "$ORCHESTRATION_DIR/workers/${input_base}.md" ]; then
+        echo "$input_base"
+        return 0
+    fi
+
+    return 1
+}
+
+# Main logic
+main() {
+    if [ $# -eq 0 ]; then
+        echo -e "${YELLOW}Usage:${NC}"
+        echo "  $0 <worker-id>"
+        echo "  $0 \"You are Engineer 1\""
+        echo ""
+        list_workers
+        exit 0
+    fi
+
+    # Try to discover worker from input
+    worker_id=$(discover_worker "$@")
+
+    if [ -z "$worker_id" ]; then
+        echo -e "${RED}❌ Could not identify worker from: $*${NC}"
+        echo ""
+        list_workers
+        exit 1
+    fi
+
+    # Load the worker
+    load_worker "$worker_id"
+}
+
+# Run main
+main "$@"

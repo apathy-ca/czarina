@@ -1,146 +1,390 @@
-# Multi-Agent Orchestration Projects
+# Czarina: Multi-Agent Orchestration System
 
-This repository contains multiple projects related to autonomous multi-agent orchestration for AI-powered software development.
+**Orchestrate multiple AI coding agents working in parallel on complex software projects**
+
+Czarina enables autonomous teams of AI agents (Claude Code, Aider, Cursor, etc.) to collaborate on software development with minimal human oversight.
+
+---
+
+## 🎯 What is Czarina?
+
+```mermaid
+graph TB
+    subgraph "Czarina Orchestration"
+        Czar[🎭 Czar<br/>Autonomous Monitor]
+        Daemon[⚡ Daemon<br/>Auto-Approver]
+
+        W1[👷 Worker 1<br/>Claude Code]
+        W2[👷 Worker 2<br/>Aider]
+        W3[👷 Worker 3<br/>Cursor]
+        Wn[👷 Worker N<br/>Any Agent]
+
+        Czar -->|monitors| W1
+        Czar -->|monitors| W2
+        Czar -->|monitors| W3
+        Czar -->|monitors| Wn
+
+        Daemon -->|auto-approves| W1
+        Daemon -->|auto-approves| W2
+        Daemon -->|auto-approves| W3
+        Daemon -->|auto-approves| Wn
+
+        W1 -->|PRs| Git[📦 Git Repository]
+        W2 -->|PRs| Git
+        W3 -->|PRs| Git
+        Wn -->|PRs| Git
+    end
+
+    Human[👤 Human] -.->|occasional<br/>intervention| Czar
+    Human -.->|reviews PRs| Git
+
+    style Czar fill:#e1f5ff
+    style Daemon fill:#fff3e0
+    style Git fill:#e8f5e9
+```
+
+**Key Features:**
+- 🤖 **Agent-Agnostic** - Works with Claude Code, Aider, Cursor, Windsurf, and more
+- 🎭 **Autonomous Czar** - Monitors workers, detects stuck agents, manages tasks
+- ⚡ **Auto-Approval Daemon** - Reduces human intervention from 100% to ~10%
+- 🔀 **Git Orchestration** - Automated branching, PRs, and merging
+- 📊 **Live Dashboard** - Real-time worker status and progress
+- 🎯 **Embedded Mode** - Lives in your project repo, no external dependencies
+
+---
 
 ## 📁 Repository Structure
 
+```mermaid
+graph LR
+    Root[📁 czarina-orchestrator]
+
+    Root --> Core[📁 czarina-core<br/>Framework & CLI]
+    Root --> Inbox[📁 czarina-inbox<br/>Improvements & Feedback]
+    Root --> Agents[📁 agents<br/>Agent Profiles]
+    Root --> Projects[📁 projects<br/>Active Projects]
+    Root --> Docs[📁 docs<br/>Documentation]
+    Root --> Archive[📁 archive<br/>Legacy Files]
+
+    Core --> CoreDocs[📁 docs<br/>Framework Docs]
+    Core --> Daemon[📁 daemon<br/>Auto-Approval]
+    Core --> Templates[📁 templates<br/>Project Templates]
+
+    Inbox --> Fixes[💾 fixes]
+    Inbox --> Feedback[💬 feedback]
+    Inbox --> Sessions[📝 sessions]
+
+    Projects --> SARK[📁 sark-v2<br/>10 Worker Project]
+    Projects --> MultiAgent[📁 multi-agent-support<br/>Agent Refactor]
+
+    Docs --> Guides[📁 guides]
+    Docs --> Analysis[📁 analysis]
+
+    style Root fill:#e1f5ff
+    style Core fill:#fff3e0
+    style Inbox fill:#e8f5e9
 ```
-.
-├── czarina-core/              # Czarina orchestration framework (reusable)
-├── projects/                  # Specific projects using Czarina
-│   └── sark-v2-orchestration/ # SARK v2.0 development project
-├── archive/                   # Legacy/completed files
-└── README.md                  # This file
-```
 
-## 🎭 Czarina Core
-
-**Location:** `czarina-core/`
-
-Czarina is a **reusable framework** for orchestrating multiple AI coding agents (Claude Code, Aider, Cursor, etc.) working in parallel on complex software projects.
-
-### Key Features
-- Autonomous Czar monitoring and coordination
-- Worker health detection (stuck/idle)
-- Task injection and assignment
-- Live dashboard for progress visualization
-- Git orchestration and PR management
-- Support for 2-20+ parallel workers
-
-### Getting Started with Czarina
+## ⚡ Quick Start
 
 ```bash
-cd czarina-core/
-cat README.md                    # Full framework documentation
-cat docs/GETTING_STARTED.md     # Quick start guide
-cat docs/CZAR_GUIDE.md          # How the autonomous Czar works
+# 1. Clone the repository
+git clone <repository-url> czarina-orchestrator
+cd czarina-orchestrator
+
+# 2. Create a new project
+./czarina init my-project
+
+# 3. Configure workers (edit config.json)
+cd czarina-my-project
+nano config.json
+
+# 4. Launch orchestration
+cd ..
+./czarina launch my-project
+
+# 5. (Optional) Start autonomous daemon
+./czarina daemon start my-project
 ```
 
-### Quick Launch
-
-```bash
-cd czarina-core/
-
-# 1. Configure your project
-cp config.example.sh config.sh
-nano config.sh  # Set PROJECT_ROOT, worker definitions
-
-# 2. Launch workers
-./QUICKSTART.sh
-```
-
-See `czarina-core/docs/` for comprehensive documentation.
+**That's it!** Your AI workers are now collaborating on your project. 🎉
 
 ---
 
-## 🚀 Projects
+## 🔄 How It Works
 
-Active projects using the Czarina orchestration framework.
+```mermaid
+sequenceDiagram
+    participant H as 👤 Human
+    participant C as 🎭 Czar
+    participant D as ⚡ Daemon
+    participant W1 as 👷 Worker 1
+    participant W2 as 👷 Worker 2
+    participant G as 📦 Git
+
+    H->>C: Launch orchestration
+    C->>W1: Start with task
+    C->>W2: Start with task
+
+    W1->>W1: Working...
+    W2->>W2: Working...
+
+    D->>W1: Auto-approve file edits
+    D->>W2: Auto-approve file edits
+
+    W1->>G: Create PR
+    W2->>G: Create PR
+
+    C->>C: Monitor progress
+    C->>H: Alert if stuck
+
+    H->>G: Review & merge PRs
+```
+
+**Workflow:**
+1. **Initialize** - Czar launches workers in tmux sessions
+2. **Autonomous Work** - Workers code independently, daemon auto-approves
+3. **Git Flow** - Each worker on isolated branch, creates PRs
+4. **Monitoring** - Czar detects stuck workers, provides status
+5. **Integration** - Human reviews PRs, merges work
+
+---
+
+## 🎯 Core Concepts
+
+### 🎭 The Czar
+**Autonomous coordinator** that:
+- Monitors all worker sessions
+- Detects stuck/idle workers
+- Injects tasks and guidance
+- Provides real-time dashboard
+- Manages Git workflow
+
+### ⚡ The Daemon
+**Auto-approval system** that:
+- Watches worker sessions for prompts
+- Auto-approves file edits and reads
+- Answers Y/N questions intelligently
+- Reduces human intervention from 100% to ~10%
+- Verifies approvals worked (alert system)
+
+### 👷 Workers
+**AI coding agents** that:
+- Work in isolated tmux sessions
+- Each on their own Git branch
+- Create PRs when work is complete
+- Can be any agent: Claude Code, Aider, Cursor, etc.
+- Follow role-specific prompts
+
+---
+
+## 📊 Supported Agents
+
+```mermaid
+graph TB
+    subgraph "Agent Compatibility"
+        CC[Claude Code<br/>⭐⭐⭐⭐⭐<br/>Daemon: 70-80%]
+        Aider[Aider<br/>⭐⭐⭐⭐⭐<br/>Daemon: 95-98%]
+        Cursor[Cursor<br/>⭐⭐⭐⭐⭐<br/>Daemon: 80-90%]
+        Wind[Windsurf<br/>⭐⭐⭐⭐⭐<br/>Daemon: 85-95%]
+        Copilot[GitHub Copilot<br/>⭐⭐⭐⭐☆<br/>Daemon: 70-80%]
+        Continue[Continue.dev<br/>⭐⭐⭐⭐☆<br/>Daemon: 75-85%]
+        Human[Human<br/>⭐⭐⭐⭐⭐<br/>Daemon: N/A]
+    end
+
+    CC -.->|Best for| Desktop[Desktop UI]
+    Aider -.->|Best for| Automation[Full Automation]
+    Cursor -.->|Best for| VSCode[VS Code Users]
+    Wind -.->|Best for| AINative[AI-Native IDE]
+
+    style Aider fill:#c8e6c9
+    style CC fill:#e1f5ff
+    style Cursor fill:#fff3e0
+```
+
+**Best for daemon autonomy:** Aider (95-98%)
+**Best for desktop UI:** Claude Code (70-80% with daemon)
+**Best for local/free:** Continue.dev with local LLMs
+
+See [docs/guides/SUPPORTED_AGENTS.md](docs/guides/SUPPORTED_AGENTS.md) for full comparison.
+
+---
+
+## 🚀 Active Projects
 
 ### SARK v2.0 Orchestration
-
 **Location:** `projects/sark-v2-orchestration/`
 
-An orchestrated development project implementing SARK v2.0 with 10 parallel engineers over 6-8 weeks.
-
-#### Project Overview
-- **Team Size:** 10 engineers (6 core, 2 QA, 2 docs)
+Real-world orchestration test with 10 parallel AI engineers building SARK v2.0:
+- **Team:** 6 engineers + 2 QA + 2 docs writers
 - **Timeline:** 6-8 weeks (vs. 22-26 weeks sequential)
 - **Speedup:** 3-4x faster delivery
-- **Autonomy:** 90% autonomous with Czarina orchestration
+- **Autonomy:** 90% with daemon system
 
-#### Quick Start
+**Key Innovation:** Alert system that detects stuck workers and provides structured JSON alerts for integration.
+
+### Multi-Agent Support
+**Location:** `czarina-multi-agent-support/`
+
+Refactoring Czarina to be fully agent-agnostic:
+- Agent profile system (JSON-based)
+- Universal launch scripts
+- Agent-specific adapters
+- Testing with Claude Code, Aider, Cursor
+
+---
+
+## 🛠️ CLI Commands
 
 ```bash
-cd projects/sark-v2-orchestration/
+# Project management
+./czarina init <project-name>           # Create new project
+./czarina launch <project-name>         # Launch all workers
+./czarina stop <project-name>           # Stop all workers
+./czarina status <project-name>         # Show status
 
-# 1. Initialize the project
-./init_sark_v2.py
+# Daemon management
+./czarina daemon start <project-name>   # Start auto-approval daemon
+./czarina daemon stop <project-name>    # Stop daemon
+./czarina daemon status <project-name>  # Check daemon status
+./czarina daemon logs <project-name>    # View daemon logs
 
-# 2. Start Week 1
-./orchestrate_sark_v2.py start-week 1
-
-# 3. Launch individual engineers
-./orchestrate_sark_v2.py start engineer-1
-
-# 4. Monitor progress
-./orchestrate_sark_v2.py daily-report
+# Worker management
+./czarina worker start <project> <role> # Start single worker
+./czarina worker stop <project> <role>  # Stop single worker
+./czarina worker attach <project> <role># Attach to worker session
 ```
 
-See `projects/sark-v2-orchestration/README.md` for full documentation.
+---
+
+## 🏗️ Creating a New Project
+
+```mermaid
+graph LR
+    A[./czarina init<br/>my-project] --> B[Edit<br/>config.json]
+    B --> C[Create worker<br/>prompts]
+    C --> D[./czarina launch<br/>my-project]
+    D --> E[🎉 Workers<br/>Collaborating!]
+
+    style A fill:#e1f5ff
+    style E fill:#c8e6c9
+```
+
+**Step-by-step:**
+
+1. **Initialize:**
+   ```bash
+   ./czarina init my-project
+   cd czarina-my-project
+   ```
+
+2. **Configure** (`config.json`):
+   ```json
+   {
+     "project": {
+       "name": "My Project",
+       "repository": "/path/to/repo"
+     },
+     "workers": [
+       {"role": "architect", "agent": "claude-code"},
+       {"role": "backend", "agent": "aider"},
+       {"role": "frontend", "agent": "cursor"}
+     ]
+   }
+   ```
+
+3. **Create prompts:**
+   ```bash
+   nano workers/architect.md
+   nano workers/backend.md
+   nano workers/frontend.md
+   ```
+
+4. **Launch:**
+   ```bash
+   cd ..
+   ./czarina launch my-project
+   ./czarina daemon start my-project  # Optional but recommended
+   ```
+
+See [docs/guides/WORKER_SETUP_GUIDE.md](docs/guides/WORKER_SETUP_GUIDE.md) for detailed guidance.
 
 ---
 
-## 🗄️ Archive
+## 📖 Documentation Hub
 
-**Location:** `archive/`
+```mermaid
+graph TB
+    Start[🎯 Start Here] --> Beginner{New to<br/>Czarina?}
 
-Contains legacy files, deprecated scripts, and completed project artifacts. These files are kept for historical reference but are not actively maintained.
+    Beginner -->|Yes| Getting[📘 Getting Started]
+    Beginner -->|No| Advanced[📚 Advanced Topics]
+
+    Getting --> Overview[Czarina Overview]
+    Getting --> Setup[Worker Setup]
+    Getting --> FirstProject[Create First Project]
+
+    Advanced --> Daemon[⚡ Daemon System]
+    Advanced --> Agents[🤖 Agent Types]
+    Advanced --> Patterns[🏗️ Worker Patterns]
+
+    FirstProject --> Launch[🚀 Launch!]
+    Daemon --> Launch
+    Patterns --> Launch
+
+    style Start fill:#e1f5ff
+    style Launch fill:#c8e6c9
+    style Getting fill:#fff3e0
+```
+
+### 📘 Essential Reading
+| Document | Description | Link |
+|----------|-------------|------|
+| **Getting Started** | Your first Czarina project | [czarina-core/docs/GETTING_STARTED.md](czarina-core/docs/GETTING_STARTED.md) |
+| **Czarina Overview** | Framework deep dive | [docs/guides/CZARINA_README.md](docs/guides/CZARINA_README.md) |
+| **Supported Agents** | All 8 compatible agents | [docs/guides/SUPPORTED_AGENTS.md](docs/guides/SUPPORTED_AGENTS.md) |
+| **Worker Setup** | Configure workers | [docs/guides/WORKER_SETUP_GUIDE.md](docs/guides/WORKER_SETUP_GUIDE.md) |
+
+### ⚡ Advanced Topics
+| Document | Description | Link |
+|----------|-------------|------|
+| **Daemon System** | Auto-approval daemon | [czarina-core/docs/DAEMON_SYSTEM.md](czarina-core/docs/DAEMON_SYSTEM.md) |
+| **Daemon Limitations** | Known issues & workarounds | [czarina-core/docs/DAEMON_LIMITATIONS.md](czarina-core/docs/DAEMON_LIMITATIONS.md) |
+| **Agent Types** | Agent compatibility matrix | [czarina-core/docs/AGENT_TYPES.md](czarina-core/docs/AGENT_TYPES.md) |
+| **Worker Patterns** | Team structures & patterns | [czarina-core/docs/WORKER_PATTERNS.md](czarina-core/docs/WORKER_PATTERNS.md) |
+
+### 📁 Full Documentation
+- **[docs/](docs/)** - All documentation hub
+- **[czarina-core/docs/](czarina-core/docs/)** - Framework documentation
+- **[czarina-inbox/](czarina-inbox/)** - Improvement inbox
+- **[.cursorrules](.cursorrules)** - Contribution standards
 
 ---
 
-## 🛠️ Creating a New Project
+## 🤝 Contributing
 
-To create a new orchestrated project:
+Found a bug? Have an improvement? Use the **inbox system**:
 
-1. **Copy the Czarina framework configuration:**
-   ```bash
-   mkdir projects/my-new-project
-   cp czarina-core/config.example.sh projects/my-new-project/config.sh
-   ```
+```bash
+# Quick fix you already implemented
+cp czarina-inbox/templates/FIX_DONE.md czarina-inbox/fixes/$(date +%Y-%m-%d)-my-fix.md
 
-2. **Configure your project:**
-   - Edit `config.sh` with your project details
-   - Define workers and their roles
-   - Set up your Git repository path
+# Feature idea
+cp czarina-inbox/templates/FEATURE_REQUEST.md czarina-inbox/features/$(date +%Y-%m-%d)-idea.md
 
-3. **Create worker prompts:**
-   ```bash
-   mkdir projects/my-new-project/prompts
-   # Create prompt files for each worker
-   ```
+# General feedback
+cp czarina-inbox/templates/FEEDBACK.md czarina-inbox/feedback/$(date +%Y-%m-%d)-feedback.md
+```
 
-4. **Launch orchestration:**
-   ```bash
-   cd projects/my-new-project
-   ../../czarina-core/QUICKSTART.sh
-   ```
+**Philosophy:** "If you built it, fixed it, or thought about it - drop a note in the inbox!"
 
-See `czarina-core/docs/WORKER_PATTERNS.md` for recommended team structures.
+See [czarina-inbox/README.md](czarina-inbox/README.md) for details.
 
----
-
-## 📖 Documentation
-
-- **Czarina Framework:** `czarina-core/docs/`
-  - [Getting Started](czarina-core/docs/GETTING_STARTED.md)
-  - [Czar Guide](czarina-core/docs/CZAR_GUIDE.md)
-  - [Agent Types](czarina-core/docs/AGENT_TYPES.md)
-  - [Worker Patterns](czarina-core/docs/WORKER_PATTERNS.md)
-  - [Distributed Workers](czarina-core/docs/DISTRIBUTED_WORKERS.md)
-  - [Lessons Learned](czarina-core/docs/LESSONS_LEARNED.md)
-
-- **SARK v2.0 Project:** `projects/sark-v2-orchestration/README.md`
+### 🎯 Areas of Interest
+- **Daemon improvements** - Better auto-approval, alert integrations
+- **Agent support** - New agent profiles, compatibility improvements
+- **Dashboard** - Web-based monitoring, real-time status
+- **Templates** - Worker patterns, project templates
 
 ---
 
@@ -150,28 +394,41 @@ MIT License - see [LICENSE](LICENSE)
 
 ---
 
-## 🤝 Contributing
+## 🌟 Status
 
-Contributions are welcome! Areas of interest:
+**Production-ready** ✅
+- ✅ Multi-agent orchestration (8 agents supported)
+- ✅ Autonomous daemon (90% autonomy)
+- ✅ Git workflow automation
+- ✅ Real-world tested (SARK v2.0 with 10 workers)
+- ✅ Embedded orchestration mode
+- ✅ Agent-agnostic architecture
 
-- **Framework improvements:** Auto PR review, work queues, web dashboard
-- **New project templates:** Share your orchestration patterns
-- **Documentation:** Help others succeed with multi-agent orchestration
-
----
-
-## 🌟 Quick Links
-
-| Resource | Location |
-|----------|----------|
-| Czarina Framework | `czarina-core/` |
-| SARK v2.0 Project | `projects/sark-v2-orchestration/` |
-| Legacy Files | `archive/` |
-| Framework Docs | `czarina-core/docs/` |
-| Getting Started | `czarina-core/docs/GETTING_STARTED.md` |
+**Active Development** 🚧
+- 🚧 Alert system integration
+- 🚧 Web dashboard
+- 🚧 Enhanced monitoring
+- 🚧 More agent profiles
 
 ---
 
-**Status:** Production-ready framework with active projects
+## 💡 Use Cases
+
+**Multi-agent orchestration works well for:**
+- ✅ Large refactors across multiple files
+- ✅ Parallel feature development
+- ✅ Documentation generation
+- ✅ Test writing and coverage
+- ✅ Code modernization
+- ✅ Multi-language projects
+
+**May not be ideal for:**
+- ❌ Small, focused tasks
+- ❌ Highly coupled code requiring tight coordination
+- ❌ Tasks requiring human creativity/judgment
+
+---
 
 *Built with ❤️ by humans and AI working together*
+
+**Ready to orchestrate?** → [Get Started](czarina-core/docs/GETTING_STARTED.md) 🚀

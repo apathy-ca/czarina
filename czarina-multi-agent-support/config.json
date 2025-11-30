@@ -1,0 +1,34 @@
+{
+  "project": {
+    "name": "Czarina Multi-Agent Support",
+    "slug": "multi-agent-support",
+    "repository": "/home/jhenry/Source/GRID/claude-orchestrator",
+    "orchestration_dir": "czarina-multi-agent-support"
+  },
+  "workers": [
+    {
+      "id": "rebrand",
+      "branch": "feat/agent-agnostic-docs",
+      "task_file": "prompts/REBRAND.md",
+      "description": "Documentation Rebranding Specialist"
+    },
+    {
+      "id": "architect",
+      "branch": "feat/agent-profiles",
+      "task_file": "prompts/ARCHITECT.md",
+      "description": "Agent Profile System Architect"
+    },
+    {
+      "id": "integrator",
+      "branch": "feat/multi-agent-launcher",
+      "task_file": "prompts/INTEGRATOR.md",
+      "description": "Multi-Agent Integration Engineer"
+    }
+  ],
+  "omnibus": {
+    "branch": "feat/multi-agent-support",
+    "merge_order": ["rebrand", "architect", "integrator"]
+  },
+  "checkpoints": [
+  ]
+}
