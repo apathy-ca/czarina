@@ -9,26 +9,41 @@ These rules ensure the Czarina codebase remains clean, well-documented, and main
 
 ### Root Directory
 **RULE:** The root directory should contain **ONLY**:
-- `README.md` - Main repository overview
+- `README.md` - Main repository overview (concise, delegates to docs/)
+- `QUICK_START.md` - 5-minute getting started guide
+- `PRODUCTION_READINESS.md` - Production checklist
+- `AGENT_COMPATIBILITY.md` - Agent comparison matrix
 - `czarina` - Main executable
 - `.gitignore`, `LICENSE`, `.cursorrules` - Project config files
-- Core directories: `czarina-core/`, `czarina-inbox/`, `agents/`, `projects/`, `archive/`
+- Core directories: `czarina-core/`, `czarina-inbox/`, `agents/`, `projects/`, `docs/`, `archive/`
+
+**MAXIMUM:** 7 markdown files in root (README, QUICK_START, PRODUCTION_READINESS, AGENT_COMPATIBILITY, and 3 project config files)
 
 **DO NOT:**
-- ❌ Create documentation files in the root (`FEATURE_X.md`, `GUIDE_Y.md`, etc.)
-- ❌ Leave temporary analysis files (`ANALYSIS_*.md`, `SUMMARY_*.md`)
+- ❌ Create new documentation files in root - use `docs/` subdirectories
+- ❌ Leave temporary analysis files (`ANALYSIS_*.md`, `SUMMARY_*.md`, `TEMP_*.md`)
 - ❌ Create multiple README variations (`README-NEW.md`, `README-OLD.md`)
+- ❌ Leave backup files (`*-old`, `*.bak`, `*~`)
+- ❌ Create worker-specific docs in root - use project directories
+
+**ENFORCEMENT:**
+Before committing, run: `find . -maxdepth 1 -name "*.md" -type f | wc -l`
+If count > 4, move extras to `docs/archive/`
 
 ### Where Documentation Goes
 
 ```
 czarina-orchestrator/
-├── README.md                           # Main repo overview (mermaid diagrams!)
-├── docs/                               # Root-level documentation
+├── README.md                           # Main repo overview (concise!)
+├── QUICK_START.md                      # 5-minute guide
+├── PRODUCTION_READINESS.md             # Production checklist
+├── AGENT_COMPATIBILITY.md              # Agent comparison
+├── docs/                               # All other documentation
+│   ├── ARCHITECTURE.md                 # Detailed diagrams and architecture
 │   ├── guides/                         # User guides and tutorials
-│   ├── architecture/                   # Architecture decisions and diagrams
 │   ├── integration/                    # Integration and migration docs
-│   └── analysis/                       # Analysis and summary documents
+│   ├── analysis/                       # Analysis and summary documents
+│   └── archive/                        # Legacy and outdated docs
 ├── czarina-core/
 │   ├── README.md                       # Core framework overview
 │   └── docs/                           # Core framework documentation
@@ -97,7 +112,30 @@ czarina-orchestrator/
 
 ## 🎨 README Requirements
 
-### All README files must include:
+### Root README.md MUST be concise
+
+**Hard Limits:**
+- Maximum 250 lines total
+- ONE simple horizontal flow diagram only
+- Delegate details to `docs/ARCHITECTURE.md` and other docs
+- Focus on "why" and "what", not "how"
+
+**Required Structure:**
+1. Title and tagline (1 line)
+2. ONE horizontal flow diagram (human → czar → workers → git)
+3. Quick start (4-6 commands max)
+4. Key features (6-8 bullet points)
+5. Links to detailed docs
+
+**Forbidden in root README:**
+- ❌ Multiple mermaid diagrams (use docs/ARCHITECTURE.md)
+- ❌ Vertical/complex diagrams
+- ❌ Sequence diagrams, state diagrams, decision trees
+- ❌ Repository structure diagrams
+- ❌ Detailed architecture explanations
+- ❌ Long code examples (> 10 lines)
+
+### Other README files
 
 1. **Clear title and purpose**
    ```markdown
@@ -105,42 +143,25 @@ czarina-orchestrator/
    Brief one-line description
    ```
 
-2. **Mermaid diagrams where applicable**
-   - Architecture diagrams
-   - Flow charts for processes
-   - State diagrams for complex systems
-
-3. **Quick start section**
+2. **Quick start section**
    - How to use in 3-5 commands
    - Common use cases
 
-4. **Table of contents** (if > 100 lines)
-
-5. **Links to related documentation**
+3. **Links to related documentation**
 
 ### Mermaid Diagram Standards
 
-**Use mermaid for:**
-- System architecture
-- Process flows
-- Worker interactions
-- Git workflows
-- Decision trees
+**Location for detailed diagrams:**
+- `docs/ARCHITECTURE.md` - System architecture, detailed flows
+- Component docs - Component-specific diagrams
 
-**Example:**
-```markdown
-## Architecture
+**Root README gets ONE diagram:**
+- Horizontal flow (LR orientation)
+- Maximum 8 nodes
+- Shows high-level flow only
+- Human → System → Output
 
-```mermaid
-graph TD
-    A[Czar] --> B[Worker 1]
-    A --> C[Worker 2]
-    B --> D[Git PR]
-    C --> D
-```
-\`\`\`
-
-**Keep diagrams:**
+**Keep all diagrams:**
 - Clean and readable
 - Focused on one concept
 - Properly labeled
@@ -178,17 +199,28 @@ graph TD
 Before committing, run these:
 
 ```bash
-# Find documentation files that shouldn't be in root
-find . -maxdepth 1 -name "*.md" ! -name "README.md" -type f
+# Check root markdown count (must be ≤ 4)
+find . -maxdepth 1 -name "*.md" -type f | wc -l
+# Expected: 4 (README, QUICK_START, PRODUCTION_READINESS, AGENT_COMPATIBILITY)
+
+# Find extra documentation files in root
+find . -maxdepth 1 -name "*.md" ! -name "README.md" ! -name "QUICK_START.md" ! -name "PRODUCTION_READINESS.md" ! -name "AGENT_COMPATIBILITY.md" -type f
 
 # Find temporary/scratch files
-find . -name "TEMP_*.md" -o -name "SCRATCH_*.md" -o -name "*-OLD.md"
+find . -name "TEMP_*.md" -o -name "SCRATCH_*.md" -o -name "*-OLD.md" -o -name "*-old" -o -name "*.bak"
 
 # Check for duplicate READMEs
-find . -name "README*.md" | grep -v "^./README.md$"
+find . -name "README*.md" | grep -v "^./README.md$" | grep -v "/README.md$"
+
+# Check README line count (must be ≤ 250)
+wc -l README.md
 ```
 
-**Action:** Move or delete these files before committing.
+**Action:**
+- If root has > 4 .md files: move extras to `docs/archive/`
+- If README > 250 lines: extract details to `docs/ARCHITECTURE.md`
+- Delete all temporary/backup files
+- Remove duplicate READMEs
 
 ---
 
