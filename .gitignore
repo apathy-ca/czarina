@@ -44,3 +44,6 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Czarina orchestration runtime state
+czarina-*/status/

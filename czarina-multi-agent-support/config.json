@@ -30,5 +30,21 @@
     "merge_order": ["rebrand", "architect", "integrator"]
   },
   "checkpoints": [
+    {
+      "id": "phase1_rebrand",
+      "description": "Phase 1: Documentation Rebranded"
+    },
+    {
+      "id": "phase2_profiles",
+      "description": "Phase 2: Agent Profiles Complete"
+    },
+    {
+      "id": "phase3_launcher",
+      "description": "Phase 3: Multi-Agent Launcher Working"
+    },
+    {
+      "id": "phase4_tested",
+      "description": "Phase 4: Tested with Multiple Agents"
+    }
   ]
 }
