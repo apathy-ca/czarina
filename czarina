@@ -337,6 +337,62 @@ def cmd_patterns_version():
         print("💡 Run: czarina patterns update")
 
 
+def cmd_patterns_pending():
+    """List patterns ready to contribute upstream"""
+    orchestrator_dir = get_orchestrator_dir()
+    inbox_patterns = orchestrator_dir / "czarina-inbox" / "patterns"
+
+    if not inbox_patterns.exists():
+        inbox_patterns.mkdir(parents=True)
+
+    patterns = list(inbox_patterns.glob("*.md"))
+
+    if not patterns:
+        print("📝 No patterns pending contribution")
+        print("💡 Document patterns in: czarina-inbox/patterns/")
+        return
+
+    print("📝 Patterns ready to contribute:\n")
+    for pattern in sorted(patterns):
+        # Simple validation: check if has example and metrics
+        with open(pattern) as f:
+            content = f.read()
+            has_example = "```" in content or "Example" in content
+            has_metrics = any(word in content for word in ["Value:", "%", "reduction", "improvement"])
+
+            if has_example and has_metrics:
+                status = "✅ Ready"
+            elif has_example or has_metrics:
+                status = "⚠️  Needs improvement"
+            else:
+                status = "❌ Incomplete"
+
+        print(f"  {pattern.name:40} {status}")
+
+    print(f"\n💡 Use 'czarina patterns contribute' to submit upstream")
+
+
+def cmd_patterns_contribute():
+    """Show contribution guide"""
+    orchestrator_dir = get_orchestrator_dir()
+    guide = orchestrator_dir / "czarina-core" / "patterns" / "PATTERN_CONTRIBUTION_GUIDE.md"
+
+    if guide.exists():
+        # Show first 50 lines
+        with open(guide) as f:
+            lines = f.readlines()[:50]
+            print("".join(lines))
+            if len(lines) >= 50:
+                print(f"\n📖 Read full guide: {guide}")
+    else:
+        print("📖 Contribution guide not found")
+
+    print("\n📝 Quick start:")
+    print("  1. Document pattern in: czarina-inbox/patterns/")
+    print("  2. Check pending: czarina patterns pending")
+    print("  3. Follow guide to submit upstream")
+
+
 def show_usage():
     """Show usage information"""
     print(__doc__)
@@ -351,6 +407,8 @@ def show_usage():
     print("  czarina daemon logs sark-v2")
     print("  czarina patterns update")
     print("  czarina patterns version")
+    print("  czarina patterns pending")
+    print("  czarina patterns contribute")
 
 
 def main():
@@ -407,16 +465,20 @@ def main():
             sys.exit(1)
     elif command == "patterns":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina patterns <update|version>")
+            print("❌ Usage: czarina patterns <update|version|pending|contribute>")
             sys.exit(1)
         subcommand = sys.argv[2]
         if subcommand == "update":
             cmd_patterns_update()
         elif subcommand == "version":
             cmd_patterns_version()
+        elif subcommand == "pending":
+            cmd_patterns_pending()
+        elif subcommand == "contribute":
+            cmd_patterns_contribute()
         else:
             print(f"❌ Unknown patterns subcommand: {subcommand}")
-            print("   Valid: update, version")
+            print("   Valid: update, version, pending, contribute")
             sys.exit(1)
     elif command in ["-h", "--help", "help"]:
         show_usage()

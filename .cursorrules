@@ -248,6 +248,14 @@ find . -name "README*.md" | grep -v "^./README.md$"
 - 40-60% improvement in tool efficiency
 - Proven in real projects (The Symposium, SARK v2.0)
 
+**Discovered a new pattern? Share it!**
+1. Document in `czarina-inbox/patterns/`
+2. Check pending: `czarina patterns pending`
+3. Contribute upstream to help the community
+4. See: `czarina-core/patterns/PATTERN_CONTRIBUTION_GUIDE.md`
+
+**Backchannel:** Your discoveries flow to all Czarina instances worldwide 🌐
+
 ### When in Doubt:
 
 1. Check this file (`.cursorrules`)

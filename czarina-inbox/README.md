@@ -69,6 +69,8 @@ czarina-inbox/
 │   └── YYYY-MM-DD-feature.md
 ├── sessions/                    # Session notes from Czar work
 │   └── YYYY-MM-DD-session-N.md
+├── patterns/                    # Patterns to contribute upstream 🌐
+│   └── YYYY-MM-DD-pattern.md
 └── processed/                   # Moved here after integration
     └── YYYY-MM-DD-*.md
 ```
@@ -224,6 +226,48 @@ I'm away from computer but want to know if workers need attention.
 - czar-status-dashboard.sh
 - ALERT_SYSTEM.md
 ```
+
+### 7. Patterns 🌐 (Backchannel to Community)
+**When:** You discovered a pattern worth sharing with the community
+
+**Goes in:** `patterns/`
+
+**What to document:**
+- Error recovery patterns (took >30min to solve)
+- Multi-agent coordination strategies
+- Tool use optimizations
+- Agent-specific quirks
+- Automation improvements
+
+**Example:**
+```markdown
+# Pattern: Daemon Verification Loop
+
+**Problem:** Daemon approvals fail silently
+
+**Solution:**
+1. Send approval
+2. Wait 0.5s
+3. Verify it worked
+4. Flag if still stuck
+
+**Value:** Caught 15% of failures
+
+**Metrics:**
+- Before: 85% success rate
+- After: 100% success rate with alerts
+
+**Source:** SARK v2.0 Session 3
+```
+
+**Backchannel flow:**
+1. Document pattern here
+2. Check with: `czarina patterns pending`
+3. Contribute upstream to agentic-dev-patterns
+4. Pattern flows to all Czarina instances
+5. Everyone codes better!
+
+See [PATTERN_CONTRIBUTION_GUIDE.md](../czarina-core/patterns/PATTERN_CONTRIBUTION_GUIDE.md)
 
 ## Workflow
 
