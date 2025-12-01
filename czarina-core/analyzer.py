@@ -118,79 +118,50 @@ class ProjectAnalyzer:
 
     def _call_via_interactive(self, prompt):
         """
-        Interactive mode - save prompt to file and ask agent to process it
+        Interactive mode - save prompt to file for AI agent to process
         This works with ANY coding assistant (Claude Code, Cursor, etc.)
         """
         import tempfile
-
-        # Check if we're in an interactive terminal
-        if not sys.stdin.isatty():
-            raise RuntimeError("Not in interactive mode")
 
         print()
         print("=" * 60)
         print("📝 INTERACTIVE ANALYSIS MODE")
         print("=" * 60)
         print()
-        print("The analysis prompt has been prepared.")
-        print()
-        print("OPTIONS:")
-        print()
-        print("1. Process with current AI agent (Claude Code, Cursor, etc.)")
-        print("   - The agent will read the prompt below")
-        print("   - Analyze it and return structured JSON")
-        print("   - Paste the JSON response when ready")
-        print()
-        print("2. Skip interactive mode (try automated methods)")
-        print()
 
-        choice = input("Choose [1=interactive, 2=skip]: ").strip()
+        # Save prompt to a file in current directory
+        prompt_file = Path.cwd() / ".czarina-analysis-prompt.md"
+        response_file = Path.cwd() / ".czarina-analysis-response.json"
 
-        if choice != "1":
-            raise RuntimeError("User chose to skip interactive mode")
-
-        # Save prompt to temp file for reference
-        prompt_file = Path(tempfile.gettempdir()) / "czarina-analysis-prompt.txt"
         with open(prompt_file, 'w') as f:
             f.write(prompt)
 
+        print(f"✅ Analysis prompt saved to: {prompt_file}")
         print()
-        print(f"✅ Prompt saved to: {prompt_file}")
+        print("📋 NEXT STEPS:")
         print()
-        print("=" * 60)
-        print("ANALYSIS PROMPT")
-        print("=" * 60)
+        print("Please ask your AI agent (Claude Code, Cursor, etc.) to:")
         print()
-        print(prompt[:1000])  # Show first 1000 chars
+        print(f"  1. Read the prompt from: {prompt_file}")
+        print(f"  2. Analyze it and generate the JSON response")
+        print(f"  3. Save the JSON response to: {response_file}")
         print()
-        print(f"... ({len(prompt)} total characters)")
-        print()
-        print("=" * 60)
-        print()
-        print("Please:")
-        print("1. Copy the prompt from the file above OR use your agent to read it")
-        print("2. Process it with your AI assistant")
-        print("3. Paste the complete JSON response below")
-        print("4. Press Ctrl+D when done (or type 'END' on a new line)")
-        print()
-        print("Paste JSON response:")
+        print("Then press Enter to continue...")
         print()
 
-        # Read multi-line response
-        lines = []
-        try:
-            while True:
-                line = input()
-                if line.strip() == "END":
-                    break
-                lines.append(line)
-        except EOFError:
-            pass
+        # Wait for user to complete the task
+        input("Press Enter when the AI agent has created the response file: ")
 
-        response = '\n'.join(lines).strip()
+        # Read the response
+        if not response_file.exists():
+            raise RuntimeError(f"Response file not found: {response_file}\n"
+                             f"Please ensure your AI agent created this file with the JSON analysis.")
+
+        with open(response_file, 'r') as f:
+            response = f.read().strip()
 
         if not response:
-            raise RuntimeError("No response provided")
+            raise RuntimeError(f"Response file is empty: {response_file}")
 
         # Clean up markdown code fences if present
         if response.startswith("```"):
@@ -200,6 +171,17 @@ class ProjectAnalyzer:
             if lines and lines[-1].strip() == "```":
                 lines = lines[:-1]
             response = '\n'.join(lines).strip()
+
+        print()
+        print(f"✅ Response loaded from: {response_file}")
+        print()
+
+        # Clean up the temp files
+        try:
+            prompt_file.unlink()
+            response_file.unlink()
+        except:
+            pass
 
         return response
 
