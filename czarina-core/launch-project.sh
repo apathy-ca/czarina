@@ -123,9 +123,18 @@ for i in $(seq 0 $((WORKER_COUNT - 1))); do
     # Launch agent-specific setup
     case "$WORKER_AGENT" in
         "aider")
-            tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '🔧 To start working with Aider:'" C-m
-            tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '   aider --model claude-3-5-sonnet-20241022'" C-m
+            tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '🚀 Launching Aider...'" C-m
             tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo ''" C-m
+            # Check if aider is available
+            if command -v aider &> /dev/null; then
+                # Auto-launch aider with the worker prompt
+                tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "aider --model claude-3-5-sonnet-20241022 --message 'Read and follow the instructions in .czarina/workers/${WORKER_ID}.md'" C-m
+            else
+                tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '⚠️  Aider not found. Install with: pip install aider-chat'" C-m
+                tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo ''" C-m
+                tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '🔧 To start manually:'" C-m
+                tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '   aider --model claude-3-5-sonnet-20241022'" C-m
+            fi
             ;;
         "claude-code")
             tmux send-keys -t "${SESSION_NAME}:${WORKER_ID}" "echo '🔧 To start working with Claude Code:'" C-m
