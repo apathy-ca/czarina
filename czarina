@@ -135,7 +135,13 @@ def cmd_init(project_name=None):
     if not project_name:
         project_name = current_dir.name
 
-    slug = project_name.lower().replace(" ", "-")
+    # Create slug: lowercase, replace spaces/underscores with single dash, remove special chars
+    import re
+    slug = project_name.lower()
+    slug = re.sub(r'[_\s]+', '-', slug)  # Replace spaces/underscores with single dash
+    slug = re.sub(r'[^a-z0-9\-]', '', slug)  # Remove non-alphanumeric except dash
+    slug = re.sub(r'-+', '-', slug)  # Collapse multiple dashes
+    slug = slug.strip('-')  # Remove leading/trailing dashes
 
     # Create .czarina/ structure
     czarina_dir.mkdir()

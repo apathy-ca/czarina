@@ -414,8 +414,14 @@ except Exception as e:
 
     def generate_config(self, analysis, project_root):
         """Generate .czarina/config.json from analysis"""
+        import re
         project_name = analysis["analysis"]["project_name"]
-        slug = project_name.lower().replace(" ", "-").replace("_", "-")
+        # Create slug: lowercase, replace spaces/underscores with single dash, remove special chars
+        slug = project_name.lower()
+        slug = re.sub(r'[_\s]+', '-', slug)  # Replace spaces/underscores with single dash
+        slug = re.sub(r'[^a-z0-9\-]', '', slug)  # Remove non-alphanumeric except dash
+        slug = re.sub(r'-+', '-', slug)  # Collapse multiple dashes
+        slug = slug.strip('-')  # Remove leading/trailing dashes
 
         workers = []
         for worker in analysis["worker_recommendations"]:

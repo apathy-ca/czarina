@@ -27,10 +27,16 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Extract project info using jq
+# Check for required tools
 if ! command -v jq &> /dev/null; then
     echo -e "${RED}❌ jq is required but not installed${NC}"
     echo "   Install: sudo apt install jq"
+    exit 1
+fi
+
+if ! command -v tmux &> /dev/null; then
+    echo -e "${RED}❌ tmux is required but not installed${NC}"
+    echo "   Install: sudo apt install tmux"
     exit 1
 fi
 
@@ -57,7 +63,15 @@ fi
 
 # Create new tmux session
 echo -e "${GREEN}📦 Creating tmux session: ${SESSION_NAME}${NC}"
-tmux new-session -d -s "$SESSION_NAME" -n "orchestrator"
+if ! tmux new-session -d -s "$SESSION_NAME" -n "orchestrator" 2>/dev/null; then
+    echo -e "${RED}❌ Failed to create tmux session${NC}"
+    echo "   This might happen if the session name is invalid or tmux server is not running"
+    echo "   Try: tmux kill-server && czarina launch"
+    exit 1
+fi
+
+# Give tmux a moment to fully initialize
+sleep 0.5
 
 # Set up orchestrator window
 tmux send-keys -t "${SESSION_NAME}:orchestrator" "cd ${PROJECT_ROOT}" C-m
