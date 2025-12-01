@@ -44,10 +44,16 @@ PROJECT_NAME=$(jq -r '.project.name' "$CONFIG_FILE")
 PROJECT_SLUG=$(jq -r '.project.slug' "$CONFIG_FILE")
 PROJECT_ROOT=$(jq -r '.project.repository' "$CONFIG_FILE")
 
-# Sanitize session name for tmux (tmux converts dots to underscores)
-# Replace dots with underscores to match tmux behavior
-SESSION_NAME="czarina-${PROJECT_SLUG}"
-SESSION_NAME="${SESSION_NAME//./_}"
+# Create short session name
+# Extract version number if present (e.g., v0.4.7 -> v047, v1.2.3 -> v123)
+if [[ "$PROJECT_SLUG" =~ ^v?([0-9]+)\.?([0-9]+)?\.?([0-9]+)? ]]; then
+    VERSION="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[3]}"
+    SESSION_NAME="czarina-v${VERSION}"
+else
+    # No version found, use first word of slug (up to 15 chars)
+    FIRST_WORD=$(echo "$PROJECT_SLUG" | cut -d'-' -f1 | cut -c1-15)
+    SESSION_NAME="czarina-${FIRST_WORD}"
+fi
 
 echo -e "${BLUE}🚀 Launching Czarina Project${NC}"
 echo "   Project: $PROJECT_NAME"
