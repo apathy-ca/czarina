@@ -380,7 +380,7 @@ def cmd_launch(project_name=None):
 
     # Use orchestrator launch script
     orchestrator_dir = get_orchestrator_dir()
-    launch_script = orchestrator_dir / "czarina-core" / "launch-worker.sh"
+    launch_script = orchestrator_dir / "czarina-core" / "launch-project.sh"
 
     if not launch_script.exists():
         print(f"❌ Launch script not found: {launch_script}")
