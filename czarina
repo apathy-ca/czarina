@@ -13,6 +13,7 @@ Usage:
     czarina launch [project]                     - Launch project workers
     czarina status [project]                     - Show project status
     czarina dashboard [project]                  - Live monitoring dashboard
+    czarina closeout [project]                   - Stop all workers and clean up
     czarina daemon start [project]               - Start autonomous daemon
     czarina daemon stop [project]                - Stop daemon
     czarina daemon logs [project]                - Show daemon logs
@@ -497,6 +498,20 @@ def cmd_dashboard(project_name=None):
 
     os.chdir(project_root)
     subprocess.run([sys.executable, str(dashboard_script)])
+
+
+def cmd_closeout(project_name=None):
+    """Stop all workers, archive logs, and clean up worktrees"""
+    czarina_dir, project_root = get_project_context(project_name)
+    orchestrator_dir = get_orchestrator_dir()
+    closeout_script = orchestrator_dir / "czarina-core" / "closeout-project.sh"
+
+    if not closeout_script.exists():
+        print(f"❌ Closeout script not found: {closeout_script}")
+        sys.exit(1)
+
+    os.chdir(project_root)
+    subprocess.run(["bash", str(closeout_script), str(czarina_dir)])
 
 
 def cmd_daemon_start(project_name=None):
@@ -989,6 +1004,9 @@ def main():
     elif command == "dashboard":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_dashboard(project_name)
+    elif command == "closeout":
+        project_name = sys.argv[2] if len(sys.argv) > 2 else None
+        cmd_closeout(project_name)
     elif command == "daemon":
         if len(sys.argv) < 3:
             print("❌ Usage: czarina daemon <start|stop|logs|status> [project]")
