@@ -310,17 +310,42 @@ Created: {datetime.now().strftime('%Y-%m-%d')}
                 f.write("\n")
             f.write("\n# Czarina orchestration\n")
             f.write(".czarina/status/\n")
+            f.write(".czarina/worktrees/\n")
 
-    print("✅ Czarina initialized successfully!")
+    # Copy branch loader script
+    import shutil
+    loader_template = orchestrator_dir / "czarina-core" / "templates" / "embedded-orchestration" / "load-worker-by-branch.sh"
+    loader_dest = czarina_dir / "load-worker-by-branch.sh"
+    if loader_template.exists():
+        shutil.copy(loader_template, loader_dest)
+        loader_dest.chmod(0o755)
+
+    # Initialize git branches if this is a git repo
+    if (current_dir / ".git").exists():
+        print("\n🌿 Initializing git branches...")
+        init_branches_script = orchestrator_dir / "czarina-core" / "init-embedded-branches.sh"
+        if init_branches_script.exists():
+            result = subprocess.run(
+                ["bash", str(init_branches_script), str(current_dir)],
+                input="n\n",  # Auto-answer "no" to pull prompt
+                text=True,
+                capture_output=True
+            )
+            if result.returncode == 0:
+                print("✅ Git branches initialized")
+
+    print("\n✅ Czarina initialized successfully!")
     print(f"\n📁 Created in: {current_dir}")
     print(f"📋 Project: {project_name} ({slug})")
     print(f"\n📝 Next steps:")
     print(f"  1. Edit .czarina/config.json - configure workers")
     print(f"  2. Edit .czarina/workers/*.md - define worker roles")
-    print(f"  3. git add .czarina/")
-    print(f"  4. git commit -m 'Add Czarina orchestration'")
-    print(f"  5. czarina launch")
-    print(f"\n💡 Read more: {orchestrator_dir}/docs/guides/WORKER_SETUP_GUIDE.md")
+    print(f"  3. (Optional) Setup .claude/settings.local.json SessionStart hook")
+    print(f"     See: {orchestrator_dir}/docs/BRANCH_BASED_WORKER_LOADING.md")
+    print(f"  4. git add .czarina/")
+    print(f"  5. git commit -m 'Add Czarina orchestration'")
+    print(f"  6. czarina launch  (will auto-create branches if needed)")
+    print(f"\n💡 Read more: {orchestrator_dir}/docs/BRANCH_BASED_WORKER_LOADING.md")
 
 
 def cmd_list():
@@ -384,8 +409,38 @@ def cmd_launch(project_name=None):
     print(f"   Project: {project_root}")
     print()
 
-    # Use orchestrator launch script
+    # Check if git branches exist, initialize if needed
     orchestrator_dir = get_orchestrator_dir()
+    if (project_root / ".git").exists():
+        # Check if any worker branches are missing
+        branches_missing = False
+        for worker in workers:
+            branch = worker.get("branch", "")
+            if branch:
+                result = subprocess.run(
+                    ["git", "-C", str(project_root), "show-ref", "--verify", "--quiet", f"refs/heads/{branch}"],
+                    capture_output=True
+                )
+                if result.returncode != 0:
+                    branches_missing = True
+                    break
+
+        if branches_missing:
+            print("🌿 Some worker branches don't exist yet. Initializing...")
+            init_branches_script = orchestrator_dir / "czarina-core" / "init-embedded-branches.sh"
+            if init_branches_script.exists():
+                result = subprocess.run(
+                    ["bash", str(init_branches_script), str(project_root)],
+                    input="n\n",  # Auto-answer "no" to pull prompt
+                    text=True
+                )
+                if result.returncode == 0:
+                    print("✅ Git branches initialized")
+                else:
+                    print("⚠️  Branch initialization had issues, continuing anyway...")
+            print()
+
+    # Use orchestrator launch script
     launch_script = orchestrator_dir / "czarina-core" / "launch-project.sh"
 
     if not launch_script.exists():
@@ -775,7 +830,40 @@ Edit `.czarina/workers/*.md` to define worker roles and tasks.
                         f.write("\n")
                     f.write("\n# Czarina orchestration\n")
                     f.write(".czarina/status/\n")
+                    f.write(".czarina/worktrees/\n")
                 print(f"✅ Updated: .gitignore")
+
+            # Copy branch loader script
+            loader_template = orchestrator_dir / "czarina-core" / "templates" / "embedded-orchestration" / "load-worker-by-branch.sh"
+            loader_dest = czarina_dir / "load-worker-by-branch.sh"
+            if loader_template.exists():
+                import shutil
+                shutil.copy(loader_template, loader_dest)
+                loader_dest.chmod(0o755)
+                print(f"✅ Created: .czarina/load-worker-by-branch.sh")
+
+            # Initialize git branches
+            print()
+            print("🌿 Initializing git branches...")
+            init_branches_script = orchestrator_dir / "czarina-core" / "init-embedded-branches.sh"
+            if init_branches_script.exists() and (current_dir / ".git").exists():
+                result = subprocess.run(
+                    ["bash", str(init_branches_script), str(current_dir)],
+                    input="n\n",  # Auto-answer "no" to pull prompt
+                    text=True,
+                    capture_output=True
+                )
+                if result.returncode == 0:
+                    print(f"✅ Git branches initialized")
+                else:
+                    print(f"⚠️  Branch initialization failed (may need manual setup)")
+                    print(f"   Run: ./czarina-core/init-embedded-branches.sh .")
+            else:
+                if not (current_dir / ".git").exists():
+                    print(f"⚠️  Not a git repository - skipping branch initialization")
+                    print(f"   Initialize git first: git init && git add . && git commit -m 'Initial commit'")
+                else:
+                    print(f"⚠️  Branch init script not found")
 
             print()
             print("=" * 60)
@@ -790,10 +878,12 @@ Edit `.czarina/workers/*.md` to define worker roles and tasks.
             print("📝 Next steps:")
             print("  1. Review .czarina/config.json")
             print("  2. Review .czarina/workers/*.md")
-            print("  3. git add .czarina/")
-            print("  4. git commit -m 'Add Czarina orchestration'")
-            print("  5. czarina launch")
-            print("  6. czarina daemon start")
+            print("  3. (Optional) Setup SessionStart hook in .claude/settings.local.json:")
+            print("     See: docs/BRANCH_BASED_WORKER_LOADING.md")
+            print("  4. git add .czarina/")
+            print("  5. git commit -m 'Add Czarina orchestration'")
+            print("  6. Workers: git checkout <branch> && start your agent")
+            print("  7. (Optional) czarina daemon start")
             print()
 
         else:

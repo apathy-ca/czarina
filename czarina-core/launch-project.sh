@@ -44,6 +44,28 @@ PROJECT_NAME=$(jq -r '.project.name' "$CONFIG_FILE")
 PROJECT_SLUG=$(jq -r '.project.slug' "$CONFIG_FILE")
 PROJECT_ROOT=$(jq -r '.project.repository' "$CONFIG_FILE")
 
+# Create worktrees directory for workers
+WORKTREES_DIR="${PROJECT_ROOT}/.czarina/worktrees"
+mkdir -p "$WORKTREES_DIR"
+
+# Make sure we're on a safe branch (main) before creating worktrees
+echo -e "${BLUE}🔄 Preparing repository for multi-worker launch...${NC}"
+cd "$PROJECT_ROOT"
+
+# Clean up any stale worktree references
+echo "   Cleaning up stale worktrees..."
+git worktree prune 2>/dev/null || true
+
+CURRENT_BRANCH=$(git branch --show-current)
+if [ "$CURRENT_BRANCH" != "main" ] && [ "$CURRENT_BRANCH" != "master" ]; then
+    echo "   Switching from ${CURRENT_BRANCH} to main for worktree setup..."
+    git checkout main 2>/dev/null || git checkout master 2>/dev/null || {
+        echo -e "${YELLOW}   ⚠️  Could not switch to main/master branch${NC}"
+        echo "   Continuing anyway, but some worktrees may fail to create"
+    }
+fi
+echo ""
+
 # Create short session name
 # Extract version number if present (e.g., v0.4.7 -> v047, v1.2.3 -> v123)
 if [[ "$PROJECT_SLUG" =~ ^v?([0-9]+)\.?([0-9]+)?\.?([0-9]+)? ]]; then
@@ -140,6 +162,7 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
     WORKER_ID=$(jq -r ".workers[$i].id" "$CONFIG_FILE")
     WORKER_AGENT=$(jq -r ".workers[$i].agent" "$CONFIG_FILE")
     WORKER_DESC=$(jq -r ".workers[$i].description" "$CONFIG_FILE")
+    WORKER_BRANCH=$(jq -r ".workers[$i].branch" "$CONFIG_FILE")
     WORKER_FILE="${CZARINA_DIR}/workers/${WORKER_ID}.md"
 
     if [ ! -f "$WORKER_FILE" ]; then
@@ -149,20 +172,63 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
 
         echo "   • ${WORKER_ID} (${WORKER_AGENT})"
 
+        # Create or reuse git worktree for this worker's branch
+        WORKER_DIR="${WORKTREES_DIR}/${WORKER_ID}"
+        if [ -n "$WORKER_BRANCH" ] && [ "$WORKER_BRANCH" != "null" ]; then
+            # Check if worktree already exists
+            if [ ! -d "$WORKER_DIR" ]; then
+                echo "      Creating worktree for ${WORKER_BRANCH}..."
+                cd "$PROJECT_ROOT"
+
+                # Check if branch is currently checked out (can't create worktree for it)
+                CURRENT_BRANCH=$(git branch --show-current)
+                if [ "$CURRENT_BRANCH" = "$WORKER_BRANCH" ]; then
+                    echo "      ⚠️  Branch ${WORKER_BRANCH} is currently checked out"
+                    echo "      Using main project directory instead"
+                    WORKER_DIR="$PROJECT_ROOT"
+                else
+                    git worktree add "$WORKER_DIR" "$WORKER_BRANCH" 2>/dev/null || {
+                        # Branch might not exist yet, create it
+                        git worktree add -b "$WORKER_BRANCH" "$WORKER_DIR" 2>/dev/null || {
+                            echo "      ⚠️  Failed to create worktree for ${WORKER_BRANCH}"
+                            WORKER_DIR="$PROJECT_ROOT"
+                        }
+                    }
+                fi
+            fi
+        else
+            # No branch specified, use main project directory
+            WORKER_DIR="$PROJECT_ROOT"
+        fi
+
         # Create window for this worker
         tmux new-window -t "${CURRENT_SESSION}" -n "${WORKER_ID}"
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cd ${PROJECT_ROOT}" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "clear" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '═══════════════════════════════════════════════════════════════'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🤖 Worker: ${WORKER_ID}'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '📋 Role: ${WORKER_DESC}'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 Agent: ${WORKER_AGENT}'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '═══════════════════════════════════════════════════════════════'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat ${WORKER_FILE}" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '═══════════════════════════════════════════════════════════════'" C-m
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
+        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cd ${WORKER_DIR}" C-m
+        sleep 0.2
+
+        # Display worker info using a heredoc (much faster than multiple echo commands)
+        BRANCH_LINE=""
+        WORKTREE_LINE=""
+        if [ -n "$WORKER_BRANCH" ] && [ "$WORKER_BRANCH" != "null" ]; then
+            BRANCH_LINE="echo '🌿 Branch: ${WORKER_BRANCH}'"
+            WORKTREE_LINE="echo '📁 Worktree: ${WORKER_DIR}'"
+        fi
+
+        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "clear && cat <<'WORKER_INFO_EOF'
+═══════════════════════════════════════════════════════════════
+🤖 Worker: ${WORKER_ID}
+📋 Role: ${WORKER_DESC}
+🔧 Agent: ${WORKER_AGENT}
+WORKER_INFO_EOF
+${BRANCH_LINE}
+${WORKTREE_LINE}
+echo '═══════════════════════════════════════════════════════════════'
+echo ''
+cat ${WORKER_FILE}
+echo ''
+echo '═══════════════════════════════════════════════════════════════'
+echo ''" C-m
+        sleep 0.2
 
         # Add to orchestrator window list
         tmux send-keys -t "${CURRENT_SESSION}:orchestrator" "echo '  • ${WORKER_ID} - ${WORKER_DESC}'" C-m
@@ -170,34 +236,45 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
         # Launch agent-specific setup
         case "$WORKER_AGENT" in
             "aider")
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🚀 Launching Aider...'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
                 # Check if aider is available
                 if command -v aider &> /dev/null; then
-                    # Auto-launch aider with the worker prompt
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "aider --model claude-3-5-sonnet-20241022 --message 'Read and follow the instructions in .czarina/workers/${WORKER_ID}.md'" C-m
+                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🚀 Launching Aider...' && echo '' && aider --model claude-3-5-sonnet-20241022 --message 'Read and follow the instructions in .czarina/workers/${WORKER_ID}.md'" C-m
                 else
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '⚠️  Aider not found. Install with: pip install aider-chat'" C-m
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 To start manually:'" C-m
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '   aider --model claude-3-5-sonnet-20241022'" C-m
+                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'AIDER_INFO_EOF'
+🔧 Ready for Aider:
+
+⚠️  Aider not found. Install with: pip install aider-chat
+
+🔧 To start manually:
+   aider --model claude-3-5-sonnet-20241022
+
+AIDER_INFO_EOF
+" C-m
                 fi
                 ;;
             "claude-code")
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 Ready for Claude Code:'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '   Just say: \"You are ${WORKER_ID}\"'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
+                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'CLAUDE_INFO_EOF'
+🔧 Ready for Claude Code:
+
+   You are already in your isolated worktree on ${WORKER_BRANCH}
+   Just start working - your prompt is loaded above!
+
+   Or say: \"You are ${WORKER_ID}\"
+
+CLAUDE_INFO_EOF
+" C-m
                 ;;
             "cursor")
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 To start working with Cursor:'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '   1. Open Cursor in this directory'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '   2. Load worker prompt: .czarina/workers/${WORKER_ID}.md'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
+                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'CURSOR_INFO_EOF'
+🔧 To start working with Cursor:
+   1. Open Cursor in this directory
+   2. Load worker prompt: .czarina/workers/${WORKER_ID}.md
+
+CURSOR_INFO_EOF
+" C-m
                 ;;
             *)
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 Ready to start working!'" C-m
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo ''" C-m
+                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 Ready to start working!' && echo ''" C-m
                 ;;
         esac
     done
