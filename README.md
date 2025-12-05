@@ -77,7 +77,8 @@ czarina daemon start
 - 🤖 **Agent-Agnostic** - Works with 8+ AI coding assistants (Claude Code, Aider, Cursor, Windsurf, etc.)
 - ⚡ **90% Autonomy** - Daemon system reduces manual intervention from 100% to ~10%
 - 🎯 **Embedded** - `.czarina/` lives in your project (like `.git/`)
-- 🔀 **Git Native** - Automated branching, PRs, and safe integration
+- 🔀 **Auto Git Branches** - Worker branches created and managed automatically
+- 🌿 **Branch-Based Loading** - Workers auto-load their prompts based on git branch
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
 - 📚 **Pattern Library** - 30-50% faster debugging with proven patterns
 
