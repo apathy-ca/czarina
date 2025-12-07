@@ -1,21 +1,14 @@
 # Czarina .gitignore
 
-# Configuration (contains project-specific paths)
-config.sh
-
 # Runtime status and logs
 status/
 *.log
 nohup.out
 
-# Task files (project-specific)
-prompts/*_TASKS.txt
-prompts/*_BONUS_TASKS.txt
-prompts/*_PROMPT.txt
-
-# Auto-deployment artifacts
-auto-deploy/
-cli-workers/
+# Development/testing artifacts
+czarina-inbox/
+czarina-development-archive/
+archive/
 
 # Python
 __pycache__/
