@@ -120,9 +120,9 @@ class ProjectAnalyzer:
         """
         Interactive mode - save prompt to file for AI agent to process
         This works with ANY coding assistant (Claude Code, Cursor, etc.)
-        """
-        import tempfile
 
+        If response file already exists, load it. Otherwise save prompt and exit.
+        """
         print()
         print("=" * 60)
         print("📝 INTERACTIVE ANALYSIS MODE")
@@ -133,57 +133,62 @@ class ProjectAnalyzer:
         prompt_file = Path.cwd() / ".czarina-analysis-prompt.md"
         response_file = Path.cwd() / ".czarina-analysis-response.json"
 
+        # Check if response already exists (agent completed the work)
+        if response_file.exists():
+            print(f"✅ Found existing response: {response_file}")
+            print()
+
+            with open(response_file, 'r') as f:
+                response = f.read().strip()
+
+            if not response:
+                raise RuntimeError(f"Response file is empty: {response_file}")
+
+            # Clean up markdown code fences if present
+            if response.startswith("```"):
+                lines = response.split('\n')
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                response = '\n'.join(lines).strip()
+
+            print(f"✅ Response loaded successfully")
+            print()
+
+            # Clean up the temp files
+            try:
+                prompt_file.unlink()
+                response_file.unlink()
+            except:
+                pass
+
+            return response
+
+        # Response doesn't exist yet - save prompt and exit with instructions
         with open(prompt_file, 'w') as f:
             f.write(prompt)
 
         print(f"✅ Analysis prompt saved to: {prompt_file}")
         print()
-        print("📋 NEXT STEPS:")
+        print("=" * 60)
+        print("📋 NEXT STEPS FOR AI AGENT")
+        print("=" * 60)
         print()
         print("Please ask your AI agent (Claude Code, Cursor, etc.) to:")
         print()
-        print(f"  1. Read the prompt from: {prompt_file}")
-        print(f"  2. Analyze it and generate the JSON response")
-        print(f"  3. Save the JSON response to: {response_file}")
+        print(f"  1. Read and analyze: {prompt_file}")
+        print(f"  2. Generate JSON response following the schema")
+        print(f"  3. Save response to: {response_file}")
         print()
-        print("Then press Enter to continue...")
+        print("Then run this command again:")
+        print(f"  czarina analyze [plan-file] --interactive --init")
         print()
-
-        # Wait for user to complete the task
-        input("Press Enter when the AI agent has created the response file: ")
-
-        # Read the response
-        if not response_file.exists():
-            raise RuntimeError(f"Response file not found: {response_file}\n"
-                             f"Please ensure your AI agent created this file with the JSON analysis.")
-
-        with open(response_file, 'r') as f:
-            response = f.read().strip()
-
-        if not response:
-            raise RuntimeError(f"Response file is empty: {response_file}")
-
-        # Clean up markdown code fences if present
-        if response.startswith("```"):
-            lines = response.split('\n')
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            response = '\n'.join(lines).strip()
-
-        print()
-        print(f"✅ Response loaded from: {response_file}")
+        print("The tool will detect the response file and continue automatically.")
         print()
 
-        # Clean up the temp files
-        try:
-            prompt_file.unlink()
-            response_file.unlink()
-        except:
-            pass
-
-        return response
+        # Exit cleanly - agent needs to do the work
+        sys.exit(0)
 
     def _call_via_inline_python(self, prompt):
         """
