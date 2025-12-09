@@ -179,22 +179,14 @@ WORKER_EOF
 cat ${worker_file}
 echo ''
 echo '═══════════════════════════════════════════════════════════════'
+echo ''
+echo '📄 Your instructions are in: .czarina/workers/${worker_id}.md'
+echo '📁 Working directory: ${worker_dir}'
+echo ''
+echo 'Ready to begin! Read your instructions above and start implementing.'
+echo ''
 " C-m
     sleep 0.1
-
-    # Agent-specific setup
-    case "$worker_agent" in
-        "aider")
-            if command -v aider &> /dev/null; then
-                tmux send-keys -t "${session}:${window_name}" "aider --model claude-3-5-sonnet-20241022 --message 'Read .czarina/workers/${worker_id}.md and begin implementation'" C-m
-            else
-                tmux send-keys -t "${session}:${window_name}" "echo '⚠️  Aider not found. Install: pip install aider-chat'" C-m
-            fi
-            ;;
-        *)
-            tmux send-keys -t "${session}:${window_name}" "echo '✅ Ready for ${worker_agent}'" C-m
-            ;;
-    esac
 }
 
 # Create main session

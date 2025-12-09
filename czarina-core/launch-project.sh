@@ -235,50 +235,17 @@ echo ''" C-m
         # Add to orchestrator window list
         tmux send-keys -t "${CURRENT_SESSION}:orchestrator" "echo '  • ${WORKER_ID} - ${WORKER_DESC}'" C-m
 
-        # Launch agent-specific setup
-        case "$WORKER_AGENT" in
-            "aider")
-                # Check if aider is available
-                if command -v aider &> /dev/null; then
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🚀 Launching Aider...' && echo '' && aider --model claude-3-5-sonnet-20241022 --message 'Read and follow the instructions in .czarina/workers/${WORKER_ID}.md'" C-m
-                else
-                    tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'AIDER_INFO_EOF'
-🔧 Ready for Aider:
+        # Show simple ready message - let agents discover instructions via hooks
+        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'READY_EOF'
 
-⚠️  Aider not found. Install with: pip install aider-chat
+📄 Your instructions: .czarina/workers/${WORKER_ID}.md
+📁 Working directory: ${WORKER_DIR}
+🌿 Branch: ${WORKER_BRANCH}
 
-🔧 To start manually:
-   aider --model claude-3-5-sonnet-20241022
+✅ Ready to begin! Read your instructions above and start implementing.
 
-AIDER_INFO_EOF
+READY_EOF
 " C-m
-                fi
-                ;;
-            "claude-code")
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'CLAUDE_INFO_EOF'
-🔧 Ready for Claude Code:
-
-   You are already in your isolated worktree on ${WORKER_BRANCH}
-   Just start working - your prompt is loaded above!
-
-   Or say: \"You are ${WORKER_ID}\"
-
-CLAUDE_INFO_EOF
-" C-m
-                ;;
-            "cursor")
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'CURSOR_INFO_EOF'
-🔧 To start working with Cursor:
-   1. Open Cursor in this directory
-   2. Load worker prompt: .czarina/workers/${WORKER_ID}.md
-
-CURSOR_INFO_EOF
-" C-m
-                ;;
-            *)
-                tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "echo '🔧 Ready to start working!' && echo ''" C-m
-                ;;
-        esac
     done
 
     # Finish orchestrator window for this session
