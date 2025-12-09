@@ -141,15 +141,22 @@ create_worker_window() {
     if [ -n "$worker_branch" ] && [ "$worker_branch" != "null" ]; then
         if [ ! -d "$worker_dir" ]; then
             cd "$PROJECT_ROOT"
-            git worktree add "$worker_dir" "$worker_branch" 2>/dev/null || {
-                git worktree add -b "$worker_branch" "$worker_dir" 2>/dev/null || {
-                    echo "      ⚠️  Failed to create worktree, using main directory"
-                    worker_dir="$PROJECT_ROOT"
-                }
-            }
+            echo "      Creating worktree: $worker_dir on branch $worker_branch..."
+            if git worktree add "$worker_dir" "$worker_branch" 2>&1; then
+                echo "      ✅ Worktree created"
+            elif git worktree add -b "$worker_branch" "$worker_dir" 2>&1; then
+                echo "      ✅ Worktree created (new branch)"
+            else
+                echo "      ⚠️  Failed to create worktree, using main directory"
+                echo "      Run 'git worktree list' to debug"
+                worker_dir="$PROJECT_ROOT"
+            fi
+        else
+            echo "      ↻ Reusing existing worktree: $worker_dir"
         fi
     else
         worker_dir="$PROJECT_ROOT"
+        echo "      ℹ  No branch specified, using main directory"
     fi
 
     # Create window

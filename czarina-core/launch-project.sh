@@ -177,7 +177,7 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
         if [ -n "$WORKER_BRANCH" ] && [ "$WORKER_BRANCH" != "null" ]; then
             # Check if worktree already exists
             if [ ! -d "$WORKER_DIR" ]; then
-                echo "      Creating worktree for ${WORKER_BRANCH}..."
+                echo "      Creating worktree: ${WORKER_DIR} on branch ${WORKER_BRANCH}..."
                 cd "$PROJECT_ROOT"
 
                 # Check if branch is currently checked out (can't create worktree for it)
@@ -187,13 +187,15 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
                     echo "      Using main project directory instead"
                     WORKER_DIR="$PROJECT_ROOT"
                 else
-                    git worktree add "$WORKER_DIR" "$WORKER_BRANCH" 2>/dev/null || {
-                        # Branch might not exist yet, create it
-                        git worktree add -b "$WORKER_BRANCH" "$WORKER_DIR" 2>/dev/null || {
-                            echo "      ⚠️  Failed to create worktree for ${WORKER_BRANCH}"
-                            WORKER_DIR="$PROJECT_ROOT"
-                        }
-                    }
+                    if git worktree add "$WORKER_DIR" "$WORKER_BRANCH" 2>&1; then
+                        echo "      ✅ Worktree created"
+                    elif git worktree add -b "$WORKER_BRANCH" "$WORKER_DIR" 2>&1; then
+                        echo "      ✅ Worktree created (new branch)"
+                    else
+                        echo "      ⚠️  Failed to create worktree for ${WORKER_BRANCH}"
+                        echo "      Run 'git worktree list' to debug"
+                        WORKER_DIR="$PROJECT_ROOT"
+                    fi
                 fi
             fi
         else
