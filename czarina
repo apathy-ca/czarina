@@ -10,6 +10,7 @@ Usage:
     czarina analyze <plan-file> --output file    - Save analysis to file
     czarina init [project-name]                  - Initialize orchestration in current dir
     czarina init --from-config <config.json>     - Initialize from pre-made config file
+    czarina init --from-config <file> --force    - Re-initialize (replaces existing)
     czarina list                                 - List all Czarina projects
     czarina launch [project]                     - Launch project workers
     czarina status [project]                     - Show project status
@@ -356,16 +357,58 @@ You are the **Czar** - the orchestration coordinator for this multi-agent projec
     print("  2. czarina launch")
 
 
-def cmd_init(project_name=None, from_config=None):
+def cmd_init(project_name=None, from_config=None, force=False):
     """Initialize Czarina orchestration in current directory"""
     current_dir = Path.cwd()
 
     # Check if already initialized
     czarina_dir = current_dir / ".czarina"
-    if czarina_dir.exists():
-        print(f"❌ Czarina already initialized in {current_dir}")
-        print(f"   .czarina/ directory exists")
-        sys.exit(1)
+    config_file = czarina_dir / "config.json"
+    workers_dir = czarina_dir / "workers"
+
+    if czarina_dir.exists() and config_file.exists():
+        # Check if this is an active project or a phase-closed structure
+        import shutil
+
+        # If workers directory is empty or doesn't exist, assume phase was closed
+        workers_exist = workers_dir.exists() and any(workers_dir.iterdir())
+
+        if workers_exist and not force:
+            print(f"❌ Czarina already initialized in {current_dir}")
+            print(f"   .czarina/ directory exists with active workers")
+            print()
+            print("💡 Options:")
+            print("   1. Close current phase first: czarina phase close")
+            print("   2. Force re-initialize: czarina init --from-config <file> --force")
+            sys.exit(1)
+
+        if force or not workers_exist:
+            if force:
+                print(f"⚠️  Reinitializing (--force): {current_dir}")
+            else:
+                print(f"📦 Initializing new phase in existing project")
+
+            print(f"   Archiving previous phase...")
+
+            # Archive existing config/workers to phases
+            phases_dir = czarina_dir / "phases"
+            phases_dir.mkdir(exist_ok=True)
+            backup_name = f"phase-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}-reInit"
+            backup_dir = phases_dir / backup_name
+            backup_dir.mkdir()
+
+            if config_file.exists():
+                shutil.copy(config_file, backup_dir / "config.json")
+            if workers_dir.exists() and any(workers_dir.iterdir()):
+                shutil.copytree(workers_dir, backup_dir / "workers")
+
+            print(f"   ✅ Backed up to: .czarina/phases/{backup_name}")
+
+            # Remove old config and workers (keep phases, archive, status dirs)
+            if config_file.exists():
+                config_file.unlink()
+            if workers_dir.exists():
+                shutil.rmtree(workers_dir)
 
     # Handle --from-config (user provides pre-made config)
     if from_config:
@@ -1392,22 +1435,31 @@ def main():
                 interactive = True
         cmd_analyze(plan_file, output_file, auto_init, interactive)
     elif command == "init":
-        # Check for --from-config flag
+        # Check for --from-config and --force flags
         from_config = None
         project_name = None
+        force = False
 
-        for i, arg in enumerate(sys.argv[2:], start=2):
+        i = 2
+        while i < len(sys.argv):
+            arg = sys.argv[i]
             if arg == "--from-config":
                 if i + 1 < len(sys.argv):
                     from_config = sys.argv[i + 1]
+                    i += 2
                 else:
                     print("❌ --from-config requires a file path")
                     sys.exit(1)
-                break
+            elif arg == "--force":
+                force = True
+                i += 1
             elif not arg.startswith("--"):
                 project_name = arg
+                i += 1
+            else:
+                i += 1
 
-        cmd_init(project_name, from_config)
+        cmd_init(project_name, from_config, force)
     elif command == "list":
         cmd_list()
     elif command == "launch":
