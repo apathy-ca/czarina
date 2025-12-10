@@ -490,6 +490,15 @@ except Exception as e:
         print("=" * 60)
         print()
 
+        # Metadata
+        metadata = analysis.get("analysis_metadata", {})
+        analyzed_at = metadata.get("analyzed_at", datetime.now().isoformat())
+        # Format: 2025-12-09 23:05:50
+        timestamp = datetime.fromisoformat(analyzed_at).strftime("%Y-%m-%d %H:%M:%S")
+        print(f"📅 Analyzed: {timestamp}")
+        print(f"🔧 Analyzer: v{metadata.get('analyzer_version', '1.0.0')}")
+        print()
+
         # Project overview
         proj = analysis["analysis"]
         print(f"🎯 Project: {proj['project_name']}")
