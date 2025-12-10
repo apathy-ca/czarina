@@ -13,7 +13,8 @@ Usage:
     czarina launch [project]                     - Launch project workers
     czarina status [project]                     - Show project status
     czarina dashboard [project]                  - Live monitoring dashboard
-    czarina closeout [project]                   - Stop all workers and clean up
+    czarina phase close [project]                - Close current phase, keep project for next phase
+    czarina closeout [project]                   - Stop all workers and clean up completely
     czarina daemon start [project]               - Start autonomous daemon
     czarina daemon stop [project]                - Stop daemon
     czarina daemon logs [project]                - Show daemon logs
@@ -504,6 +505,20 @@ def cmd_dashboard(project_name=None):
 
     os.chdir(project_root)
     subprocess.run([sys.executable, str(dashboard_script)])
+
+
+def cmd_phase_close(project_name=None):
+    """Close current phase but keep project structure for next phase"""
+    czarina_dir, project_root = get_project_context(project_name)
+    orchestrator_dir = get_orchestrator_dir()
+    phase_close_script = orchestrator_dir / "czarina-core" / "phase-close.sh"
+
+    if not phase_close_script.exists():
+        print(f"❌ Phase close script not found: {phase_close_script}")
+        sys.exit(1)
+
+    os.chdir(project_root)
+    subprocess.run(["bash", str(phase_close_script), str(czarina_dir)])
 
 
 def cmd_closeout(project_name=None):
@@ -1153,6 +1168,18 @@ def main():
     elif command == "dashboard":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_dashboard(project_name)
+    elif command == "phase":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina phase <close> [project]")
+            sys.exit(1)
+        phase_cmd = sys.argv[2]
+        if phase_cmd == "close":
+            project_name = sys.argv[3] if len(sys.argv) > 3 else None
+            cmd_phase_close(project_name)
+        else:
+            print(f"❌ Unknown phase command: {phase_cmd}")
+            print("   Available: close")
+            sys.exit(1)
     elif command == "closeout":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_closeout(project_name)
