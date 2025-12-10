@@ -169,16 +169,27 @@ git show-ref --verify --quiet refs/heads/<branch-name>
 
 If missing, it creates the branch from current `main` or `master`.
 
-## Integration with Worker Loading
+## Integration with Worker Isolation
 
-Once branches exist, the **branch-based worker loading** system kicks in:
+Once branches exist, Czarina uses **git worktrees** for true parallel development:
 
-1. **Worker checks out their branch**: `git checkout feat/v0.1.0-backend-service`
-2. **SessionStart hook detects branch**: `.czarina/load-worker-by-branch.sh` runs
-3. **Script matches branch to worker**: Looks up in `config.json`
-4. **Worker prompt loads**: Agent receives correct instructions
+1. **Launch creates worktrees**: Each worker gets `.czarina/worktrees/worker-id/`
+2. **Worker operates in worktree**: Isolated workspace on their branch
+3. **No conflicts**: Multiple workers can work simultaneously
+4. **SessionStart hook**: Workers auto-load their prompt in their worktree
 
-See: [BRANCH_BASED_WORKER_LOADING.md](BRANCH_BASED_WORKER_LOADING.md)
+**Architecture:**
+```
+project/
+├── .git/                           # Main repo
+├── .czarina/
+│   └── worktrees/
+│       ├── worker1/                # Isolated worktree (on feat/worker1)
+│       ├── worker2/                # Isolated worktree (on feat/worker2)
+│       └── worker3/                # Isolated worktree (on feat/worker3)
+```
+
+See: [Git Worktrees Documentation](https://git-scm.com/docs/git-worktree)
 
 ## Non-Git Projects
 
@@ -192,7 +203,7 @@ czarina init
 # ✅ Czarina initialized successfully!
 ```
 
-Workers can still use Czarina orchestration, but branch-based loading won't work. They'll need to manually load prompts:
+Workers can still use Czarina orchestration, but worktrees won't be used. They'll work in the main directory and need to manually load prompts:
 
 ```bash
 ./.czarina/.worker-init backend-attention-service

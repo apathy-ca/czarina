@@ -38,7 +38,7 @@ graph LR
 1. **Human** sets project goals and worker roles
 2. **Czar** (AI or human) launches and monitors workers autonomously
 3. **Daemon** auto-approves file operations (90% reduction in manual intervention)
-4. **Workers** code in parallel on isolated branches
+4. **Workers** code in parallel in isolated git worktrees
 5. **Git** collects work via pull requests
 6. **Human** reviews and merges
 
@@ -77,8 +77,8 @@ czarina daemon start
 - 🤖 **Agent-Agnostic** - Works with 8+ AI coding assistants (Claude Code, Aider, Cursor, Windsurf, etc.)
 - ⚡ **90% Autonomy** - Daemon system reduces manual intervention from 100% to ~10%
 - 🎯 **Embedded** - `.czarina/` lives in your project (like `.git/`)
-- 🔀 **Auto Git Branches** - Worker branches created and managed automatically
-- 🌿 **Branch-Based Loading** - Workers auto-load their prompts based on git branch
+- 🌳 **Git Worktrees** - Each worker gets isolated workspace for true parallelism
+- 🔀 **Auto Branches** - Worker branches created and managed automatically
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
 - 📚 **Pattern Library** - 30-50% faster debugging with proven patterns
 
