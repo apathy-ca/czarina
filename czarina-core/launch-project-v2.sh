@@ -164,7 +164,7 @@ create_worker_window() {
     tmux send-keys -t "${session}:${window_name}" "cd ${worker_dir}" C-m
     sleep 0.1
 
-    # Display worker info
+    # Display worker info - ONE consolidated output
     tmux send-keys -t "${session}:${window_name}" "clear && cat <<'WORKER_EOF'
 ═══════════════════════════════════════════════════════════════
 🤖 Worker ${worker_num}
@@ -177,14 +177,17 @@ create_worker_window() {
 
 WORKER_EOF
 cat ${worker_file}
-echo ''
-echo '═══════════════════════════════════════════════════════════════'
-echo ''
-echo '📄 Your instructions are in: .czarina/workers/${worker_id}.md'
-echo '📁 Working directory: ${worker_dir}'
-echo ''
-echo 'Ready to begin! Read your instructions above and start implementing.'
-echo ''
+cat <<'READY_EOF'
+
+═══════════════════════════════════════════════════════════════
+
+📄 Your instructions are in: .czarina/workers/${worker_id}.md
+📁 Working directory: ${worker_dir}
+🌿 Branch: ${worker_branch}
+
+✅ Ready to begin! Read your instructions above and start implementing.
+
+READY_EOF
 " C-m
     sleep 0.1
 }

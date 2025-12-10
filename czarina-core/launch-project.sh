@@ -208,35 +208,21 @@ for session_num in $(seq 1 $SESSIONS_NEEDED); do
         tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cd ${WORKER_DIR}" C-m
         sleep 0.2
 
-        # Display worker info using a heredoc (much faster than multiple echo commands)
-        BRANCH_LINE=""
-        WORKTREE_LINE=""
-        if [ -n "$WORKER_BRANCH" ] && [ "$WORKER_BRANCH" != "null" ]; then
-            BRANCH_LINE="echo '🌿 Branch: ${WORKER_BRANCH}'"
-            WORKTREE_LINE="echo '📁 Worktree: ${WORKER_DIR}'"
-        fi
-
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "clear && cat <<'WORKER_INFO_EOF'
+        # Display ALL worker info in ONE command (cleaner for humans to read)
+        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "clear && cat <<'WORKER_HEADER'
 ═══════════════════════════════════════════════════════════════
 🤖 Worker: ${WORKER_ID}
 📋 Role: ${WORKER_DESC}
 🔧 Agent: ${WORKER_AGENT}
-WORKER_INFO_EOF
-${BRANCH_LINE}
-${WORKTREE_LINE}
-echo '═══════════════════════════════════════════════════════════════'
-echo ''
-cat ${WORKER_FILE}
-echo ''
-echo '═══════════════════════════════════════════════════════════════'
-echo ''" C-m
-        sleep 0.2
+🌿 Branch: ${WORKER_BRANCH}
+📁 Worktree: ${WORKER_DIR}
+═══════════════════════════════════════════════════════════════
 
-        # Add to orchestrator window list
-        tmux send-keys -t "${CURRENT_SESSION}:orchestrator" "echo '  • ${WORKER_ID} - ${WORKER_DESC}'" C-m
+WORKER_HEADER
+cat '${WORKER_FILE}'
+cat <<'WORKER_FOOTER'
 
-        # Show simple ready message - let agents discover instructions via hooks
-        tmux send-keys -t "${CURRENT_SESSION}:${WORKER_ID}" "cat <<'READY_EOF'
+═══════════════════════════════════════════════════════════════
 
 📄 Your instructions: .czarina/workers/${WORKER_ID}.md
 📁 Working directory: ${WORKER_DIR}
@@ -244,8 +230,11 @@ echo ''" C-m
 
 ✅ Ready to begin! Read your instructions above and start implementing.
 
-READY_EOF
+WORKER_FOOTER
 " C-m
+
+        # Add to orchestrator window list
+        tmux send-keys -t "${CURRENT_SESSION}:orchestrator" "echo '  • ${WORKER_ID} - ${WORKER_DESC}'" C-m
     done
 
     # Finish orchestrator window for this session
