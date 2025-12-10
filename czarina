@@ -202,10 +202,10 @@ def cmd_init_from_config(config_file_path, current_dir, czarina_dir):
     with open(config_path) as f:
         user_config = json.load(f)
 
-    # Create .czarina/ structure
-    czarina_dir.mkdir()
-    (czarina_dir / "workers").mkdir()
-    (czarina_dir / "status").mkdir()
+    # Create .czarina/ structure (may already exist from phase close)
+    czarina_dir.mkdir(exist_ok=True)
+    (czarina_dir / "workers").mkdir(exist_ok=True)
+    (czarina_dir / "status").mkdir(exist_ok=True)
 
     # Convert user format to czarina format
     workers_dict = user_config.get("workers", {})
