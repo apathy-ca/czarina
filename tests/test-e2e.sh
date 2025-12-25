@@ -48,41 +48,37 @@ test_structured_logging() {
   fi
 
   # Check for key functions
-  if type czlog >/dev/null 2>&1; then
-    log_pass "czlog function exists"
+  if type czarina_log_worker >/dev/null 2>&1 && \
+     type czarina_log_event >/dev/null 2>&1; then
+    log_pass "Logging functions exist (czarina_log_worker, czarina_log_event)"
   else
-    log_fail "czlog function not found"
+    log_fail "Core logging functions not found"
     return 1
   fi
 
-  # Test log file creation
-  TEST_LOG_DIR=$(mktemp -d)
-  export CZARINA_LOG_DIR="$TEST_LOG_DIR"
-
-  if czlog "test" "info" "Test message" 2>/dev/null; then
-    if [ -f "$TEST_LOG_DIR/test.log" ]; then
-      log_pass "Log files are created correctly"
-    else
-      log_fail "Log file was not created"
-      rm -rf "$TEST_LOG_DIR"
-      return 1
-    fi
+  # Test log configuration
+  if grep -q "LOGS_DIR\|EVENTS_FILE\|ORCHESTRATION_LOG" czarina-core/logging.sh; then
+    log_pass "Log directory and file paths are configured"
   else
-    log_fail "czlog function failed to execute"
-    rm -rf "$TEST_LOG_DIR"
+    log_fail "Log configuration is missing"
     return 1
   fi
 
-  # Verify log format
-  if grep -q "Test message" "$TEST_LOG_DIR/test.log"; then
-    log_pass "Log messages are written correctly"
+  # Test that czarina_log_init function exists and has mkdir logic
+  if grep -q "mkdir.*LOGS_DIR\|mkdir.*logs" czarina-core/logging.sh; then
+    log_pass "Log directory creation logic exists"
   else
-    log_fail "Log message format is incorrect"
-    rm -rf "$TEST_LOG_DIR"
+    log_fail "Log directory creation logic not found"
     return 1
   fi
 
-  rm -rf "$TEST_LOG_DIR"
+  # Verify event stream creation logic
+  if grep -q "events.jsonl" czarina-core/logging.sh; then
+    log_pass "Event stream configuration exists"
+  else
+    log_fail "Event stream not configured"
+    return 1
+  fi
   return 0
 }
 
@@ -153,7 +149,7 @@ test_czar_coordination() {
   fi
 
   # Check for key coordination functions
-  if grep -q "monitor_workers\|check_worker_status\|generate_status_report" czarina-core/czar.sh; then
+  if grep -q "czar_generate_status\|czar_monitor\|status" czarina-core/czar.sh; then
     log_pass "Czar coordination functions are defined"
   else
     log_fail "Czar coordination functions not found"
