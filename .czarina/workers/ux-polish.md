@@ -2,7 +2,7 @@
 ## Tmux Window Names + Commit Checkpoints
 
 **Stream:** 3
-**Duration:** Week 1-2 (3 days, parallel with foundation)
+**Duration:** Week 1-2 (5 days, parallel with foundation)
 **Branch:** `feat/ux-improvements`
 **Agent:** Cursor (recommended)
 **Dependencies:** None (can run parallel)
@@ -19,6 +19,8 @@ Improve user experience with better tmux window naming and structured commit che
 - Worker definitions include commit checkpoint instructions
 - Users can navigate tmux sessions intuitively
 - Git history is clean and incremental
+- AI agents auto-launch with instructions loaded (YOLO mode!)
+- Zero manual steps to start workers
 
 ---
 
@@ -214,18 +216,252 @@ init)
 ```bash
 git add czarina
 git commit -m "feat(ux): Add 'czarina init worker' command for template generation"
-echo "[$(date +%H:%M:%S)] 🎉 WORKER_COMPLETE: All UX polish tasks done" >> .czarina/logs/ux-polish.log
+echo "[$(date +%H:%M:%S)] 💾 CHECKPOINT: worker_init_command" >> .czarina/logs/ux-polish.log
+```
+
+---
+
+### Task 3: Auto-Launch Agent System (2 days)
+
+**Enhancement #10 - Discovered during this orchestration!**
+
+The orchestrator had to manually start AI agents in each worker window and provide instructions. This should be automatic!
+
+#### 3.1: Agent Launcher Script
+**File:** `czarina-core/agent-launcher.sh` (NEW)
+
+Create script to auto-launch AI agents with instructions:
+
+```bash
+#!/bin/bash
+# Agent launcher for czarina workers
+
+launch_worker_agent() {
+  local worker_id="$1"
+  local window_index="$2"
+  local agent_type="$3"
+  local session="$4"
+
+  local worktree_path=".czarina/worktrees/$worker_id"
+
+  # Change to worktree
+  tmux send-keys -t $session:$window_index "cd $worktree_path" C-m
+
+  # Create worker identity file
+  create_worker_identity "$worker_id" "$worktree_path"
+
+  case "$agent_type" in
+    aider)
+      launch_aider "$worker_id" "$window_index" "$session"
+      ;;
+    claude)
+      launch_claude "$worker_id" "$window_index" "$session"
+      ;;
+    cursor)
+      echo "⚠️  Cursor requires manual launch (GUI application)"
+      ;;
+    *)
+      echo "❌ Unknown agent type: $agent_type"
+      ;;
+  esac
+}
+
+create_worker_identity() {
+  local worker_id="$1"
+  local worktree_path="$2"
+
+  local worker_desc=$(jq -r ".workers[] | select(.id == \"$worker_id\") | .description" .czarina/config.json)
+  local worker_branch=$(jq -r ".workers[] | select(.id == \"$worker_id\") | .branch" .czarina/config.json)
+  local worker_deps=$(jq -r ".workers[] | select(.id == \"$worker_id\") | .dependencies[]" .czarina/config.json 2>/dev/null || echo "None")
+
+  cat > "$worktree_path/WORKER_IDENTITY.md" << EOF
+# Worker Identity: $worker_id
+
+You are the **$worker_id** worker in the czarina orchestration.
+
+## Your Role
+$worker_desc
+
+## Your Instructions
+Full task list: \$(pwd)/../workers/$worker_id.md
+
+Read it now:
+\\\`\\\`\\\`bash
+cat ../workers/$worker_id.md | less
+\\\`\\\`\\\`
+
+## Quick Reference
+- **Branch:** $worker_branch
+- **Location:** $worktree_path
+- **Dependencies:** $worker_deps
+
+## Your Mission
+Read your full instructions, understand your deliverables, and begin with Task 1.
+
+Let's build this! 🚀
+EOF
+
+  echo "✅ Created WORKER_IDENTITY.md for $worker_id"
+}
+
+launch_claude() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  # Configure Claude settings for auto-approval
+  mkdir -p ".czarina/worktrees/$worker_id/.claude"
+  cat > ".czarina/worktrees/$worker_id/.claude/settings.local.json" << EOF
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(pytest:*)",
+      "Bash(test:*)",
+      "Read(/**)",
+      "Write(/**)",
+      "Edit(/**)",
+      "Grep(*)",
+      "Glob(*)"
+    ]
+  }
+}
+EOF
+
+  # Launch Claude with worker context
+  tmux send-keys -t $session:$window_index "claude --permission-mode bypassPermissions 'Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1'" C-m
+
+  echo "✅ Launched Claude for $worker_id"
+}
+
+launch_aider() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  # Create aider startup commands
+  cat > ".czarina/worktrees/$worker_id/.aider-init" << EOF
+/add ../workers/$worker_id.md
+/ask You are the $worker_id worker. Read your instructions in the file I just added and begin with Task 1.
+EOF
+
+  # Launch aider with auto-yes and init file
+  tmux send-keys -t $session:$window_index "aider --yes-always --load .aider-init" C-m
+
+  echo "✅ Launched aider for $worker_id"
+}
+
+# Make executable
+chmod +x "$0"
+```
+
+**COMMIT CHECKPOINT:**
+```bash
+git add czarina-core/agent-launcher.sh
+chmod +x czarina-core/agent-launcher.sh
+git commit -m "feat(ux): Add agent auto-launch system for workers"
+echo "[$(date +%H:%M:%S)] 💾 CHECKPOINT: agent_launcher" >> .czarina/logs/ux-polish.log
+```
+
+#### 3.2: Integration into Launch Command
+**File:** `czarina` (UPDATE)
+
+Add agent launching after worktree creation:
+
+```bash
+# After creating worktrees and tmux windows
+echo "🤖 Launching AI agents in worker windows..."
+
+INDEX=1
+for worker in $(jq -r '.workers[].id' .czarina/config.json); do
+  AGENT=$(jq -r ".workers[] | select(.id == \"$worker\") | .agent" .czarina/config.json)
+
+  # Launch agent in worker window
+  ./czarina-core/agent-launcher.sh launch "$worker" "$INDEX" "$AGENT" "czarina-$SLUG"
+
+  sleep 2  # Give agent time to start
+  ((INDEX++))
+done
+
+echo "✅ All agents launched and initialized"
+```
+
+**COMMIT CHECKPOINT:**
+```bash
+git add czarina
+git commit -m "feat(ux): Integrate agent auto-launch into czarina launch"
+echo "[$(date +%H:%M:%S)] 💾 CHECKPOINT: launch_integration" >> .czarina/logs/ux-polish.log
+```
+
+#### 3.3: Documentation
+**File:** `docs/AUTO_LAUNCH.md` (NEW)
+
+Document the auto-launch system:
+
+```markdown
+# Agent Auto-Launch System
+
+## Overview
+
+Czarina automatically launches AI agents in worker windows with instructions pre-loaded.
+
+## How It Works
+
+1. `czarina launch` creates tmux windows and worktrees
+2. For each worker, creates `WORKER_IDENTITY.md` with role and instructions
+3. Launches agent (claude/aider) with auto-approval enabled
+4. Agent reads identity file and worker instructions
+5. Agent begins Task 1 automatically
+
+## Supported Agents
+
+### Claude Code
+- Auto-approval via `--permission-mode bypassPermissions`
+- Instructions loaded via initial prompt
+- Settings in `.claude/settings.local.json`
+
+### Aider
+- Auto-approval via `--yes-always`
+- Instructions loaded via `--load .aider-init`
+
+### Cursor
+- Manual launch required (GUI application)
+
+## Zero Manual Steps
+
+Before:
+- Create windows ✅
+- Attach to tmux session ❌
+- Start each agent manually ❌
+- Provide instructions manually ❌
+
+After:
+- Create windows ✅
+- Auto-launch agents ✅
+- Auto-load instructions ✅
+- Workers start immediately ✅
+```
+
+**COMMIT CHECKPOINT:**
+```bash
+git add docs/AUTO_LAUNCH.md
+git commit -m "docs(ux): Document agent auto-launch system"
+echo "[$(date +%H:%M:%S)] 🎉 WORKER_COMPLETE: All UX polish tasks done including auto-launch!" >> .czarina/logs/ux-polish.log
 ```
 
 ---
 
 ## Deliverables
 
-- ✅ Updated `czarina` script (tmux window naming)
+- ✅ Updated `czarina` script (tmux window naming + agent auto-launch)
 - ✅ `czarina-core/templates/worker-template.md`
 - ✅ `docs/WORKER_DEFINITIONS.md`
 - ✅ Updated `QUICK_START.md`
 - ✅ `czarina init worker` command
+- ✅ `czarina-core/agent-launcher.sh` (auto-launch system)
+- ✅ `docs/AUTO_LAUNCH.md`
+- ✅ Worker identity files auto-generated
+- ✅ Agent settings auto-configured
 
 ---
 
@@ -235,6 +471,9 @@ echo "[$(date +%H:%M:%S)] 🎉 WORKER_COMPLETE: All UX polish tasks done" >> .cz
 - [ ] Template includes checkpoint sections
 - [ ] Documentation explains checkpoint best practices
 - [ ] `czarina init worker` generates valid template
+- [ ] Agents auto-launch with instructions loaded
+- [ ] Workers begin Task 1 automatically
+- [ ] Zero manual initialization steps required
 - [ ] All manual tests pass
 
 ---
@@ -271,4 +510,6 @@ No dependencies on other workers.
 
 - Enhancement #3: Tmux Window Naming
 - Enhancement #5: Commit Checkpoints
+- Enhancement #10: Auto-Launch Agent System (discovered during this orchestration!)
 - SARK v1.3.0 orchestration analysis
+- Czarina v0.5.0 orchestration analysis (dogfooding!)
