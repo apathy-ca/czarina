@@ -1,0 +1,74 @@
+{
+  "project": {
+    "name": "czarina",
+    "slug": "czarina",
+    "repository": "/home/jhenry/Source/czarina",
+    "orchestration_dir": ".czarina",
+    "version": "0.5.0",
+    "description": "Czarina Self-Improvement - Dogfooding Excellence"
+  },
+  "workers": [
+    {
+      "id": "foundation",
+      "agent": "aider",
+      "branch": "feat/structured-logging-workspace",
+      "description": "Structured Logging + Workspace Architecture",
+      "versions": ["v0.5.0-foundation"],
+      "token_budget": 2000000,
+      "dependencies": []
+    },
+    {
+      "id": "coordination",
+      "agent": "aider",
+      "branch": "feat/proactive-coordination",
+      "description": "Proactive Czar + Enhanced Daemon + Closeout Reports",
+      "versions": ["v0.5.0-coordination"],
+      "token_budget": 2500000,
+      "dependencies": ["foundation"]
+    },
+    {
+      "id": "ux-polish",
+      "agent": "cursor",
+      "branch": "feat/ux-improvements",
+      "description": "Tmux Window Names + Commit Checkpoints",
+      "versions": ["v0.5.0-ux"],
+      "token_budget": 1000000,
+      "dependencies": []
+    },
+    {
+      "id": "dependencies",
+      "agent": "aider",
+      "branch": "feat/dependency-enforcement",
+      "description": "Worker Dependency Enforcement System",
+      "versions": ["v0.5.0-deps"],
+      "token_budget": 1500000,
+      "dependencies": ["foundation"]
+    },
+    {
+      "id": "dashboard",
+      "agent": "cursor",
+      "branch": "feat/dashboard-fix",
+      "description": "Dashboard Investigation & Fix",
+      "versions": ["v0.5.0-dashboard"],
+      "token_budget": 1000000,
+      "dependencies": []
+    },
+    {
+      "id": "qa",
+      "agent": "aider",
+      "branch": "feat/v0.5.0-integration",
+      "description": "Integration Testing & v0.5.0 Release Prep",
+      "versions": ["v0.5.0-qa"],
+      "token_budget": 1500000,
+      "dependencies": ["foundation", "coordination", "ux-polish", "dependencies", "dashboard"]
+    }
+  ],
+  "daemon": {
+    "enabled": true,
+    "auto_approve": [
+      "read",
+      "write",
+      "commit"
+    ]
+  }
+}
