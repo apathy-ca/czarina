@@ -266,42 +266,77 @@ while true; do
         auto_approve_all  # Second pass to catch cascading prompts
     fi
 
-    # 4. Proactive status report to Czar every 5 iterations (~10 min)
+    # 4. Enhanced worker status display every 5 iterations (~10 min)
     if [ $((iteration % 5)) -eq 0 ]; then
-        echo "[$(date '+%H:%M:%S')] 📊 Generating status report for Czar..." | tee -a "$LOG_FILE"
-        cd "$PROJECT_ROOT"
+        echo "[$(date '+%H:%M:%S')] 📊 Generating enhanced status report for Czar..." | tee -a "$LOG_FILE"
 
-        # Count recent commits per worker branch
-        active_workers=0
-        commits_report=""
-        for ((w=0; w<WORKER_COUNT; w++)); do
-            worker_id=$(jq -r ".workers[$w].id" "$CONFIG_FILE")
-            worker_branch=$(jq -r ".workers[$w].branch" "$CONFIG_FILE")
+        # Get orchestrator directory
+        ORCHESTRATOR_DIR="$(dirname "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")")"
+        METRICS_SCRIPT="${ORCHESTRATOR_DIR}/metrics.sh"
+        CZAR_SCRIPT="${ORCHESTRATOR_DIR}/czar.sh"
 
-            if [ "$worker_branch" != "null" ] && [ -n "$worker_branch" ]; then
-                # Count commits on this branch in last 20 min
-                commits=$(git log "$worker_branch" --since="20 minutes ago" --oneline 2>/dev/null | wc -l)
-                if [ $commits -gt 0 ]; then
-                    commits_report="${commits_report}\n   • ${worker_id}: ${commits} commits"
-                    ((active_workers++))
+        # Build detailed worker status report
+        CZAR_LOG="${PROJECT_DIR}/status/czar-notifications.log"
+        {
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "[$(date '+%H:%M:%S')] 📊 WORKER STATUS REPORT"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+
+            for ((w=0; w<WORKER_COUNT; w++)); do
+                worker_id=$(jq -r ".workers[$w].id" "$CONFIG_FILE")
+                worker_desc=$(jq -r ".workers[$w].description" "$CONFIG_FILE")
+
+                # Get worker status from czar script
+                if [ -f "$CZAR_SCRIPT" ]; then
+                    worker_status=$(bash "$CZAR_SCRIPT" "$PROJECT_DIR" check 2>/dev/null | jq -r ".${worker_id}.status" 2>/dev/null || echo "unknown")
+                    last_event=$(bash "$CZAR_SCRIPT" "$PROJECT_DIR" check 2>/dev/null | jq -r ".${worker_id}.last_event" 2>/dev/null || echo "")
+                    idle_sec=$(bash "$CZAR_SCRIPT" "$PROJECT_DIR" check 2>/dev/null | jq -r ".${worker_id}.idle_seconds" 2>/dev/null || echo "0")
+                else
+                    worker_status="unknown"
+                    last_event=""
+                    idle_sec=0
                 fi
-            fi
-        done
 
-        # Write celebratory report to Czar log (avoid tmux spam)
-        if [ $active_workers -gt 0 ]; then
-            CZAR_LOG="${PROJECT_DIR}/status/czar-notifications.log"
-            {
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                echo "[$(date '+%H:%M:%S')] 📊 STATUS REPORT - Your workers are CRUSHING IT, my liege!"
-                echo -e "${commits_report}"
-                echo "   Total active: ${active_workers}/${WORKER_COUNT} workers"
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                # Get metrics
+                if [ -f "$METRICS_SCRIPT" ]; then
+                    commits=$(bash "$METRICS_SCRIPT" "$PROJECT_DIR" "$worker_id" commits 2>/dev/null || echo "0")
+                    files=$(bash "$METRICS_SCRIPT" "$PROJECT_DIR" "$worker_id" files 2>/dev/null || echo "0")
+                    idle_time=$(bash "$METRICS_SCRIPT" "$PROJECT_DIR" "$worker_id" all 2>/dev/null | jq -r '.idle_time' 2>/dev/null || echo "unknown")
+                else
+                    commits=0
+                    files=0
+                    idle_time="unknown"
+                fi
+
+                # Status emoji
+                case "$worker_status" in
+                    active) status_emoji="🔄 ACTIVE";;
+                    idle) status_emoji="💤 IDLE";;
+                    stuck) status_emoji="⚠️ STUCK";;
+                    complete) status_emoji="✅ COMPLETE";;
+                    not_started) status_emoji="🆕 NOT STARTED";;
+                    *) status_emoji="❓ UNKNOWN";;
+                esac
+
+                # Worker summary line
+                printf "Worker %d (%s): %s\n" $((w+1)) "$worker_id" "$status_emoji"
+                printf "  Description: %s\n" "$worker_desc"
+                printf "  Activity: %s (last: %s ago)\n" "$last_event" "$idle_time"
+                printf "  Progress: %d commits, %d files changed\n" "$commits" "$files"
                 echo ""
-            } | tee -a "$CZAR_LOG"
-            echo "[$(date '+%H:%M:%S')] ✅ Status report written to czar-notifications.log" | tee -a "$LOG_FILE"
-        else
-            echo "[$(date '+%H:%M:%S')] No recent activity to report" | tee -a "$LOG_FILE"
+            done
+
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+        } | tee -a "$CZAR_LOG"
+
+        echo "[$(date '+%H:%M:%S')] ✅ Enhanced status report written to czar-notifications.log" | tee -a "$LOG_FILE"
+
+        # Also run czar coordination if czar script exists
+        if [ -f "$CZAR_SCRIPT" ]; then
+            echo "[$(date '+%H:%M:%S')] 🎭 Running Czar coordination cycle..." | tee -a "$LOG_FILE"
+            bash "$CZAR_SCRIPT" "$PROJECT_DIR" coordinate >> "$LOG_FILE" 2>&1 || true
         fi
     fi
 
