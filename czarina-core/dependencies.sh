@@ -35,3 +35,16 @@ check_dependencies_met() {
 
   return 0  # All dependencies met
 }
+
+# Generate a dependency graph in DOT format
+# Usage: generate_dependency_graph
+# Returns: DOT format graph suitable for graphviz
+# Example: czarina deps graph | dot -Tpng > deps.png
+generate_dependency_graph() {
+  echo "digraph dependencies {"
+  jq -r '.workers[] | "\(.id) -> \(.dependencies[])"' .czarina/config.json 2>/dev/null | \
+    while read line; do
+      echo "  $line;"
+    done
+  echo "}"
+}
