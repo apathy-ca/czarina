@@ -180,6 +180,84 @@ git commit -m "feat(coordination): Add activity metrics calculation"
 echo "[$(date +%H:%M:%S)] 💾 CHECKPOINT: metrics" >> .czarina/logs/coordination.log
 ```
 
+#### 2.3: Fix Daemon Spacing Issue
+**File:** `czarina-core/daemon.sh` (UPDATE)
+
+**Enhancement #11 - Discovered during this orchestration!**
+
+When the daemon has no activity to report, it spams blank lines and pushes text off-screen. This is inelegant and makes the daemon window hard to read.
+
+**Current behavior:**
+```bash
+while true; do
+  echo ""
+  echo "=== Iteration $N ==="
+  # ... monitoring ...
+  sleep 120
+done
+```
+
+Every 2 minutes it outputs blank lines even when there's no activity, causing:
+- Text scrolls off screen
+- Hard to see what's happening
+- Inelegant user experience
+
+**Fix:**
+Only output iteration headers when there's actual activity:
+
+```bash
+daemon_monitor_loop() {
+  local iteration=0
+
+  while true; do
+    ((iteration++))
+
+    # Check for activity
+    local has_activity=false
+
+    # Check if any worker has recent activity (<5 min)
+    for worker in $(jq -r '.workers[].id' .czarina/config.json); do
+      if [ -f ".czarina/logs/$worker.log" ]; then
+        local last_mod=$(stat -c %Y ".czarina/logs/$worker.log" 2>/dev/null || echo 0)
+        local now=$(date +%s)
+        local age=$((now - last_mod))
+
+        if [ "$age" -lt 300 ]; then  # Activity within last 5 minutes
+          has_activity=true
+          break
+        fi
+      fi
+    done
+
+    # Only output if there's activity
+    if [ "$has_activity" = true ]; then
+      echo ""
+      echo "=== Iteration $iteration - $(date '+%Y-%m-%d %H:%M:%S') ==="
+      daemon_show_worker_status
+      daemon_auto_approve
+    else
+      # Silent iteration - just do auto-approval without output spam
+      daemon_auto_approve >/dev/null 2>&1
+    fi
+
+    sleep 120
+  done
+}
+```
+
+**Benefits:**
+- Clean daemon window (only shows updates when things happen)
+- Text doesn't scroll off screen unnecessarily
+- Easy to see recent activity at a glance
+- More elegant and professional output
+
+**COMMIT CHECKPOINT:**
+```bash
+git add czarina-core/daemon.sh
+git commit -m "fix(coordination): Prevent daemon from spamming blank lines when idle (Enhancement #11)"
+echo "[$(date +%H:%M:%S)] 💾 CHECKPOINT: daemon_spacing_fix" >> .czarina/logs/coordination.log
+```
+
 ---
 
 ### Task 3: Closeout Report Generation (2 days)
