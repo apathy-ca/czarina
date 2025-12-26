@@ -25,9 +25,9 @@ Usage:
     czarina daemon status [project]              - Check daemon status
     czarina hopper add <file.md>                 - Add enhancement to project hopper
     czarina hopper list [project|phase]          - List hopper items
-    czarina hopper pull <file> --to-phase        - Pull item into phase (v0.6.0+)
-    czarina hopper defer <file>                  - Defer item to backlog (v0.6.0+)
-    czarina hopper assign <worker> <file>        - Assign to worker (v0.6.0+)
+    czarina hopper pull <file> --to-phase        - Pull item into phase
+    czarina hopper defer <file>                  - Defer item to backlog
+    czarina hopper assign <worker> <file>        - Assign to worker
     czarina patterns update                      - Update pattern library
     czarina patterns version                     - Show pattern version
     czarina patterns pending                     - List patterns ready to contribute

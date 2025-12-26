@@ -132,20 +132,24 @@ Shows counts and items in each subdirectory (todo, in-progress, done).
 5. **Assignment**: Czar assigns to idle worker (v0.6.0+)
 6. **Completion**: Worker moves to done/
 
-### Current Status (v0.5.1)
+### Current Status (v0.6.0)
 
 **Available now:**
 - ✅ Project hopper directory structure
+- ✅ Phase hopper directory structure (todo/in-progress/done)
 - ✅ `czarina hopper add` - Add items to project hopper
-- ✅ `czarina hopper list` - View project hopper items
+- ✅ `czarina hopper list` - View project hopper items with priority sorting
 - ✅ `czarina hopper list phase` - View phase hopper items
+- ✅ `czarina hopper pull` - Pull items from project to phase
+- ✅ `czarina hopper defer` - Move items back to project hopper
+- ✅ `czarina hopper assign` - Assign items to workers
+- ✅ Priority queue sorting (High→Low priority, Small→Large complexity)
+- ✅ Metadata parsing (Priority, Complexity, Tags)
 
-**Coming in v0.6.0:**
-- 🔜 `czarina hopper pull` - Pull items from project to phase
-- 🔜 `czarina hopper defer` - Move items back to project hopper
-- 🔜 `czarina hopper assign` - Assign items to workers
+**Coming in v0.7.0+:**
 - 🔜 Czar monitoring and automatic assessment
 - 🔜 Phase integration (auto-pull at phase start)
+- 🔜 Phase closeout integration (auto-defer unfinished items)
 
 ## Commands Reference
 
@@ -215,18 +219,50 @@ Location: /path/to/.czarina/phases/phase-2-v0.6.0/hopper
 ═══════════════════════════════════════════════════════════
 ```
 
-### Future Commands (v0.6.0+)
+### `hopper pull`
+
+Pull an item from the project hopper into the current phase hopper.
 
 ```bash
-# Pull item into current phase
-czarina hopper pull <file> --to-phase current
-
-# Defer item back to project hopper
-czarina hopper defer <file>
-
-# Assign item to worker
-czarina hopper assign <worker> <file>
+czarina hopper pull <filename.md> [--to-phase current]
 ```
+
+**Example:**
+```bash
+czarina hopper pull enhancement-15.md --to-phase current
+```
+
+This moves the file from `.czarina/hopper/` to `.czarina/phases/phase-N/hopper/todo/`.
+
+### `hopper defer`
+
+Move an item from the phase hopper back to the project hopper.
+
+```bash
+czarina hopper defer <filename.md>
+```
+
+**Example:**
+```bash
+czarina hopper defer enhancement-15.md
+```
+
+This searches for the file in `todo/`, `in-progress/`, or `done/` and moves it back to the project hopper.
+
+### `hopper assign`
+
+Assign an item from the phase todo to a worker.
+
+```bash
+czarina hopper assign <worker-id> <filename.md>
+```
+
+**Example:**
+```bash
+czarina hopper assign worker-1 enhancement-15.md
+```
+
+This moves the file from `todo/` to `in-progress/` and adds assignment metadata to the file.
 
 ## Use Cases
 
@@ -491,5 +527,8 @@ czarina phase close
 
 ---
 
-**Status:** Basic structure implemented (v0.5.1)
-**Next:** Czar integration and phase management (v0.6.0)
+**Status:** Core hopper system complete (v0.6.0)
+- Task 1 (v0.5.1): Basic structure and commands (add, list)
+- Task 2 (v0.6.0): Management commands (pull, defer, assign) + priority queue
+
+**Next:** Czar integration and phase lifecycle automation (v0.7.0+)
