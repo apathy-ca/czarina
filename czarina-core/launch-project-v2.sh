@@ -159,9 +159,25 @@ create_worker_window() {
         echo "      ℹ  No branch specified, using main directory"
     fi
 
+    # Initialize worker log
+    local worker_log="${LOGS_DIR}/${worker_id}.log"
+    echo "=== Worker ${worker_id} Started - $(date -Iseconds) ===" > "$worker_log"
+    echo "Branch: ${worker_branch}" >> "$worker_log"
+    echo "Worktree: ${worker_dir}" >> "$worker_log"
+    echo "Agent: ${worker_agent}" >> "$worker_log"
+    echo "" >> "$worker_log"
+
+    # Log worker start event
+    echo "{\"ts\":\"$(date -Iseconds)\",\"event\":\"WORKER_START\",\"worker\":\"${worker_id}\",\"branch\":\"${worker_branch}\"}" >> "$EVENTS_FILE"
+
     # Create window
     tmux new-window -t "$session" -n "$window_name"
     tmux send-keys -t "${session}:${window_name}" "cd ${worker_dir}" C-m
+
+    # Export log paths to worker environment
+    tmux send-keys -t "${session}:${window_name}" "export CZARINA_WORKER_LOG='${worker_log}'" C-m
+    tmux send-keys -t "${session}:${window_name}" "export CZARINA_EVENTS_LOG='${EVENTS_FILE}'" C-m
+    tmux send-keys -t "${session}:${window_name}" "export CZARINA_WORKER_ID='${worker_id}'" C-m
     sleep 0.1
 
     # Display worker info - ONE consolidated output
