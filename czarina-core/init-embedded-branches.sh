@@ -1,5 +1,5 @@
 #!/bin/bash
-# Initialize git branches for all workers from embedded config.json
+# Initialize czarina worker branches with phase naming
 # This ensures workers have clean branches ready to go
 
 set -euo pipefail
@@ -27,8 +27,9 @@ Example:
 This script will:
   1. Find .czarina/ orchestration directory
   2. Read config.json for worker definitions
-  3. Create git branches for each worker
-  4. Push branches to remote (if remote exists)
+  3. Read phase number from config
+  4. Create git branches for each worker (cz<phase>/feat/<worker-id>)
+  5. Push branches to remote (if remote exists)
 
 EOF
     exit 0
@@ -71,12 +72,16 @@ OMNIBUS_BRANCH=$(jq -r '.project.omnibus_branch // "main"' "$CONFIG_FILE")
 ORCHESTRATION_MODE=$(jq -r '.orchestration.mode // "local"' "$CONFIG_FILE")
 AUTO_PUSH=$(jq -r '.orchestration.auto_push_branches // false' "$CONFIG_FILE")
 
+# Read phase number from config (default to 1 if not set)
+PHASE=$(jq -r '.project.phase // 1' "$CONFIG_FILE")
+
 echo "╔════════════════════════════════════════════════════════════╗"
 echo "║         Git Branch Initialization for Workers             ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo -e "${BLUE}Project:${NC}     $PROJECT_NAME"
 echo -e "${BLUE}Repository:${NC}  $REPO_DIR"
+echo -e "${BLUE}Phase:${NC}       $PHASE"
 echo -e "${BLUE}Config:${NC}      $CONFIG_FILE"
 echo ""
 
@@ -199,6 +204,47 @@ for ((i=0; i<$WORKER_COUNT; i++)); do
     echo ""
 done
 
+# Create omnibus branch if defined
+OMNIBUS_BRANCH=$(jq -r '.project.omnibus_branch // empty' "$CONFIG_FILE")
+
+if [ -n "$OMNIBUS_BRANCH" ]; then
+    echo -e "${BLUE}→ Processing Omnibus Branch:${NC} $OMNIBUS_BRANCH"
+
+    # Check if omnibus branch exists locally
+    if git show-ref --verify --quiet "refs/heads/$OMNIBUS_BRANCH"; then
+        echo -e "  ${YELLOW}Status:${NC} Omnibus branch already exists"
+        BRANCHES_EXISTS=$((BRANCHES_EXISTS + 1))
+    else
+        # Check if branch exists on remote
+        if $HAS_REMOTE && git ls-remote --heads origin "$OMNIBUS_BRANCH" | grep -q "$OMNIBUS_BRANCH"; then
+            echo -e "  ${YELLOW}Status:${NC} Omnibus branch exists on remote, checking out..."
+            git checkout -b "$OMNIBUS_BRANCH" "origin/$OMNIBUS_BRANCH"
+            git checkout "$MAIN_BRANCH"
+            echo -e "  ${GREEN}✓ Omnibus branch checked out from remote${NC}"
+            BRANCHES_EXISTS=$((BRANCHES_EXISTS + 1))
+        else
+            # Create new omnibus branch
+            echo -e "  ${YELLOW}Status:${NC} Creating omnibus branch..."
+            git checkout -b "$OMNIBUS_BRANCH" "$MAIN_BRANCH"
+
+            if $HAS_REMOTE; then
+                git push -u origin "$OMNIBUS_BRANCH"
+                echo -e "  ${GREEN}✓ Omnibus branch created and pushed to remote${NC}"
+            else
+                echo -e "  ${GREEN}✓ Omnibus branch created locally${NC}"
+            fi
+
+            git checkout "$MAIN_BRANCH"
+            BRANCHES_CREATED=$((BRANCHES_CREATED + 1))
+        fi
+    fi
+
+    echo ""
+else
+    echo -e "${YELLOW}⚠️  No omnibus branch defined in config${NC}"
+    echo ""
+fi
+
 # Return to original branch
 if [ "$ORIGINAL_BRANCH" != "$MAIN_BRANCH" ]; then
     git checkout "$ORIGINAL_BRANCH" 2>/dev/null || git checkout "$MAIN_BRANCH"
@@ -211,7 +257,7 @@ echo ""
 echo -e "${GREEN}✓ Branches created:${NC}  $BRANCHES_CREATED"
 echo -e "${BLUE}  Branches existing:${NC} $BRANCHES_EXISTS"
 echo ""
-echo -e "${GREEN}✅ All worker branches initialized!${NC}"
+echo -e "${GREEN}✅ Phase $PHASE branches initialized!${NC}"
 echo ""
 echo -e "${YELLOW}Next steps:${NC}"
 echo "  1. Workers check out their branch: ${BLUE}git checkout <branch-name>${NC}"
