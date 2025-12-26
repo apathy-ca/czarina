@@ -116,6 +116,13 @@ if tmux has-session -t "$MGMT_SESSION" 2>/dev/null; then
     exit 1
 fi
 
+# Create status directory and track orchestration start time
+STATUS_DIR="${CZARINA_DIR}/status"
+mkdir -p "$STATUS_DIR"
+date +%s > "${STATUS_DIR}/orchestration-start.timestamp"
+echo -e "${BLUE}📅 Orchestration started: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
+echo ""
+
 # Function to create worker window
 create_worker_window() {
     local session=$1
