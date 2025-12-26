@@ -5,6 +5,54 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-12-25
+
+### Added
+
+**Auto-Launch Agent System** - Agents automatically start in worker windows
+  - Zero manual setup after `czarina launch`
+  - Worker-specific instructions via `WORKER_IDENTITY.md`
+  - Auto-approval configured for Claude and Aider
+  - Configuration: `--no-auto-launch`, `--no-auto-approve` flags (planned)
+  - Documentation: `czarina-core/docs/AUTO_LAUNCH.md`
+  - Implementation: `czarina-core/agent-launcher.sh`
+  - Integration in `czarina-core/launch-project-v2.sh`
+
+**Daemon Quiet Mode** - Only outputs when workers have activity
+  - Activity detection with 5-minute threshold
+  - Silent iterations when all workers idle
+  - Configuration: `DAEMON_ALWAYS_OUTPUT` flag (disable quiet mode)
+  - Environment: `DAEMON_ACTIVITY_THRESHOLD` variable (default 300s)
+  - Documentation: `czarina-core/docs/DAEMON.md`
+  - Implementation: `daemon_has_recent_activity()` function
+
+### Fixed
+
+- **Enhancement #10** - Auto-launch agents (discovered in v0.5.0 dogfooding)
+  - Before: Manual agent initialization required (18 steps for 6 workers)
+  - After: Zero manual steps, agents auto-start with instructions
+
+- **Enhancement #11** - Daemon spacing issue (discovered in v0.5.0 dogfooding)
+  - Before: Daemon spammed blank lines every 2 minutes when idle
+  - After: Daemon only outputs when workers are active (<5 min)
+
+### Changed
+
+- Daemon monitor loop checks for activity before outputting
+- Silent iterations when no recent worker activity
+- Worker launch process integrates agent-launcher when agent type is configured
+
+---
+
+**Discovered During Dogfooding:**
+Both enhancements were discovered during czarina v0.5.0 meta-orchestration:
+- #10: Human had to manually start agents in each window
+- #11: Daemon spammed blank lines, pushing text off-screen
+
+v0.5.1 completes the fixes for both issues.
+
+[Full Changelog](https://github.com/apathy-ca/czarina/compare/v0.5.0...v0.5.1)
+
 ## [0.5.0] - 2025-12-24
 
 ### Added
@@ -97,5 +145,6 @@ Initial production-ready release of Czarina.
 
 ## Version History
 
+- **v0.5.1** - Auto-launch agent system, daemon quiet mode (December 2025)
 - **v0.5.0** - Structured logging, session workspaces, proactive coordination (December 2025)
 - **v0.4.0** - Initial production-ready release (November 2025)
