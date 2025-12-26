@@ -18,6 +18,7 @@ Usage:
     czarina status                               - Show project status
     czarina dashboard                            - Live monitoring dashboard
     czarina phase close [project]                - Close current phase, keep project for next phase
+    czarina phase list [project]                 - List all phases
     czarina closeout [project]                   - Stop all workers and clean up completely
     czarina daemon start [project]               - Start autonomous daemon
     czarina daemon stop [project]                - Stop daemon
@@ -848,6 +849,29 @@ def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
 
     os.chdir(project_root)
     subprocess.run(cmd)
+
+
+def cmd_phase_list(project_name=None):
+    """List all phases for project"""
+    czarina_dir, project_root = get_project_context(project_name)
+
+    phases_dir = czarina_dir / "phases"
+
+    if not phases_dir.exists():
+        print("No phases found")
+        return
+
+    print("📋 Phases:")
+    for phase_dir in sorted(phases_dir.iterdir()):
+        if phase_dir.is_dir():
+            summary_file = phase_dir / "PHASE_SUMMARY.md"
+            if summary_file.exists():
+                # Extract basic info
+                with open(summary_file) as f:
+                    first_line = f.readline().strip()
+                    print(f"  {phase_dir.name}: {first_line}")
+            else:
+                print(f"  {phase_dir.name}")
 
 
 def cmd_closeout(project_name=None):
