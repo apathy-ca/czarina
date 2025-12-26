@@ -128,6 +128,49 @@ auto_approve_all() {
 declare -A LAST_ACTIVITY
 declare -A STUCK_COUNT
 
+# Activity threshold for quiet mode (default 5 minutes = 300 seconds)
+ACTIVITY_THRESHOLD=${DAEMON_ACTIVITY_THRESHOLD:-300}
+DAEMON_QUIET_MODE=${DAEMON_ALWAYS_OUTPUT:-false}
+
+# Function to check if there's been recent worker activity
+daemon_has_recent_activity() {
+    local threshold=$ACTIVITY_THRESHOLD
+    local now=$(date +%s)
+
+    # Check for recent git commits in any worker branch
+    cd "$PROJECT_ROOT" 2>/dev/null || return 1
+
+    for ((w=0; w<WORKER_COUNT; w++)); do
+        worker_branch=$(jq -r ".workers[$w].branch" "$CONFIG_FILE")
+
+        if [ "$worker_branch" != "null" ] && [ -n "$worker_branch" ]; then
+            # Check if branch has commits in the last N seconds
+            last_commit_time=$(git log "$worker_branch" -1 --format=%ct 2>/dev/null || echo "0")
+            age=$((now - last_commit_time))
+
+            if [ $age -lt $threshold ]; then
+                return 0  # Has recent activity
+            fi
+        fi
+    done
+
+    # Check for recent log file updates
+    if [ -d "${PROJECT_DIR}/logs" ]; then
+        for log_file in "${PROJECT_DIR}/logs"/*.log; do
+            if [ -f "$log_file" ]; then
+                last_mod=$(stat -c %Y "$log_file" 2>/dev/null || echo "0")
+                age=$((now - last_mod))
+
+                if [ $age -lt $threshold ]; then
+                    return 0  # Has recent activity
+                fi
+            fi
+        done
+    fi
+
+    return 1  # No recent activity
+}
+
 # Function to check for workers needing guidance
 check_for_issues() {
     local issues_found=0
@@ -249,25 +292,52 @@ notify_czar() {
 iteration=0
 while true; do
     ((iteration++))
-    echo "" | tee -a "$LOG_FILE"
-    echo "=== Iteration $iteration - $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$LOG_FILE"
 
-    # 1. Auto-approve everything that needs approval
-    auto_approve_all
-    approved=$?
+    # Check if we should output this iteration (quiet mode)
+    has_activity=false
+    if [ "$DAEMON_QUIET_MODE" = "true" ]; then
+        # Always output if quiet mode is disabled
+        has_activity=true
+    elif daemon_has_recent_activity; then
+        has_activity=true
+    fi
 
-    # 2. Check for issues that need Czar intelligence
-    check_for_issues
-    issues=$?
+    # Only output iteration header if there's activity
+    if [ "$has_activity" = true ]; then
+        echo "" | tee -a "$LOG_FILE"
+        echo "=== Iteration $iteration - $(date '+%Y-%m-%d %H:%M:%S') ===" | tee -a "$LOG_FILE"
+    fi
+
+    # 1. Auto-approve everything that needs approval (always run, but conditionally output)
+    if [ "$has_activity" = true ]; then
+        auto_approve_all
+        approved=$?
+    else
+        auto_approve_all &>> "$LOG_FILE"  # Silent approval
+        approved=$?
+    fi
+
+    # 2. Check for issues that need Czar intelligence (always run, but conditionally output)
+    if [ "$has_activity" = true ]; then
+        check_for_issues
+        issues=$?
+    else
+        check_for_issues &>> "$LOG_FILE"  # Silent check
+        issues=$?
+    fi
 
     # 3. If there were approvals or issues, give workers a moment then check again
     if [ $approved -gt 0 ] || [ $issues -gt 0 ]; then
         sleep 3
-        auto_approve_all  # Second pass to catch cascading prompts
+        if [ "$has_activity" = true ]; then
+            auto_approve_all  # Second pass to catch cascading prompts
+        else
+            auto_approve_all &>> "$LOG_FILE"
+        fi
     fi
 
     # 4. Proactive status report to Czar every 5 iterations (~10 min)
-    if [ $((iteration % 5)) -eq 0 ]; then
+    if [ $((iteration % 5)) -eq 0 ] && [ "$has_activity" = true ]; then
         echo "[$(date '+%H:%M:%S')] 📊 Generating status report for Czar..." | tee -a "$LOG_FILE"
         cd "$PROJECT_ROOT"
 
@@ -301,7 +371,7 @@ while true; do
             } | tee -a "$CZAR_LOG"
             echo "[$(date '+%H:%M:%S')] ✅ Status report written to czar-notifications.log" | tee -a "$LOG_FILE"
         else
-            echo "[$(date '+%H:%M:%S')] No recent activity to report" | tee -a "$LOG_FILE"
+            echo "[$(date '+%H:%M:%S')] No recent activity to report" >> "$LOG_FILE"  # Log only, don't display
         fi
     fi
 
