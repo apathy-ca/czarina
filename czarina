@@ -829,8 +829,8 @@ def cmd_dashboard(project_name=None):
     subprocess.run([sys.executable, str(dashboard_script)])
 
 
-def cmd_phase_close(project_name=None):
-    """Close current phase but keep project structure for next phase"""
+def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
+    """Close current phase with smart worktree cleanup"""
     czarina_dir, project_root = get_project_context(project_name)
     orchestrator_dir = get_orchestrator_dir()
     phase_close_script = orchestrator_dir / "czarina-core" / "phase-close.sh"
@@ -839,8 +839,15 @@ def cmd_phase_close(project_name=None):
         print(f"❌ Phase close script not found: {phase_close_script}")
         sys.exit(1)
 
+    # Build command
+    cmd = ["bash", str(phase_close_script), str(czarina_dir)]
+    if keep_worktrees:
+        cmd.append("--keep-worktrees")
+    if force_clean:
+        cmd.append("--force-clean")
+
     os.chdir(project_root)
-    subprocess.run(["bash", str(phase_close_script), str(czarina_dir)])
+    subprocess.run(cmd)
 
 
 def cmd_closeout(project_name=None):
@@ -1201,15 +1208,31 @@ def main():
         cmd_dashboard(project_name)
     elif command == "phase":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina phase <close> [project]")
+            print("❌ Usage: czarina phase <close|list> [options]")
             sys.exit(1)
         phase_cmd = sys.argv[2]
         if phase_cmd == "close":
+            # Parse flags and project name
+            project_name = None
+            keep_worktrees = False
+            force_clean = False
+
+            for i in range(3, len(sys.argv)):
+                arg = sys.argv[i]
+                if arg == "--keep-worktrees":
+                    keep_worktrees = True
+                elif arg == "--force-clean":
+                    force_clean = True
+                elif not arg.startswith("--"):
+                    project_name = arg
+
+            cmd_phase_close(project_name, keep_worktrees, force_clean)
+        elif phase_cmd == "list":
             project_name = sys.argv[3] if len(sys.argv) > 3 else None
-            cmd_phase_close(project_name)
+            cmd_phase_list(project_name)
         else:
             print(f"❌ Unknown phase command: {phase_cmd}")
-            print("   Available: close")
+            print("   Available: close, list")
             sys.exit(1)
     elif command == "closeout":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
