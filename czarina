@@ -23,6 +23,11 @@ Usage:
     czarina daemon stop [project]                - Stop daemon
     czarina daemon logs [project]                - Show daemon logs
     czarina daemon status [project]              - Check daemon status
+    czarina hopper add <file.md>                 - Add enhancement to project hopper
+    czarina hopper list [project|phase]          - List hopper items
+    czarina hopper pull <file> --to-phase        - Pull item into phase (v0.6.0+)
+    czarina hopper defer <file>                  - Defer item to backlog (v0.6.0+)
+    czarina hopper assign <worker> <file>        - Assign to worker (v0.6.0+)
     czarina patterns update                      - Update pattern library
     czarina patterns version                     - Show pattern version
     czarina patterns pending                     - List patterns ready to contribute
@@ -907,6 +912,24 @@ def cmd_daemon_status(project_name=None):
         print(f"   Start: czarina daemon start")
 
 
+def cmd_hopper(args):
+    """Manage the two-level hopper system"""
+    orchestrator_dir = get_orchestrator_dir()
+    hopper_script = orchestrator_dir / "czarina-core" / "hopper.sh"
+
+    if not hopper_script.exists():
+        print(f"❌ Hopper script not found: {hopper_script}")
+        sys.exit(1)
+
+    # Change to current directory (or project root if in a czarina project)
+    czarina_dir, project_root = find_czarina_dir()
+    if project_root:
+        os.chdir(project_root)
+
+    # Pass all arguments to the hopper script
+    subprocess.run(["bash", str(hopper_script)] + args)
+
+
 def cmd_patterns_update():
     """Update development patterns from upstream"""
     orchestrator_dir = get_orchestrator_dir()
@@ -1209,6 +1232,10 @@ def main():
             print(f"❌ Unknown daemon subcommand: {subcommand}")
             print("   Valid: start, stop, logs, status")
             sys.exit(1)
+    elif command == "hopper":
+        # Pass remaining arguments to hopper script
+        hopper_args = sys.argv[2:] if len(sys.argv) > 2 else []
+        cmd_hopper(hopper_args)
     elif command == "patterns":
         if len(sys.argv) < 3:
             print("❌ Usage: czarina patterns <update|version|pending|contribute>")
