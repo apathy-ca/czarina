@@ -32,6 +32,15 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+# Validate config (branch naming, phase, etc.)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -f "${SCRIPT_DIR}/validate-config.sh" ]; then
+    "${SCRIPT_DIR}/validate-config.sh" "$CONFIG_FILE" || {
+        echo -e "${RED}❌ Fix config errors before launching${NC}"
+        exit 1
+    }
+fi
+
 # Check for required tools
 if ! command -v jq &> /dev/null; then
     echo -e "${RED}❌ jq is required but not installed${NC}"
