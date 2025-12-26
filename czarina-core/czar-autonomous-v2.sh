@@ -20,6 +20,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source logging system
 source "${SCRIPT_DIR}/logging.sh"
 
+# Source hopper integration (Task 2)
+source "${SCRIPT_DIR}/czar-hopper-integration.sh"
+
 # Get czarina directory (either from parent dir or environment)
 CZARINA_DIR="${CZARINA_DIR:-$(dirname "$SCRIPT_DIR")}"
 
@@ -361,16 +364,21 @@ check_worker_health() {
 
     # Check for idle workers
     local idle_workers=$(detect_idle_workers)
+    local idle_count=0
+    local idle_worker_array=()
+
     if [[ -n "$idle_workers" ]]; then
         while IFS= read -r worker; do
             [[ -z "$worker" ]] && continue
 
             log_decision "DETECT" "IDLE_WORKER" "Detected idle worker: $worker" worker=$worker
-
-            # TODO: In Task 2, integrate with hopper to assign new work
-            # For now, just log it
+            idle_worker_array+=("$worker")
+            idle_count=$((idle_count + 1))
         done <<< "$idle_workers"
     fi
+
+    # Monitor hoppers and assign work to idle workers (Task 2)
+    monitor_hoppers "$idle_count" "${idle_worker_array[@]}"
 
     # Every N iterations, log a status summary
     if [[ $((iteration % STATUS_SUMMARY_INTERVAL)) -eq 0 ]]; then
@@ -393,8 +401,14 @@ log_status_summary() {
     local stuck=$(jq -r '[.workers[] | select(.health == "stuck")] | length' "$WORKER_STATUS_FILE" 2>/dev/null || echo "0")
     local crashed=$(jq -r '[.workers[] | select(.session_active == false and .status != "pending")] | length' "$WORKER_STATUS_FILE" 2>/dev/null || echo "0")
 
-    log_decision "INFO" "STATUS_SUMMARY" "Workers: $working working, $idle idle, $pending pending | Health: $healthy healthy, $stuck stuck, $crashed crashed" \
-        working=$working idle=$idle pending=$pending healthy=$healthy stuck=$stuck crashed=$crashed
+    # Get hopper statistics
+    local hopper_stats=$(count_phase_hopper_items 2>/dev/null || echo "todo:0 in_progress:0 done:0")
+    local hopper_todo=$(echo "$hopper_stats" | grep -oP 'todo:\K\d+' || echo "0")
+    local hopper_progress=$(echo "$hopper_stats" | grep -oP 'in_progress:\K\d+' || echo "0")
+    local hopper_done=$(echo "$hopper_stats" | grep -oP 'done:\K\d+' || echo "0")
+
+    log_decision "INFO" "STATUS_SUMMARY" "Workers: $working working, $idle idle, $pending pending | Health: $healthy healthy, $stuck stuck, $crashed crashed | Hopper: $hopper_todo todo, $hopper_progress in-progress, $hopper_done done" \
+        working=$working idle=$idle pending=$pending healthy=$healthy stuck=$stuck crashed=$crashed hopper_todo=$hopper_todo hopper_progress=$hopper_progress hopper_done=$hopper_done
 }
 
 # main_loop()

@@ -6,6 +6,7 @@ The Autonomous Czar is a continuous monitoring and decision-making system that t
 
 - **A3: Autonomous Czar Loop** - Continuous monitoring and decision-making
 - **A4: Worker Health Monitoring** - Detect stuck, idle, and crashed workers
+- **E#14: Hopper Monitoring** - Monitor project and phase hoppers, auto-assign work
 - **Structured Logging** - All decisions logged to both human-readable and machine-readable formats
 
 ## Architecture
@@ -13,29 +14,34 @@ The Autonomous Czar is a continuous monitoring and decision-making system that t
 ### Components
 
 1. **`czar-autonomous-v2.sh`** - Main autonomous loop script
-2. **`logging.sh`** - Structured logging system (dependency)
-3. **`update-worker-status.sh`** - Worker status tracking
-4. **`config.json`** - Worker configuration and dependencies
+2. **`czar-hopper-integration.sh`** - Hopper monitoring and auto-assignment (Task 2)
+3. **`logging.sh`** - Structured logging system (dependency)
+4. **`update-worker-status.sh`** - Worker status tracking
+5. **`config.json`** - Worker configuration and dependencies
 
 ### Monitoring Cycle
 
 ```
-┌─────────────────────────────────────┐
-│   Autonomous Czar Loop (30s)        │
-│                                     │
-│  1. Update worker-status.json       │
-│  2. Detect worker issues:           │
-│     • Crashed (session dead)        │
-│     • Stuck (no activity 30+ min)   │
-│     • Idle (completed/waiting)      │
-│  3. Make decisions:                 │
-│     • Alert on crashes              │
-│     • Prompt stuck workers          │
-│     • Check dependencies            │
-│     • (Task 2: Assign new work)     │
-│  4. Log all decisions               │
-│  5. Sleep 30s, repeat               │
-└─────────────────────────────────────┘
+┌────────────────────────────────────────────┐
+│   Autonomous Czar Loop (30s)               │
+│                                            │
+│  1. Update worker-status.json              │
+│  2. Detect worker issues:                  │
+│     • Crashed (session dead)               │
+│     • Stuck (no activity 30+ min)          │
+│     • Idle (completed/waiting)             │
+│  3. Make decisions:                        │
+│     • Alert on crashes                     │
+│     • Prompt stuck workers                 │
+│     • Check dependencies                   │
+│  4. Monitor hoppers (Task 2):              │
+│     • Check project hopper for new items   │
+│     • Assess items (auto-include/defer)    │
+│     • Check phase hopper for available work│
+│     • Auto-assign tasks to idle workers    │
+│  5. Log all decisions                      │
+│  6. Sleep 30s, repeat                      │
+└────────────────────────────────────────────┘
 ```
 
 ## Usage
@@ -138,20 +144,18 @@ Please report your status:
   - Tag @czar if you need human intervention
 ```
 
-### 3. Idle Workers
+### 3. Idle Workers & Hopper Monitoring (Task 2)
 
 ```bash
 # Detection
 status == "idle"
 
-# Actions (Current)
-• Log IDLE_WORKER detection
-• Monitor for state changes
-
-# Actions (Task 2 - Future)
-• Check hopper for available tasks
-• Assess task compatibility
-• Auto-assign or suggest to human
+# Actions
+1. Log IDLE_WORKER detection
+2. Check phase hopper/todo/ for available tasks
+3. If tasks available: Auto-assign to idle worker
+4. If no tasks: Check project hopper for new items to assess
+5. Monitor for state changes
 ```
 
 ### 4. Dependency Tracking (Basic)
@@ -168,6 +172,69 @@ for dep in dependencies:
         • Log DEPENDENCY_NOT_READY
         • Mark worker as potentially blocked
 ```
+
+### 5. Hopper Monitoring (Task 2)
+
+The autonomous czar continuously monitors both the project hopper and phase hopper to automatically manage task flow.
+
+#### Project Hopper Assessment
+
+```bash
+# For each new item in .czarina/hopper/
+1. Detect new items (not yet assessed)
+2. Parse metadata (Priority, Complexity, Tags)
+3. Apply assessment logic:
+
+# Auto-Include Rules
+• High priority + Small complexity + Idle workers available → auto-include
+• High priority + Medium complexity + Idle workers available → auto-include
+
+# Auto-Defer Rules
+• Tagged with "future" or version > current → auto-defer
+• Low priority → auto-defer
+• Large complexity + No idle workers → auto-defer
+
+# Ask-Human Rules
+• Medium priority (ambiguous) → ask-human
+• Missing or conflicting metadata → ask-human
+
+4. Take action:
+   • auto-include: Move to phase hopper/todo/
+   • auto-defer: Leave in project hopper, log decision
+   • ask-human: Alert with metadata for human decision
+```
+
+#### Phase Hopper Auto-Assignment
+
+```bash
+# When idle workers detected
+1. Check phase hopper/todo/ for available tasks
+2. For each idle worker (up to available tasks):
+   a. Select next task from todo/
+   b. Move task from todo/ to in-progress/
+   c. Inject task into worker tmux session
+   d. Log assignment decision
+3. Track assignments in event stream
+```
+
+#### Hopper Item Metadata
+
+Hopper items use this metadata structure (extracted from markdown):
+
+```markdown
+# Enhancement: Title Here
+
+**Priority:** High|Medium|Low
+**Complexity:** Small|Medium|Large
+**Tags:** comma, separated, tags
+**Suggested Phase:** v0.X.Y
+**Estimate:** X days
+```
+
+**Complexity Definitions:**
+- **Small**: 1-4 hours, single file, no breaking changes
+- **Medium**: 1-2 days, multiple files, some design needed
+- **Large**: 3+ days, architectural changes, multiple components
 
 ## Event Types
 
@@ -187,6 +254,16 @@ for dep in dependencies:
 | `COOLDOWN_ACTIVE`       | Stuck worker in prompt cooldown          | INFO   |
 | `SESSION_NOT_FOUND`     | Worker tmux session not found            | ERROR  |
 | `NO_WORKERS`            | No workers in configuration              | ERROR  |
+| `HOPPER_NEW_ITEM`       | New item detected in project hopper      | DETECT |
+| `HOPPER_AUTO_INCLUDE`   | Auto-including item to phase hopper      | ACTION |
+| `HOPPER_AUTO_DEFER`     | Auto-deferring item in project hopper    | INFO   |
+| `HOPPER_ASK_HUMAN`      | Human decision needed for hopper item    | ALERT  |
+| `HOPPER_MOVED_TO_PHASE` | Item moved to phase hopper/todo/         | SUCCESS|
+| `HOPPER_WORK_AVAILABLE` | Phase hopper has tasks for idle workers  | DETECT |
+| `HOPPER_ASSIGN_TASK`    | Assigning task to idle worker            | ACTION |
+| `HOPPER_ASSIGNED_TASKS` | Summary of tasks assigned                | SUCCESS|
+| `TASK_INJECTED`         | Task injected into worker session        | SUCCESS|
+| `HOPPER_NO_PHASE`       | No active phase hopper found             | INFO   |
 
 ## Configuration
 
@@ -269,21 +346,16 @@ session="czarina-${project_slug}:${worker_id}"
 tmux send-keys -t "$session" "message" C-m
 ```
 
-## Future Enhancements (Task 2 & 3)
+## Future Enhancements (Task 3)
 
-### Task 2: Hopper Monitoring
+### Task 3: Advanced Dependency Tracking & Coordination
 
-- Monitor project hopper for new items
-- Assess tasks (auto-include, auto-defer, ask-human)
-- Monitor phase hopper for idle worker assignments
-- Auto-assign compatible tasks to idle workers
-
-### Task 3: Advanced Dependency Tracking
-
-- Track task dependencies (not just worker dependencies)
+- Track task-level dependencies (not just worker-level dependencies)
 - Detect circular dependencies
-- Suggest integration order
+- Suggest integration order based on dependency graph
 - Auto-merge when dependencies complete
+- Coordination strategies for integration phases
+- Documentation in `docs/CZAR_COORDINATION.md`
 
 ## Testing
 
@@ -301,6 +373,8 @@ tail -f .czarina/logs/orchestration.log
 # - Leave a worker idle (no commits for 10+ minutes)
 # - Stop a worker's tmux session
 # - Check dependency blocking
+# - Add item to project hopper and watch assessment
+# - Create task in phase hopper/todo/ for idle worker
 ```
 
 ### Validating Decisions
@@ -382,14 +456,18 @@ mv /tmp/decisions.tmp .czarina/status/autonomous-decisions.log
 
 ## References
 
-- **IMPROVEMENT_PLAN A3**: Autonomous Czar Loop
-- **IMPROVEMENT_PLAN A4**: Worker Health Monitoring
-- **IMPROVEMENT_PLAN A2**: Structured Logging Integration
-- **Enhancement #14**: Hopper Monitoring (Task 2)
-- **IMPROVEMENT_PLAN B4**: Dependency Tracking (Task 3)
+- **IMPROVEMENT_PLAN A3**: Autonomous Czar Loop ✓ Implemented (Task 1)
+- **IMPROVEMENT_PLAN A4**: Worker Health Monitoring ✓ Implemented (Task 1)
+- **IMPROVEMENT_PLAN A2**: Structured Logging Integration ✓ Implemented (Task 1)
+- **Enhancement #14 Part 2**: Hopper Monitoring ✓ Implemented (Task 2)
+- **IMPROVEMENT_PLAN B3**: Two-Level Hopper System ✓ Integrated (Task 2)
+- **IMPROVEMENT_PLAN B4**: Dependency Tracking (Task 3 - Future)
 
 ## See Also
 
-- `docs/LOGGING.md` - Logging system documentation
-- `docs/WORKER_STATUS.md` - Worker status tracking
+- `czar-hopper-integration.sh` - Hopper monitoring implementation
+- `test-autonomous-czar.sh` - Test suite for autonomous loop
+- `test-hopper-integration.sh` - Test suite for hopper integration
+- `docs/LOGGING.md` - Logging system documentation (logging worker)
+- `docs/HOPPER.md` - Hopper system documentation (hopper worker)
 - `docs/CZAR_COORDINATION.md` - (Task 3) Overall coordination strategy
