@@ -50,6 +50,23 @@ else
     echo "⚠️  Warning: No omnibus branch defined"
 fi
 
+# Validate project slug (prevent tmux issues)
+SLUG=$(jq -r '.project.slug' "$CONFIG_FILE")
+
+if echo "$SLUG" | grep -qE '\.'; then
+    echo "❌ Project slug contains dots: '$SLUG'"
+    echo "   Tmux converts dots to underscores, causing session name mismatches"
+    echo "   Suggested: '${SLUG//./_}'"
+    ((ERRORS++))
+fi
+
+if echo "$SLUG" | grep -qE '[^a-zA-Z0-9_-]'; then
+    echo "❌ Project slug contains invalid characters: '$SLUG'"
+    echo "   Only alphanumeric, hyphens, and underscores allowed"
+    echo "   Suggested: '$(echo "$SLUG" | sed 's/[^a-zA-Z0-9_-]/_/g')'"
+    ((ERRORS++))
+fi
+
 if [ $ERRORS -gt 0 ]; then
     echo ""
     echo "❌ Validation failed with $ERRORS error(s)"
