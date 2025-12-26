@@ -1,0 +1,13 @@
+#!/bin/bash
+# Auto-log commits to worker log
+
+# Source logging if available
+if [ -f "../../czarina-core/logging.sh" ]; then
+    source "../../czarina-core/logging.sh"
+
+    # Get commit message
+    COMMIT_MSG=$(git log -1 --format=%s)
+
+    # Log the commit
+    czarina_log_checkpoint "$COMMIT_MSG"
+fi

@@ -316,6 +316,11 @@ if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
     done
 fi
 
+# Install git hooks in all worktrees
+echo ""
+echo -e "${BLUE}🪝 Installing git hooks in worktrees...${NC}"
+"${ORCHESTRATOR_DIR}/czarina-core/install-hooks.sh" "$CZARINA_DIR" "$PROJECT_ROOT"
+
 # Create daemon window
 echo "   • Daemon (auto-starting)"
 tmux send-keys -t "${MGMT_SESSION}:info" "echo '- Daemon (auto-monitoring)'" C-m
