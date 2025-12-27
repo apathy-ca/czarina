@@ -3,7 +3,7 @@
 Czarina - Multi-Agent Orchestration CLI
 Simple interface for managing multi-agent orchestration projects
 
-Version: 0.4.0
+Version: 0.6.0
 
 Usage:
     czarina analyze <plan-file>                  - Analyze plan and suggest orchestration
@@ -14,10 +14,9 @@ Usage:
     czarina init --plan <plan.md>                - Initialize from implementation plan (launches agent)
     czarina init --from-config <config.json>     - Initialize from pre-made config file
     czarina init --from-config <file> --force    - Re-initialize (replaces existing)
-    czarina list                                 - List all Czarina projects
-    czarina launch [project]                     - Launch project workers
-    czarina status [project]                     - Show project status
-    czarina dashboard [project]                  - Live monitoring dashboard
+    czarina launch                               - Launch workers (searches current dir and parents)
+    czarina status                               - Show project status
+    czarina dashboard                            - Live monitoring dashboard
     czarina phase close [project]                - Close current phase, keep project for next phase
     czarina closeout [project]                   - Stop all workers and clean up completely
     czarina daemon start [project]               - Start autonomous daemon
@@ -31,7 +30,7 @@ Usage:
     czarina version                              - Show version information
 """
 
-CZARINA_VERSION = "0.5.1"
+CZARINA_VERSION = "0.6.0"
 
 import sys
 import subprocess
@@ -70,64 +69,29 @@ def find_czarina_dir(start_path=None):
     return None, None
 
 
-def find_project_by_name(project_name):
-    """
-    Search for a project by name in common locations
-    Returns (czarina_dir, project_root) or (None, None)
-    """
-    # Search in home directory projects
-    home = Path.home()
-    search_paths = [
-        home / "projects",
-        home / "Source",
-        home / "Source" / "GRID",
-        home / "code",
-        home / "dev",
-    ]
-
-    for base in search_paths:
-        if not base.exists():
-            continue
-        for item in base.rglob(".czarina"):
-            if item.is_dir():
-                config_file = item / "config.json"
-                if config_file.exists():
-                    try:
-                        with open(config_file) as f:
-                            config = json.load(f)
-                            if config.get("project", {}).get("slug") == project_name:
-                                return item, item.parent
-                    except:
-                        pass
-
-    return None, None
+# find_project_by_name() removed - czarina is purely local to each repo
+# Use current directory or parent directories only
 
 
 def get_project_context(project_name=None):
     """
     Get project context (czarina_dir and project_root)
 
-    Priority:
-    1. If project_name given, search for it
-    2. Look for .czarina/ in current directory or parents
-    3. Fail with helpful message
+    Searches current directory and parent directories for .czarina/
     """
     if project_name:
-        czarina_dir, project_root = find_project_by_name(project_name)
-        if czarina_dir:
-            return czarina_dir, project_root
-        print(f"❌ Project '{project_name}' not found")
-        print(f"💡 Run 'czarina list' to see available projects")
-        sys.exit(1)
+        print(f"⚠️  Project name argument is deprecated")
+        print(f"   Czarina is local to each repo - cd to the project directory instead")
+        print()
 
-    # Try current directory
+    # Look for .czarina/ in current directory or parents
     czarina_dir, project_root = find_czarina_dir()
     if czarina_dir:
         return czarina_dir, project_root
 
     print("❌ No Czarina project found")
-    print("💡 Run 'czarina init' in your project directory")
-    print("💡 Or specify project name: 'czarina launch <project>'")
+    print("💡 Run 'czarina init --plan <plan.md>' to create orchestration")
+    print("💡 Or cd to a directory with .czarina/ configuration")
     sys.exit(1)
 
 
@@ -740,60 +704,8 @@ Created: {datetime.now().strftime('%Y-%m-%d')}
     print(f"\n💡 Read more: {orchestrator_dir}/docs/BRANCH_BASED_WORKER_LOADING.md")
 
 
-def cmd_list():
-    """List all Czarina projects"""
-    home = Path.home()
-    search_paths = [
-        home / "projects",
-        home / "Source",
-        home / "Source" / "GRID",
-        home / "code",
-        home / "dev",
-    ]
-
-    projects = []
-    for base in search_paths:
-        if not base.exists():
-            continue
-        for item in base.rglob(".czarina"):
-            if item.is_dir():
-                # Skip worker worktrees (not separate projects)
-                if ".czarina/worktrees" in str(item):
-                    continue
-
-                # Skip archive directories
-                if "/archive/" in str(item):
-                    continue
-
-                # Skip phases directory
-                if ".czarina/phases" in str(item):
-                    continue
-
-                config_file = item / "config.json"
-                if config_file.exists():
-                    try:
-                        with open(config_file) as f:
-                            config = json.load(f)
-                            projects.append({
-                                "name": config.get("project", {}).get("name", "Unknown"),
-                                "slug": config.get("project", {}).get("slug", "unknown"),
-                                "path": item.parent,
-                                "workers": len(config.get("workers", []))
-                            })
-                    except:
-                        pass
-
-    if not projects:
-        print("📋 No Czarina projects found")
-        print("💡 Run 'czarina init' in a project directory to create one")
-        return
-
-    print("📋 Czarina Projects:\n")
-    for p in sorted(projects, key=lambda x: x["name"]):
-        print(f"  • {p['name']} ({p['slug']})")
-        print(f"    Path: {p['path']}")
-        print(f"    Workers: {p['workers']}")
-        print()
+# cmd_list() removed - czarina is purely local to each repo
+# No global project registry needed
 
 
 def cmd_launch(project_name=None):
@@ -813,8 +725,24 @@ def cmd_launch(project_name=None):
     print(f"   Project: {project_root}")
     print()
 
-    # Check if git branches exist, initialize if needed
+    # Check if git repo exists
     orchestrator_dir = get_orchestrator_dir()
+    if not (project_root / ".git").exists():
+        print("⚠️  This directory is not a git repository")
+        print()
+        response = input("Would you like to initialize a git repo? (Y/n): ")
+        if response.lower() not in ['n', 'no']:
+            print("📦 Initializing git repository...")
+            subprocess.run(["git", "-C", str(project_root), "init"], check=True)
+            subprocess.run(["git", "-C", str(project_root), "add", ".czarina"], check=True)
+            subprocess.run(["git", "-C", str(project_root), "commit", "-m", "chore: Initialize czarina orchestration"], check=True)
+            print("✅ Git repository initialized")
+            print()
+        else:
+            print("⚠️  Continuing without git - some features may not work")
+            print()
+
+    # Check if git branches exist, initialize if needed
     if (project_root / ".git").exists():
         # Check if any worker branches are missing
         branches_missing = False
@@ -1251,8 +1179,6 @@ def main():
                 i += 1
 
         cmd_init(project_name, from_config, from_plan, force)
-    elif command == "list":
-        cmd_list()
     elif command == "launch":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_launch(project_name)
