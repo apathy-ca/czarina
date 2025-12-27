@@ -77,10 +77,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Filters out .czarina/phases/* (historical data)
   - Shows only actual top-level czarina orchestrations
 
+### Integrated Post-Release (v0.6.1+)
+
+**Note:** The following features from v0.6.0 worker branches were integrated into main after the v0.6.1 tag was created. They are available on the main branch but not included in the v0.6.1 GitHub release.
+
+**Autonomous Czar v2** - Advanced orchestration coordination (3,257 lines)
+  - czar-autonomous-v2.sh - Modern autonomous loop with structured logging
+  - czar-hopper-integration.sh - Hopper monitoring and auto-assignment
+  - czar-dependency-tracking.sh - Worker dependency tracking and coordination
+  - Worker health detection (crashed/stuck/idle)
+  - 30s monitoring cycle with decision logging
+  - Complete test suites (45 automated tests, all passing)
+  - docs/AUTONOMOUS_CZAR.md - Complete autonomous czar guide
+  - docs/CZAR_COORDINATION.md - Coordination documentation
+
+**Hopper Implementation** - Full hopper system (2,065 lines)
+  - czarina-core/hopper.sh - Complete CLI implementation
+  - Commands: list, pull, defer, assign
+  - Priority queue logic (Priority × Complexity)
+  - Metadata parsing and validation
+  - docs/HOPPER.md - Complete hopper documentation
+  - Example enhancement files with metadata
+  - Makes hopper actually functional (was documentation-only before)
+
+**Phase Management Enhancements** - Robust phase lifecycle (524 lines)
+  - Smart worktree cleanup (keep dirty, remove clean)
+  - Phase history archiving to .czarina/phases/
+  - czarina-core/validate-config.sh - Config validation
+  - czarina phase list command
+  - Session naming validation
+  - Phase-aware branch initialization
+  - docs/PHASE_MANAGEMENT.md - Phase management guide
+  - docs/BRANCH_NAMING.md - Branch naming conventions
+
+**v0.6.0 Branch Integration** - Completed integration of worker branches
+  - Integrated code from autonomous-czar, hopper, and phase-mgmt branches
+  - 14 commits, 6,549 lines added, 130 lines removed
+  - 39 files modified
+  - Archived v0.6.0 branches to .czarina/phases/phase-1-v0.6.0/
+  - INTEGRATION_SUMMARY.md - Complete integration documentation
+
+**Testing & Validation** - Comprehensive v0.6.1 testing
+  - TEST_RESULTS.md - 13 test cases, 100% pass rate
+  - Validated all 8 v0.6.1 features
+  - Production-ready certification
+  - No bugs found
+
+**Coordination Note:** This integration work was completed via czarina orchestration (3 workers: integration, testing, release) but was inadvertently omitted from the release/v0.6.1 branch merge. It was pragmatically forward-merged into main post-release. See INTEGRATION_SUMMARY.md for complete details.
+
 ---
 
 **Release Focus:**
 This patch release improves the initialization workflow and fixes several UX issues discovered during dogfooding. Key improvements include auto-launching the Czar agent, streamlined project initialization with `czarina init --plan`, and better orchestration mode configuration for local vs GitHub workflows.
+
+**Post-Release Integration:** Significant additional features (autonomous czar v2, hopper implementation, phase management) were integrated after the v0.6.1 tag was created and are available on the main branch.
 
 [Full Changelog](https://github.com/apathy-ca/czarina/compare/v0.6.0...v0.6.1)
 
