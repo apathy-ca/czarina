@@ -100,6 +100,48 @@ czarina daemon start
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
 - 📚 **Pattern Library** - 30-50% faster debugging with proven patterns
 
+### ✨ What's New in v0.6.1
+
+**Patch Release - Streamlined Initialization & UX Improvements** (December 2025)
+
+Better workflow for starting new projects and improved orchestration experience:
+
+#### 🚀 Streamlined Initialization
+One command to create your orchestration from a plan file:
+
+```bash
+czarina init --plan docs/implementation-plan.md
+```
+
+Claude Code launches interactively to create config.json and worker files - no more manual configuration!
+
+#### 🎭 Auto-launch Czar
+The Czar (coordination agent) now auto-launches with Claude Code, just like workers:
+- Creates CZAR_IDENTITY.md with coordination instructions
+- Configurable via config.czar.agent
+- Context-aware prompts for monitoring and coordination
+
+#### 🏢 Orchestration Mode
+Configure how workers are managed:
+- **local** mode: Git worktrees, no auto-push (default)
+- **github** mode: Workers via GitHub for Claude Code Web
+- Prevents accidental pushes in local development
+
+#### 🛡️ Omnibus Branch Protection
+Prevents accidental feature work on release branches:
+- Only integration workers (QA, etc.) can use omnibus branch
+- All other workers must use feature branches
+- Validates at launch time
+
+#### 🪟 Better tmux Window Names
+- Before: worker1, worker2, worker3
+- After: logging, phase-mgmt, hopper
+- Much easier to navigate!
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+---
+
 ### ✨ What's New in v0.6.0
 
 **Minor Release - Professional Closeout Reporting** (December 2025)

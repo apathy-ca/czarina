@@ -5,6 +5,85 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2025-12-26
+
+### Added
+
+**Auto-launch Czar with Claude** - Czar window now gets Claude auto-launched
+  - Creates CZAR_IDENTITY.md with coordination instructions
+  - Configurable via config.czar.agent (defaults to "claude")
+  - Czar runs from project root (not a worktree)
+  - Context-aware prompts for both Czar and workers
+
+**Orchestration Mode (local vs github)** - Configure how workers are managed
+  - 'local' mode: workers use git worktrees, no auto-push (default)
+  - 'github' mode: workers via GitHub (Claude Code Web)
+  - Auto-push only enabled when mode='github' AND auto_push_branches=true
+  - Configuration: orchestration.mode in config.json
+
+**Omnibus Branch Protection** - Prevent accidental feature work on release branches
+  - Only integration workers (role='integration') can use omnibus branch
+  - All other workers MUST use feature branches
+  - Validates branch usage at launch time
+
+**Project Hopper** - Enhancement queue management
+  - Initialize hopper structure (.czarina/hopper/)
+  - README and example files
+  - Integrated with orchestration mode
+
+**Streamlined Initialization** - czarina init --plan command
+  - Combines analyze + init into single command
+  - Launches Claude Code with plan file for interactive setup
+  - Creates config.json and worker files interactively
+  - Auto-detects and uses Claude Code CLI
+
+**Git Repository Prompt** - Guides users to initialize git if needed
+  - Detects non-git directories
+  - Prompts to run git init
+  - Ensures czarina works in proper git context
+
+### Changed
+
+- **Simplified czarina analyze** - Now uses Claude Code directly instead of complex Python analyzer
+  - No more cut/paste required - Claude has direct file access
+  - Interactive workflow with coding agent
+  - Removed 400+ lines of analyzer code
+
+- **Worker IDs in tmux window names** - More readable window identification
+  - Before: worker1, worker2, worker3 (generic)
+  - After: logging, phase-mgmt, hopper (actual worker IDs)
+  - Makes tmux window list much clearer
+
+- **Czarina is purely local** - Removed global project registry
+  - No more czarina list command scanning filesystem
+  - Each repo is self-contained
+  - Use standard tools (find, cd) to navigate projects
+
+- **Claude Code only for init --plan** - Simplified agent detection
+  - Removed auto-detection of multiple agents (aider, kilocode)
+  - Clear error if Claude not installed
+  - Prevents configuration issues with unconfigured agents
+
+### Fixed
+
+- **Closeout session cleanup** - Kill both main and mgmt tmux sessions
+  - Previously left orphaned management sessions running
+  - Now explicitly kills czarina-{slug} and czarina-{slug}-mgmt
+  - Uses tmux has-session for reliable detection
+
+- **czarina list filtering** - No longer shows worktrees and archives
+  - Filters out .czarina/worktrees/* (worker worktrees)
+  - Filters out archive/ directories
+  - Filters out .czarina/phases/* (historical data)
+  - Shows only actual top-level czarina orchestrations
+
+---
+
+**Release Focus:**
+This patch release improves the initialization workflow and fixes several UX issues discovered during dogfooding. Key improvements include auto-launching the Czar agent, streamlined project initialization with `czarina init --plan`, and better orchestration mode configuration for local vs GitHub workflows.
+
+[Full Changelog](https://github.com/apathy-ca/czarina/compare/v0.6.0...v0.6.1)
+
 ## [0.6.0] - 2025-12-26
 
 ### Added
@@ -188,6 +267,8 @@ Initial production-ready release of Czarina.
 
 ## Version History
 
+- **v0.6.1** - Streamlined initialization, orchestration mode, auto-launch Czar (December 2025)
+- **v0.6.0** - Comprehensive closeout reports, logging auto-initialization (December 2025)
 - **v0.5.1** - Auto-launch agent system, daemon quiet mode (December 2025)
 - **v0.5.0** - Structured logging, session workspaces, proactive coordination (December 2025)
 - **v0.4.0** - Initial production-ready release (November 2025)
