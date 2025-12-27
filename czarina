@@ -959,13 +959,8 @@ def cmd_analyze(plan_file, output_file=None, auto_init=False, interactive=False)
     """
     Analyze implementation plan and suggest orchestration setup
 
-    Uses Claude AI to analyze the plan and generate complete orchestration setup.
-
-    Interactive mode: Works with any AI agent (Claude Code, Cursor, etc.)
-    Automated mode: Requires Anthropic API key
+    Launches Claude Code to help create czarina orchestration from plan file.
     """
-    from analyzer import ProjectAnalyzer
-
     orchestrator_dir = get_orchestrator_dir()
 
     print("🔍 Czarina Project Analysis")
@@ -973,7 +968,7 @@ def cmd_analyze(plan_file, output_file=None, auto_init=False, interactive=False)
     print()
 
     # Check if plan file exists
-    plan_path = Path(plan_file)
+    plan_path = Path(plan_file).resolve()
     if not plan_path.exists():
         print(f"❌ Plan file not found: {plan_file}")
         sys.exit(1)
@@ -981,407 +976,74 @@ def cmd_analyze(plan_file, output_file=None, auto_init=False, interactive=False)
     print(f"📄 Input Plan: {plan_file}")
     print()
 
-    # Read plan file
-    with open(plan_path) as f:
-        plan_content = f.read()
+    # Create .czarina directory if it doesn't exist
+    current_dir = Path.cwd()
+    czarina_dir = current_dir / ".czarina"
 
-    plan_lines = len(plan_content.split('\n'))
-    plan_words = len(plan_content.split())
+    if not czarina_dir.exists():
+        print("📁 Creating .czarina directory structure...")
+        czarina_dir.mkdir()
+        (czarina_dir / "workers").mkdir()
+        print("   ✅ Created .czarina/")
+        print("   ✅ Created .czarina/workers/")
+        print()
 
-    print(f"📊 Plan Statistics:")
-    print(f"   Lines: {plan_lines}")
-    print(f"   Words: {plan_words}")
-    print(f"   Characters: {len(plan_content)}")
+    # Build Claude Code prompt
+    prompt = f"""Read the implementation plan at {plan_path} and help me set up a czarina orchestration.
+
+Please:
+1. Analyze the plan and identify the key workers needed
+2. Create a config.json file in .czarina/ with the project structure
+3. Create worker definition markdown files in .czarina/workers/ for each worker
+4. Follow the czarina configuration format (see examples in czarina-core/templates/ if available)
+
+The config.json should include:
+- project metadata (name, slug, version, phase)
+- worker definitions (id, branch, dependencies)
+- any special configuration (hopper, orchestration mode, etc.)
+
+Each worker markdown file should include:
+- Mission and deliverables
+- Detailed task breakdown
+- References to relevant documentation
+
+Let's get started!"""
+
+    print("🚀 Launching Claude Code to help with orchestration setup...")
+    print()
+    print("💡 Claude will help you create:")
+    print("   - .czarina/config.json")
+    print("   - .czarina/workers/*.md files")
     print()
 
-    # Create analyzer and run analysis
+    # Launch Claude Code
     try:
-        analyzer = ProjectAnalyzer(orchestrator_dir)
-
-        if interactive:
-            print("🤝 Interactive Mode - Works with ANY AI agent!")
-            print()
-        else:
-            print("🤖 Automated Mode - Using Claude API...")
-            print()
-
-        analysis = analyzer.analyze(plan_content, plan_path, interactive=interactive)
-
-        # Print summary
-        analyzer.print_summary(analysis)
-
-        # Save analysis if output file specified
-        if output_file:
-            analyzer.save_analysis(analysis, output_file)
-            print(f"💾 Analysis saved to: {output_file}")
-            print()
-
-        # Auto-initialize project if requested
-        if auto_init:
-            print("🚀 Auto-initializing project...")
-            print()
-
-            current_dir = Path.cwd()
-
-            # Check if already initialized
-            czarina_dir = current_dir / ".czarina"
-            if czarina_dir.exists():
-                print(f"❌ Project already initialized in {current_dir}")
-                print(f"   .czarina/ directory exists")
-                print()
-                print("💡 To re-analyze, delete .czarina/ first or use --output to save analysis only")
-                sys.exit(1)
-
-            # Create .czarina/ structure
-            czarina_dir.mkdir()
-            (czarina_dir / "workers").mkdir()
-            (czarina_dir / "status").mkdir()
-
-            # Generate and save config.json
-            config = analyzer.generate_config(analysis, current_dir)
-            config_file = czarina_dir / "config.json"
-            with open(config_file, 'w') as f:
-                json.dump(config, f, indent=2)
-            print(f"✅ Created: .czarina/config.json")
-
-            # Generate and save worker prompts
-            worker_prompts = analyzer.generate_worker_prompts(analysis)
-            for worker_id, prompt_content in worker_prompts.items():
-                worker_file = czarina_dir / "workers" / f"{worker_id}.md"
-                with open(worker_file, 'w') as f:
-                    f.write(prompt_content)
-                print(f"✅ Created: .czarina/workers/{worker_id}.md")
-
-            # Create CZAR.md (orchestrator instructions)
-            czar_file = czarina_dir / "workers" / "CZAR.md"
-            worker_count = len(config["workers"])
-            worker_list = "\n".join([f"- **{w['id']}**: {w.get('description', 'Worker')}"
-                                     for w in config["workers"]])
-            with open(czar_file, 'w') as f:
-                f.write(f"""# Czar - Orchestration Coordinator
-
-## Your Role
-
-You are the **Czar** - the orchestration coordinator for this multi-agent project.
-
-**Project:** {config['project']['name']}
-**Workers:** {worker_count}
-**Your Window:** tmux window 0 (czar)
-
-## Responsibilities
-
-### 1. Monitor Worker Progress
-- Track completion of worker tasks
-- Identify blockers and dependencies
-- Coordinate handoffs between workers
-
-### 2. Manage Integration
-- Review PRs from workers as they complete
-- Coordinate merges when dependencies are met
-- Ensure integration tests pass
-
-### 3. Track Project Health
-- Monitor test coverage and quality
-- Watch for conflicts or duplicate work
-- Keep project documentation updated
-
-### 4. Coordinate Communication
-- Facilitate cross-worker discussions
-- Escalate issues that need user input
-- Document decisions and changes
-
-## Workers
-
-{worker_list}
-
-## Quick Commands
-
-### Tmux Navigation
-```bash
-# Switch to worker windows
-Ctrl+b 1    # Worker 1
-Ctrl+b 2    # Worker 2
-# ... etc
-
-# List all windows
-Ctrl+b w
-
-# Switch sessions (for >9 workers)
-Ctrl+b s
-
-# Detach from session
-Ctrl+b d
-```
-
-### Git Operations
-```bash
-# Check all worker branches
-git branch -a
-
-# Check worktrees
-git worktree list
-
-# View worker's changes
-git log <worker-branch> --oneline
-
-# Check for conflicts
-git diff main...<worker-branch>
-```
-
-### Czarina Commands
-```bash
-# Check project status
-czarina status
-
-# View dashboard (if available)
-czarina dashboard
-
-# Check daemon status
-czarina daemon status
-
-# View daemon logs
-czarina daemon logs
-```
-
-## Workflow
-
-1. **Launch Phase**
-   - All workers start in their isolated worktrees
-   - Each has their instructions in `.czarina/workers/<worker-id>.md`
-   - Monitor tmux windows to see progress
-
-2. **Development Phase**
-   - Workers implement their assigned features
-   - You track progress and coordinate
-   - Help resolve blockers or conflicts
-
-3. **Integration Phase**
-   - Workers create PRs as they complete
-   - You review and coordinate merges
-   - Watch for dependency ordering
-
-4. **Completion Phase**
-   - Verify all features integrated
-   - Run full test suite
-   - Update project documentation
-   - Prepare release notes
-
-## Tips
-
-- **Be proactive**: Check in on workers periodically
-- **Document decisions**: Keep notes on what's been decided
-- **Watch dependencies**: Some workers may need others to finish first
-- **Communicate clearly**: Make sure workers know about changes affecting them
-- **Stay organized**: Use this window to track TODOs and status
-
-## Status Tracking
-
-You can track worker status here:
-
-```markdown
-## Worker Status
-
-- [ ] {config['workers'][0]['id']} - {config['workers'][0].get('description', 'In progress')}
-{''.join([f"- [ ] {w['id']} - {w.get('description', 'In progress')}" + chr(10) for w in config['workers'][1:]])}
-```
-
-Update this as workers complete their tasks!
-
----
-
-**Remember:** You're the coordinator, not a micromanager. Trust your workers to do their jobs, but be ready to help when needed.
-
-✅ Ready to orchestrate!
-""")
-            print(f"✅ Created: .czarina/workers/CZAR.md")
-
-            # Save complete analysis
-            analysis_file = czarina_dir / "analysis.json"
-            analyzer.save_analysis(analysis, analysis_file)
-            print(f"✅ Created: .czarina/analysis.json")
-
-            # Create .worker-init script
-            worker_init = czarina_dir / ".worker-init"
-            with open(worker_init, "w") as f:
-                f.write(f"""#!/bin/bash
-# Czarina Worker Auto-Init
-# This script helps workers discover their role and setup
-
-CZARINA_DIR="$(cd "$(dirname "${{BASH_SOURCE[0]}})" && pwd)"
-CONFIG_FILE="$CZARINA_DIR/config.json"
-
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "❌ Config file not found: $CONFIG_FILE"
-    exit 1
-fi
-
-# Show available workers
-echo "📋 Available workers:"
-jq -r '.workers[] | "  • \\(.id) - \\(.description)"' "$CONFIG_FILE"
-echo ""
-
-# If worker ID provided, load it
-if [ -n "$1" ]; then
-    WORKER_ID="$1"
-    WORKER_FILE="$CZARINA_DIR/workers/$WORKER_ID.md"
-
-    if [ -f "$WORKER_FILE" ]; then
-        echo "✅ Loading worker: $WORKER_ID"
-        cat "$WORKER_FILE"
-    else
-        echo "❌ Worker file not found: $WORKER_FILE"
-        exit 1
-    fi
-else
-    echo "💡 Usage: ./.czarina/.worker-init <worker-id>"
-fi
-""")
-            worker_init.chmod(0o755)
-            print(f"✅ Created: .czarina/.worker-init")
-
-            # Create README
-            readme = czarina_dir / "README.md"
-            project_name = analysis["analysis"]["project_name"]
-            with open(readme, "w") as f:
-                f.write(f"""# Czarina Orchestration - {project_name}
-
-## Quick Start
-
-### For Workers
-
-**Claude Code / Desktop:**
-```bash
-./.czarina/.worker-init <worker-id>
-```
-
-**Claude Code Web (auto-discovery):**
-Just say: "You are <worker-id>"
-
-### For Orchestrators
-
-**Launch all workers:**
-```bash
-czarina launch
-```
-
-**Start daemon (auto-approval):**
-```bash
-czarina daemon start
-```
-
-**Check status:**
-```bash
-czarina status
-```
-
-## Configuration
-
-Edit `.czarina/config.json` to:
-- Add/remove workers
-- Configure agent types
-- Set daemon behavior
-- Update token budgets
-
-Edit `.czarina/workers/*.md` to define worker roles and tasks.
-
-## Workers
-
-{chr(10).join(f"- **{w['id']}**: {w['description']}" for w in config['workers'])}
-
-## Version Plan
-
-{chr(10).join(f"- **{v}**: {config['version_plan'][v]['description']} ({config['version_plan'][v]['token_budget']['projected']:,} tokens)" for v in config['version_plan'])}
-
-## Project
-
-**Repository:** {current_dir}
-**Orchestration:** .czarina/
-**Generated:** {datetime.now().strftime('%Y-%m-%d')}
-**From:** {plan_file}
-""")
-            print(f"✅ Created: .czarina/README.md")
-
-            # Update .gitignore
-            gitignore = current_dir / ".gitignore"
-            gitignore_content = ""
-            if gitignore.exists():
-                gitignore_content = gitignore.read_text()
-
-            if ".czarina/status/" not in gitignore_content:
-                with open(gitignore, "a") as f:
-                    if gitignore_content and not gitignore_content.endswith("\n"):
-                        f.write("\n")
-                    f.write("\n# Czarina orchestration\n")
-                    f.write(".czarina/status/\n")
-                    f.write(".czarina/worktrees/\n")
-                print(f"✅ Updated: .gitignore")
-
-            # Copy branch loader script
-            loader_template = orchestrator_dir / "czarina-core" / "templates" / "embedded-orchestration" / "load-worker-by-branch.sh"
-            loader_dest = czarina_dir / "load-worker-by-branch.sh"
-            if loader_template.exists():
-                import shutil
-                shutil.copy(loader_template, loader_dest)
-                loader_dest.chmod(0o755)
-                print(f"✅ Created: .czarina/load-worker-by-branch.sh")
-
-            # Initialize git branches
-            print()
-            print("🌿 Initializing git branches...")
-            init_branches_script = orchestrator_dir / "czarina-core" / "init-embedded-branches.sh"
-            if init_branches_script.exists() and (current_dir / ".git").exists():
-                result = subprocess.run(
-                    ["bash", str(init_branches_script), str(current_dir)],
-                    input="n\n",  # Auto-answer "no" to pull prompt
-                    text=True,
-                    capture_output=True
-                )
-                if result.returncode == 0:
-                    print(f"✅ Git branches initialized")
-                else:
-                    print(f"⚠️  Branch initialization failed (may need manual setup)")
-                    print(f"   Run: ./czarina-core/init-embedded-branches.sh .")
-            else:
-                if not (current_dir / ".git").exists():
-                    print(f"⚠️  Not a git repository - skipping branch initialization")
-                    print(f"   Initialize git first: git init && git add . && git commit -m 'Initial commit'")
-                else:
-                    print(f"⚠️  Branch init script not found")
-
-            print()
-            print("=" * 60)
-            print("✅ PROJECT INITIALIZED")
-            print("=" * 60)
-            print()
-            print(f"📁 Location: {current_dir}")
-            print(f"📋 Project: {project_name}")
-            print(f"👷 Workers: {len(config['workers'])}")
-            print(f"📦 Versions: {len(config['version_plan'])}")
-            print()
-            print("📝 Next steps:")
-            print("  1. Review .czarina/config.json")
-            print("  2. Review .czarina/workers/*.md")
-            print("  3. (Optional) Setup SessionStart hook in .claude/settings.local.json:")
-            print("     See: docs/BRANCH_BASED_WORKER_LOADING.md")
-            print("  4. git add .czarina/")
-            print("  5. git commit -m 'Add Czarina orchestration'")
-            print("  6. Workers: git checkout <branch> && start your agent")
-            print("  7. (Optional) czarina daemon start")
-            print()
-
-        else:
-            print()
-            print("💡 To initialize project with this analysis:")
-            print(f"   czarina analyze {plan_file} --init")
-            print()
-            print("Or save analysis for later:")
-            print(f"   czarina analyze {plan_file} --output analysis.json")
-            print()
+        import subprocess
+        subprocess.run(["claude", prompt], check=True)
+
+        print()
+        print("=" * 60)
+        print()
+        print("✅ Claude Code session complete!")
+        print()
+        print("📋 Next steps:")
+        print("   1. Verify .czarina/config.json was created")
+        print("   2. Verify .czarina/workers/*.md files exist")
+        print("   3. Launch the orchestration:")
+        print("      czarina launch")
+        print()
+
+    except FileNotFoundError:
+        print()
+        print("❌ Error: 'claude' command not found")
+        print("   Please install Claude Code CLI: https://code.claude.com")
+        print()
+        sys.exit(1)
 
     except Exception as e:
-        print(f"❌ Analysis failed: {e}")
-        import traceback
-        traceback.print_exc()
+        print()
+        print(f"❌ Failed to launch Claude Code: {e}")
+        print()
         sys.exit(1)
 
     print("=" * 60)
