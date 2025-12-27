@@ -241,6 +241,18 @@ def cmd_init_from_config(config_file_path, current_dir, czarina_dir):
         budget = worker_data.get("budget", {})
         token_budget = budget.get("tokens_projected", budget.get("tokens_max", "N/A"))
 
+        # Format token budget with commas only if it's a number
+        if isinstance(token_budget, (int, float)):
+            token_budget_str = f"{token_budget:,}"
+        else:
+            token_budget_str = str(token_budget)
+
+        token_max = budget.get('tokens_max', 'N/A')
+        if isinstance(token_max, (int, float)):
+            token_max_str = f"{token_max:,}"
+        else:
+            token_max_str = str(token_max)
+
         with open(worker_file, 'w') as f:
             f.write(f"""# {worker_data.get('name', worker_id)}
 
@@ -251,7 +263,7 @@ def cmd_init_from_config(config_file_path, current_dir, czarina_dir):
 {worker_data.get('branch', f'feat/{worker_id}')}
 
 ## Token Budget
-{token_budget:,} tokens (max: {budget.get('tokens_max', 'N/A')})
+{token_budget_str} tokens (max: {token_max_str})
 {tasks_section}{files_section}{criteria_section}
 
 ## Dependencies
