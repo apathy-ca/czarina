@@ -1,0 +1,11 @@
+ .czarina/hopper/PHASE_HOPPER_TEMPLATE.md           |  56 ++
+ .czarina/hopper/README.md                          |  96 +++
+ .czarina/hopper/examples/README.md                 | 282 +++++++++
+ .../examples/example-1-high-priority-small.md      |  69 +++
+ .../examples/example-2-medium-priority-medium.md   | 101 ++++
+ .../examples/example-3-low-priority-large.md       | 214 +++++++
+ WORKER_IDENTITY.md                                 |  33 ++
+ czarina                                            |  27 +
+ czarina-core/hopper.sh                             | 653 +++++++++++++++++++++
+ docs/HOPPER.md                                     | 534 +++++++++++++++++
+ 10 files changed, 2065 insertions(+)

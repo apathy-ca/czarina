@@ -1,0 +1,9 @@
+ README.md                              |   2 +
+ czarina                                |  61 ++++++++++--
+ czarina-core/init-embedded-branches.sh |  54 ++++++++++-
+ czarina-core/launch-project-v2.sh      |   9 ++
+ czarina-core/phase-close.sh            | 166 +++++++++++++++++++++++----------
+ czarina-core/validate-config.sh        |  81 ++++++++++++++++
+ docs/BRANCH_NAMING.md                  |  92 ++++++++++++++++++
+ docs/PHASE_MANAGEMENT.md               | 121 ++++++++++++++++++++++++
+ 8 files changed, 524 insertions(+), 62 deletions(-)

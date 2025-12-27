@@ -1,0 +1,8 @@
+ca3755d9438295ec94ad768ee9df7f03dd1a8110|James Henry|james.henry@telus.com|2025-12-26 13:39:17 -0500|docs(phase): Add comprehensive phase management documentation
+03c3e15335186c256c8250df8a8a021840667e74|James Henry|james.henry@telus.com|2025-12-26 13:36:34 -0500|feat(phase): Add 'czarina phase list' command
+12fcc194708598bc929dad05e05eeeecc94c7298|James Henry|james.henry@telus.com|2025-12-26 13:35:41 -0500|feat(phase): Add phase history archiving
+4aac05e2404213f27e844e5523756b4284ce2eea|James Henry|james.henry@telus.com|2025-12-26 13:33:48 -0500|feat(phase): Add 'czarina phase close' command
+3b6c52d9811cfc85f8ad157304f8b841e9ffd42f|James Henry|james.henry@telus.com|2025-12-26 13:31:58 -0500|feat(phase): Implement smart worktree cleanup
+3e0e0b056b8cc5c7aef76c4d6cc7be4124f1282d|James Henry|james.henry@telus.com|2025-12-26 13:30:27 -0500|feat(phase): Add session naming validation (E#15)
+c08c3589b2ff892c403447f7d9e6b19024f1c490|James Henry|james.henry@telus.com|2025-12-26 13:29:39 -0500|feat(phase): Add config validation for branch naming
+9b51c85a6ca729b9b57d8605188dbf747c50d151|James Henry|james.henry@telus.com|2025-12-26 13:27:17 -0500|feat(phase): Add phase-aware branch initialization

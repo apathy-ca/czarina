@@ -1,99 +1,96 @@
 # Project Hopper
 
-This is the **project-level hopper** - a backlog of enhancement ideas, feature requests, and improvements for czarina.
+This is the **project hopper** - the long-term backlog for enhancement ideas, feature requests, and discovered work.
 
-## What is the Hopper?
+## Purpose
 
-The hopper is a two-level work queue system:
+The project hopper serves as an inbox for:
+- Enhancement ideas discovered during dogfooding
+- Feature requests from users
+- Bug fixes that aren't urgent for the current phase
+- Technical debt items
+- Future improvements
 
-1. **Project Hopper** (`.czarina/hopper/`) - Long-term backlog
-   - Enhancement ideas discovered during dogfooding
-   - Feature requests
-   - Technical debt items
-   - Nice-to-have improvements
-
-2. **Phase Hopper** (`.czarina-vX.Y.Z/phase-hopper/`) - Current phase scope
-   - Items pulled from project hopper for current work
-   - Active tasks being worked on
-   - Completed items
-
-## How to Use
+## How It Works
 
 ### Adding Items
 
-Create a markdown file describing the enhancement:
+Humans can add items in two ways:
 
-```bash
-# Create new enhancement file
-vim .czarina/hopper/enhancement-your-idea.md
-```
+1. **Direct file creation:**
+   ```bash
+   vim .czarina/hopper/my-enhancement.md
+   ```
 
-Use this template structure:
+2. **Via command:**
+   ```bash
+   czarina hopper add my-enhancement.md
+   ```
+
+### Item Lifecycle
+
+1. **Project Hopper** (here) - Items land here first
+2. **Phase Hopper** - Czar pulls items into current phase scope
+3. **Worker Assignment** - Czar assigns items to idle workers
+4. **Completion** - Items move to done when completed
+
+### Enhancement File Format
+
+Items should include metadata to help Czar make decisions:
+
 ```markdown
-# Enhancement: Your Idea Title
+# Enhancement #XX: Title
 
-**Priority:** High/Medium/Low
-**Complexity:** High/Medium/Low
-**Tags:** feature, bugfix, tooling, etc.
-**Status:** Backlog/In Progress/Done
+**Priority:** Low | Medium | High
+**Complexity:** Small | Medium | Large
+**Tags:** future, major-feature, bugfix, ux
+**Suggested Phase:** v0.x.0
+**Estimate:** X days
 
-## Summary
-Brief description...
-
-## Proposal
-What should be implemented...
+## Description
+[...]
 
 ## Acceptance Criteria
 - [ ] Criterion 1
 - [ ] Criterion 2
 ```
 
-### Hopper Commands
+### Czar Monitoring
+
+The Czar daemon monitors this directory every 15 minutes and:
+- Assesses new items for inclusion in the current phase
+- Auto-includes small, high-priority items if workers are idle
+- Auto-defers large or future-tagged items
+- Asks the human when uncertain
+
+## Structure
+
+```
+.czarina/
+├── hopper/                    # PROJECT HOPPER (you are here)
+│   ├── README.md             # This file
+│   └── *.md                  # Enhancement files
+│
+└── phases/
+    └── phase-N-vX.Y.Z/
+        └── hopper/           # PHASE HOPPER (active work)
+            ├── todo/         # Ready to assign
+            ├── in-progress/  # Assigned to workers
+            └── done/         # Completed
+```
+
+## Commands
 
 ```bash
-# List all items in project hopper
+# List items in project hopper
 czarina hopper list
 
-# Pull item from project hopper to phase hopper
-czarina hopper pull enhancement-your-idea.md
+# Pull item into current phase
+czarina hopper pull <item> --to-phase current
 
-# Defer item from phase back to project hopper
-czarina hopper defer enhancement-your-idea.md
+# Defer item back to project hopper
+czarina hopper defer <item>
 
-# Assign hopper item to worker
-czarina hopper assign enhancement-your-idea.md worker-id
+# View Czar status and recommendations
+czarina czar status
 ```
-
-### Priority Queue
-
-Items are prioritized by:
-1. **Priority** field (High > Medium > Low)
-2. **Complexity** field (Low > Medium > High for quick wins)
-3. **Dependencies** (blocked items pushed down)
-
-## Czar Monitoring
-
-The autonomous Czar can monitor the hopper and:
-- Suggest items for idle workers
-- Auto-pull items based on priority
-- Track progress across phase boundaries
-
-## Examples
-
-See `examples/` directory for sample enhancement files.
-
-## Workflow
-
-```
-Project Hopper (long-term)
-     ↓ (pull for phase)
-Phase Hopper (current scope)
-     ↓ (assign to worker)
-Worker (implements)
-     ↓ (complete & merge)
-Done (archived)
-```
-
----
-
-**Created:** 2025-12-26 during czarina v0.6.0 development

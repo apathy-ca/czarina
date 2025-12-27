@@ -36,17 +36,30 @@ fi
 PROJECT_NAME=$(jq -r '.project.name' "$CONFIG_FILE")
 PROJECT_SLUG=$(jq -r '.project.slug' "$CONFIG_FILE")
 PROJECT_ROOT=$(jq -r '.project.repository' "$CONFIG_FILE")
+PHASE=$(jq -r '.project.phase // 1' "$CONFIG_FILE")
+VERSION=$(jq -r '.project.version' "$CONFIG_FILE")
 WORKTREES_DIR="${PROJECT_ROOT}/.czarina/worktrees"
+
+# Check for flags
+KEEP_WORKTREES=false
+FORCE_CLEAN=false
+
+for arg in "$@"; do
+    case $arg in
+        --keep-worktrees) KEEP_WORKTREES=true ;;
+        --force-clean) FORCE_CLEAN=true ;;
+    esac
+done
 
 echo -e "${BLUE}🎭 Czarina Phase Close${NC}"
 echo "   Project: $PROJECT_NAME"
+echo "   Phase: $PHASE"
 echo "   Slug: $PROJECT_SLUG"
 echo ""
 
-# Create phase archive directory with timestamp
-PHASE_TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-PHASE_ARCHIVE="${CZARINA_DIR}/phases/phase-${PHASE_TIMESTAMP}"
-mkdir -p "$PHASE_ARCHIVE"
+# Create phase archive directory with phase and version
+PHASE_DIR="${CZARINA_DIR}/phases/phase-${PHASE}-v${VERSION}"
+mkdir -p "$PHASE_DIR"
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Closing current phase...${NC}"
@@ -87,82 +100,133 @@ echo ""
 # 3. Archive current phase state
 echo -e "${YELLOW}3. Archiving phase state...${NC}"
 
-# Archive worker statuses
-if [ -d "${CZARINA_DIR}/status" ]; then
-    cp -r "${CZARINA_DIR}/status" "$PHASE_ARCHIVE/status" 2>/dev/null || true
-    echo "   ✅ Worker status archived"
+echo "📁 Archiving phase data to: $PHASE_DIR"
+
+# Copy config snapshot
+cp "$CONFIG_FILE" "$PHASE_DIR/config.json"
+
+# Archive logs if they exist
+if [ -d "${CZARINA_DIR}/logs" ]; then
+    mkdir -p "$PHASE_DIR/logs"
+    cp -r "${CZARINA_DIR}/logs"/* "$PHASE_DIR/logs/" 2>/dev/null || true
 fi
 
-# Archive current config (snapshot of this phase)
-cp "$CONFIG_FILE" "$PHASE_ARCHIVE/config.json" 2>/dev/null || true
-echo "   ✅ Config archived"
+# Archive worker statuses
+if [ -d "${CZARINA_DIR}/status" ]; then
+    cp -r "${CZARINA_DIR}/status" "$PHASE_DIR/status" 2>/dev/null || true
+fi
 
-# Archive worker prompts (snapshot of this phase)
+# Archive worker prompts
 if [ -d "${CZARINA_DIR}/workers" ]; then
-    cp -r "${CZARINA_DIR}/workers" "$PHASE_ARCHIVE/workers" 2>/dev/null || true
-    echo "   ✅ Worker prompts archived"
+    cp -r "${CZARINA_DIR}/workers" "$PHASE_DIR/workers" 2>/dev/null || true
 fi
 
 # Create phase summary
-cat > "$PHASE_ARCHIVE/PHASE_SUMMARY.md" << EOF
-# Phase Closed: $PHASE_TIMESTAMP
+cat > "$PHASE_DIR/PHASE_SUMMARY.md" <<EOF
+# Phase $PHASE Summary
+**Version:** v${VERSION}
+**Completed:** $(date -Iseconds)
 
-**Project:** $PROJECT_NAME
-**Closed:** $(date)
-**Workers:** $(jq -r '.workers | length' "$CONFIG_FILE")
+## Configuration
 
-## Workers in This Phase
+\`\`\`json
+$(cat "$CONFIG_FILE")
+\`\`\`
 
-$(jq -r '.workers[] | "- **\(.id)**: \(.description // "Worker") (Branch: \(.branch // "N/A"))"' "$CONFIG_FILE")
+## Workers
 
-## Next Steps
+$(jq -r '.workers[] | "- \(.id): \(.description)"' "$CONFIG_FILE")
 
-This phase has been closed. To start a new phase:
+## Branches
 
-1. Analyze new implementation plan:
-   \`\`\`bash
-   czarina analyze docs/next-phase-plan.md --interactive --init
-   \`\`\`
+**Omnibus:** $(jq -r '.project.omnibus_branch' "$CONFIG_FILE")
 
-2. Or manually update workers in .czarina/config.json
+**Worker Branches:**
+$(jq -r '.workers[] | "- \(.branch) (\(.id))"' "$CONFIG_FILE")
 
-3. Launch new phase:
-   \`\`\`bash
-   czarina launch
-   \`\`\`
+## Status
 
-## Archive Location
+Phase closed on $(date '+%Y-%m-%d %H:%M:%S')
 
-Phase state archived to: $PHASE_ARCHIVE
+See logs/ directory for detailed activity logs.
 EOF
 
-echo -e "   ${GREEN}✅ Phase archived to: phases/phase-${PHASE_TIMESTAMP}${NC}"
+echo -e "   ${GREEN}✅ Phase data archived: $PHASE_DIR${NC}"
 echo ""
 
-# 4. Clean up worktrees
-echo -e "${YELLOW}4. Cleaning up git worktrees...${NC}"
-if [ -d "$WORKTREES_DIR" ]; then
-    WORKTREE_COUNT=$(ls -1 "$WORKTREES_DIR" 2>/dev/null | wc -l)
-    echo "   Found $WORKTREE_COUNT worktree(s)"
+# 4. Smart worktree cleanup
+echo -e "${YELLOW}4. Smart worktree cleanup...${NC}"
+
+if [ "$KEEP_WORKTREES" = true ]; then
+    echo "   ⏭️  Keeping all worktrees (--keep-worktrees flag)"
+elif [ -d "$WORKTREES_DIR" ]; then
+    echo "   🔍 Checking worktrees for uncommitted changes..."
+
+    CLEAN_COUNT=0
+    DIRTY_COUNT=0
 
     cd "$PROJECT_ROOT"
 
-    # Remove each worktree directory
     for worktree in "$WORKTREES_DIR"/*; do
-        if [ -d "$worktree" ]; then
-            worker_name=$(basename "$worktree")
-            echo "      Removing $worker_name..."
-            git worktree remove "$worktree" --force 2>/dev/null || rm -rf "$worktree"
+        if [ ! -d "$worktree" ]; then
+            continue
         fi
+
+        worker_id=$(basename "$worktree")
+        cd "$worktree"
+
+        # Check for uncommitted changes
+        if git diff --quiet && git diff --cached --quiet; then
+            # Clean worktree
+            echo "      ✅ $worker_id: Clean (removing)"
+            cd "$PROJECT_ROOT"
+            git worktree remove "$worktree" 2>/dev/null || {
+                if [ "$FORCE_CLEAN" = true ]; then
+                    git worktree remove --force "$worktree"
+                else
+                    echo "         ⚠️  Failed to remove (use --force-clean to override)"
+                    ((DIRTY_COUNT++))
+                    continue
+                fi
+            }
+            ((CLEAN_COUNT++))
+        else
+            # Dirty worktree
+            if [ "$FORCE_CLEAN" = true ]; then
+                echo "      🗑️  $worker_id: Has changes (removing anyway - forced)"
+                cd "$PROJECT_ROOT"
+                git worktree remove --force "$worktree"
+                ((CLEAN_COUNT++))
+            else
+                echo "      ⚠️  $worker_id: Has uncommitted changes (keeping)"
+                ((DIRTY_COUNT++))
+            fi
+        fi
+
+        cd "$PROJECT_ROOT"
     done
 
-    # Prune stale references
-    git worktree prune 2>/dev/null || true
+    echo ""
+    echo "   📦 Removed $CLEAN_COUNT worktree(s), kept $DIRTY_COUNT with changes"
 
-    # Remove worktrees directory
-    rmdir "$WORKTREES_DIR" 2>/dev/null || rm -rf "$WORKTREES_DIR"
+    if [ $DIRTY_COUNT -gt 0 ]; then
+        echo ""
+        echo "   ⚠️  Warning: $DIRTY_COUNT worktree(s) have uncommitted changes"
+        echo "      Review before next phase:"
+        for worktree in "$WORKTREES_DIR"/*; do
+            if [ -d "$worktree" ]; then
+                echo "        git -C $worktree status"
+            fi
+        done
+    fi
 
-    echo -e "   ${GREEN}✅ All worktrees removed${NC}"
+    # Prune worktree references
+    git worktree prune
+
+    # Remove worktrees directory if empty
+    if [ -d "$WORKTREES_DIR" ] && [ -z "$(ls -A "$WORKTREES_DIR")" ]; then
+        rmdir "$WORKTREES_DIR"
+    fi
 else
     echo "   No worktrees directory found"
 fi
@@ -194,10 +258,10 @@ echo ""
 
 # 6. Summary
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${GREEN}✅ Phase closed successfully!${NC}"
+echo -e "${GREEN}✅ Phase $PHASE closeout complete${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "📦 Phase archived to: .czarina/phases/phase-${PHASE_TIMESTAMP}"
+echo "📦 Phase archived to: .czarina/phases/phase-${PHASE}-v${VERSION}"
 echo "   ✅ Complete history preserved"
 echo ""
 echo "📋 Next steps:"

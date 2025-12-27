@@ -18,11 +18,17 @@ Usage:
     czarina status                               - Show project status
     czarina dashboard                            - Live monitoring dashboard
     czarina phase close [project]                - Close current phase, keep project for next phase
+    czarina phase list [project]                 - List all phases
     czarina closeout [project]                   - Stop all workers and clean up completely
     czarina daemon start [project]               - Start autonomous daemon
     czarina daemon stop [project]                - Stop daemon
     czarina daemon logs [project]                - Show daemon logs
     czarina daemon status [project]              - Check daemon status
+    czarina hopper add <file.md>                 - Add enhancement to project hopper
+    czarina hopper list [project|phase]          - List hopper items
+    czarina hopper pull <file> --to-phase        - Pull item into phase
+    czarina hopper defer <file>                  - Defer item to backlog
+    czarina hopper assign <worker> <file>        - Assign to worker
     czarina patterns update                      - Update pattern library
     czarina patterns version                     - Show pattern version
     czarina patterns pending                     - List patterns ready to contribute
@@ -824,8 +830,8 @@ def cmd_dashboard(project_name=None):
     subprocess.run([sys.executable, str(dashboard_script)])
 
 
-def cmd_phase_close(project_name=None):
-    """Close current phase but keep project structure for next phase"""
+def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
+    """Close current phase with smart worktree cleanup"""
     czarina_dir, project_root = get_project_context(project_name)
     orchestrator_dir = get_orchestrator_dir()
     phase_close_script = orchestrator_dir / "czarina-core" / "phase-close.sh"
@@ -834,8 +840,38 @@ def cmd_phase_close(project_name=None):
         print(f"❌ Phase close script not found: {phase_close_script}")
         sys.exit(1)
 
+    # Build command
+    cmd = ["bash", str(phase_close_script), str(czarina_dir)]
+    if keep_worktrees:
+        cmd.append("--keep-worktrees")
+    if force_clean:
+        cmd.append("--force-clean")
+
     os.chdir(project_root)
-    subprocess.run(["bash", str(phase_close_script), str(czarina_dir)])
+    subprocess.run(cmd)
+
+
+def cmd_phase_list(project_name=None):
+    """List all phases for project"""
+    czarina_dir, project_root = get_project_context(project_name)
+
+    phases_dir = czarina_dir / "phases"
+
+    if not phases_dir.exists():
+        print("No phases found")
+        return
+
+    print("📋 Phases:")
+    for phase_dir in sorted(phases_dir.iterdir()):
+        if phase_dir.is_dir():
+            summary_file = phase_dir / "PHASE_SUMMARY.md"
+            if summary_file.exists():
+                # Extract basic info
+                with open(summary_file) as f:
+                    first_line = f.readline().strip()
+                    print(f"  {phase_dir.name}: {first_line}")
+            else:
+                print(f"  {phase_dir.name}")
 
 
 def cmd_closeout(project_name=None):
@@ -905,6 +941,24 @@ def cmd_daemon_status(project_name=None):
     else:
         print(f"⚡ Daemon: ❌ Not running")
         print(f"   Start: czarina daemon start")
+
+
+def cmd_hopper(args):
+    """Manage the two-level hopper system"""
+    orchestrator_dir = get_orchestrator_dir()
+    hopper_script = orchestrator_dir / "czarina-core" / "hopper.sh"
+
+    if not hopper_script.exists():
+        print(f"❌ Hopper script not found: {hopper_script}")
+        sys.exit(1)
+
+    # Change to current directory (or project root if in a czarina project)
+    czarina_dir, project_root = find_czarina_dir()
+    if project_root:
+        os.chdir(project_root)
+
+    # Pass all arguments to the hopper script
+    subprocess.run(["bash", str(hopper_script)] + args)
 
 
 def cmd_patterns_update():
@@ -1178,15 +1232,31 @@ def main():
         cmd_dashboard(project_name)
     elif command == "phase":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina phase <close> [project]")
+            print("❌ Usage: czarina phase <close|list> [options]")
             sys.exit(1)
         phase_cmd = sys.argv[2]
         if phase_cmd == "close":
+            # Parse flags and project name
+            project_name = None
+            keep_worktrees = False
+            force_clean = False
+
+            for i in range(3, len(sys.argv)):
+                arg = sys.argv[i]
+                if arg == "--keep-worktrees":
+                    keep_worktrees = True
+                elif arg == "--force-clean":
+                    force_clean = True
+                elif not arg.startswith("--"):
+                    project_name = arg
+
+            cmd_phase_close(project_name, keep_worktrees, force_clean)
+        elif phase_cmd == "list":
             project_name = sys.argv[3] if len(sys.argv) > 3 else None
-            cmd_phase_close(project_name)
+            cmd_phase_list(project_name)
         else:
             print(f"❌ Unknown phase command: {phase_cmd}")
-            print("   Available: close")
+            print("   Available: close, list")
             sys.exit(1)
     elif command == "closeout":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
@@ -1209,6 +1279,10 @@ def main():
             print(f"❌ Unknown daemon subcommand: {subcommand}")
             print("   Valid: start, stop, logs, status")
             sys.exit(1)
+    elif command == "hopper":
+        # Pass remaining arguments to hopper script
+        hopper_args = sys.argv[2:] if len(sys.argv) > 2 else []
+        cmd_hopper(hopper_args)
     elif command == "patterns":
         if len(sys.argv) < 3:
             print("❌ Usage: czarina patterns <update|version|pending|contribute>")

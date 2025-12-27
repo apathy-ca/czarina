@@ -1,0 +1,10 @@
+ WORKER_IDENTITY.md                       |  34 ++
+ czarina-core/czar-autonomous-v2.sh       | 490 ++++++++++++++++++++++++++++
+ czarina-core/czar-dependency-tracking.sh | 391 +++++++++++++++++++++++
+ czarina-core/czar-hopper-integration.sh  | 456 ++++++++++++++++++++++++++
+ czarina-core/test-autonomous-czar.sh     | 146 +++++++++
+ czarina-core/test-dependency-tracking.sh | 419 ++++++++++++++++++++++++
+ czarina-core/test-hopper-integration.sh  | 320 +++++++++++++++++++
+ docs/AUTONOMOUS_CZAR.md                  | 473 +++++++++++++++++++++++++++
+ docs/CZAR_COORDINATION.md                | 528 +++++++++++++++++++++++++++++++
+ 9 files changed, 3257 insertions(+)

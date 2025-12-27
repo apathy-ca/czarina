@@ -292,6 +292,8 @@ czarina patterns pending  # List discoveries to share
 - **[docs/guides/WORKER_SETUP_GUIDE.md](docs/guides/WORKER_SETUP_GUIDE.md)** - Worker configuration
 
 ### Advanced
+- **[docs/PHASE_MANAGEMENT.md](docs/PHASE_MANAGEMENT.md)** - Phase lifecycle & smart cleanup
+- **[docs/BRANCH_NAMING.md](docs/BRANCH_NAMING.md)** - Branch naming conventions
 - **[czarina-core/docs/DAEMON_SYSTEM.md](czarina-core/docs/DAEMON_SYSTEM.md)** - Auto-approval system
 - **[czarina-core/patterns/](czarina-core/patterns/)** - Error recovery & best practices
 - **[docs/guides/SUPPORTED_AGENTS.md](docs/guides/SUPPORTED_AGENTS.md)** - Agent comparison
