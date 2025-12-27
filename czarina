@@ -431,38 +431,26 @@ Let's get started!"""
         print("   - .czarina/workers/*.md files")
         print()
 
-        # Try to find an available coding agent (claude -> kilocode -> aider)
+        # Launch Claude Code
         import subprocess
         import shutil
 
-        agents = [
-            ("claude", ["claude", prompt]),
-            ("kilocode", ["kilocode", prompt]),
-            ("aider", ["aider", "--message", prompt])
-        ]
-
-        agent_found = None
-        for agent_name, agent_cmd in agents:
-            if shutil.which(agent_name):
-                agent_found = (agent_name, agent_cmd)
-                break
-
-        if not agent_found:
+        if not shutil.which("claude"):
             print()
-            print("❌ No coding agent found!")
-            print("   Please install one of:")
-            print("     - Claude Code: https://code.claude.com")
-            print("     - Kilocode: https://kilocode.com")
-            print("     - Aider: https://aider.chat")
+            print("❌ Claude Code CLI not found!")
+            print("   Please install: https://code.claude.com")
+            print()
+            print("💡 Alternatively, manually create:")
+            print("   - .czarina/config.json")
+            print("   - .czarina/workers/*.md files")
             print()
             sys.exit(1)
 
-        agent_name, agent_cmd = agent_found
-        print(f"   Using: {agent_name}")
+        print(f"   Using: Claude Code")
         print()
 
         try:
-            subprocess.run(agent_cmd, check=True)
+            subprocess.run(["claude", prompt], check=True)
 
             print()
             print("=" * 60)
@@ -479,7 +467,7 @@ Let's get started!"""
 
         except Exception as e:
             print()
-            print(f"❌ Failed to launch {agent_name}: {e}")
+            print(f"❌ Failed to launch Claude Code: {e}")
             print()
             sys.exit(1)
 
