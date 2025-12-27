@@ -5,6 +5,74 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-12-26
+
+### Added
+
+**Autonomous Czar v2** - Advanced orchestration coordination (3,257 lines)
+  - czar-autonomous-v2.sh - Modern autonomous loop with structured logging
+  - czar-hopper-integration.sh - Hopper monitoring and auto-assignment
+  - czar-dependency-tracking.sh - Worker dependency tracking and coordination
+  - Worker health detection (crashed/stuck/idle)
+  - 30s monitoring cycle with decision logging
+  - Complete test suites (45 automated tests, all passing)
+  - docs/AUTONOMOUS_CZAR.md - Complete autonomous czar guide
+  - docs/CZAR_COORDINATION.md - Coordination documentation
+
+**Hopper Implementation** - Full hopper system (2,065 lines)
+  - czarina-core/hopper.sh - Complete CLI implementation
+  - Commands: `czarina hopper list`, `pull`, `defer`, `assign`
+  - Priority queue logic (Priority × Complexity)
+  - Metadata parsing and validation
+  - docs/HOPPER.md - Complete hopper documentation
+  - Example enhancement files with metadata
+  - Makes hopper actually functional (was documentation-only in v0.6.1)
+
+**Phase Management Enhancements** - Robust phase lifecycle (524 lines)
+  - Smart worktree cleanup (keep dirty, remove clean)
+  - Phase history archiving to .czarina/phases/
+  - czarina-core/validate-config.sh - Config validation
+  - `czarina phase list` command
+  - Session naming validation
+  - Phase-aware branch initialization
+  - docs/PHASE_MANAGEMENT.md - Phase management guide
+  - docs/BRANCH_NAMING.md - Branch naming conventions
+
+**v0.6.0 Branch Integration** - Completed integration of worker branches
+  - Integrated code from autonomous-czar, hopper, and phase-mgmt branches
+  - 14 commits, 6,549 lines added, 130 lines removed
+  - 39 files modified
+  - Archived v0.6.0 branches to .czarina/phases/phase-1-v0.6.0/
+  - INTEGRATION_SUMMARY.md - Complete integration documentation
+
+**Testing & Validation** - Comprehensive testing suite
+  - TEST_RESULTS.md - 13 test cases, 100% pass rate
+  - Validated all v0.6.1 features
+  - Production-ready certification
+  - No bugs found
+
+**Meta-Orchestration Documentation**
+  - ORCHESTRATION_POSTMORTEM.md - v0.6.1 orchestration analysis
+  - .czarina/COORDINATION_LOG.md - Complete coordination timeline
+  - Lessons learned and recommendations for future orchestrations
+
+### Changed
+
+- Version bump from 0.6.1 to 0.6.2 to properly version the integrated work
+
+---
+
+**Release Focus:**
+This patch release includes all the integrated v0.6.0 worker code that was completed during v0.6.1 orchestration. It combines the v0.6.1 UX improvements with autonomous czar v2, full hopper implementation, and enhanced phase management.
+
+**Why 0.6.2?**
+The v0.6.1 orchestration successfully integrated significant features from v0.6.0 branches, but these were merged to main after the v0.6.1 tag was created. Version 0.6.2 properly versions this complete feature set. See ORCHESTRATION_POSTMORTEM.md for details.
+
+**Meta-Note:**
+This release was built using czarina to orchestrate its own improvement (3 workers: integration, testing, release). Peak dogfooding! 🐕
+
+[Full Changelog](https://github.com/apathy-ca/czarina/compare/v0.6.1...v0.6.2)
+
 ## [0.6.1] - 2025-12-26
 
 ### Added

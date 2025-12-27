@@ -3,7 +3,7 @@
 Czarina - Multi-Agent Orchestration CLI
 Simple interface for managing multi-agent orchestration projects
 
-Version: 0.6.0
+Version: 0.6.2
 
 Usage:
     czarina analyze <plan-file>                  - Analyze plan and suggest orchestration
@@ -38,7 +38,7 @@ Usage:
     czarina version                              - Show version information
 """
 
-CZARINA_VERSION = "0.6.0"
+CZARINA_VERSION = "0.6.2"
 
 import sys
 import subprocess
