@@ -757,6 +757,18 @@ def cmd_list():
             continue
         for item in base.rglob(".czarina"):
             if item.is_dir():
+                # Skip worker worktrees (not separate projects)
+                if ".czarina/worktrees" in str(item):
+                    continue
+
+                # Skip archive directories
+                if "/archive/" in str(item):
+                    continue
+
+                # Skip phases directory
+                if ".czarina/phases" in str(item):
+                    continue
+
                 config_file = item / "config.json"
                 if config_file.exists():
                     try:
