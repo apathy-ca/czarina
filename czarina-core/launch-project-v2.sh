@@ -128,9 +128,9 @@ create_worker_window() {
     local session=$1
     local worker_num=$2
     local worker_idx=$3
-    local window_name="worker${worker_num}"
 
     local worker_id=$(jq -r ".workers[$worker_idx].id" "$CONFIG_FILE")
+    local window_name="$worker_id"  # Use worker ID, not generic "workerN"
     local worker_agent=$(jq -r ".workers[$worker_idx].agent" "$CONFIG_FILE")
     local worker_desc=$(jq -r ".workers[$worker_idx].description" "$CONFIG_FILE")
     local worker_branch=$(jq -r ".workers[$worker_idx].branch" "$CONFIG_FILE")
@@ -287,6 +287,13 @@ Daemon and Dashboard are in the mgmt session
 ✅ All systems ready!
 CZAR_EOF
 " C-m
+fi
+
+# Auto-launch agent for Czar window
+CZAR_AGENT=$(jq -r '.czar.agent // "claude"' "$CONFIG_FILE" 2>/dev/null || echo "claude")
+if [ -n "$CZAR_AGENT" ] && [ "$CZAR_AGENT" != "null" ]; then
+    echo "   🤖 Launching Czar agent..."
+    "${ORCHESTRATOR_DIR}/czarina-core/agent-launcher.sh" launch "czar" 0 "$CZAR_AGENT" "$SESSION_NAME"
 fi
 
 # Create workers 1-9 in main session

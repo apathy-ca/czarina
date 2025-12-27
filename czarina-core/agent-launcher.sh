@@ -10,17 +10,24 @@ launch_worker_agent() {
   local agent_type="$3"
   local session="$4"
 
-  local worktree_path=".czarina/worktrees/$worker_id"
   local project_root="$(pwd)"
 
-  echo "🚀 Launching $agent_type agent for worker: $worker_id (window $window_index)"
+  echo "🚀 Launching $agent_type agent for: $worker_id (window $window_index)"
 
-  # Change to worktree
-  tmux send-keys -t $session:$window_index "cd $project_root/$worktree_path" C-m
-  sleep 1
-
-  # Create worker identity file
-  create_worker_identity "$worker_id" "$project_root/$worktree_path"
+  # Czar runs from project root, workers run from worktrees
+  if [ "$worker_id" == "czar" ]; then
+    local work_path="$project_root"
+    # Czar stays in project root
+    create_czar_identity "$work_path"
+  else
+    local worktree_path=".czarina/worktrees/$worker_id"
+    local work_path="$project_root/$worktree_path"
+    # Change to worktree
+    tmux send-keys -t $session:$window_index "cd $work_path" C-m
+    sleep 1
+    # Create worker identity file
+    create_worker_identity "$worker_id" "$work_path"
+  fi
 
   # Launch appropriate agent
   case "$agent_type" in
@@ -122,16 +129,125 @@ EOF
   echo "  ✅ Created WORKER_IDENTITY.md for $worker_id"
 }
 
+create_czar_identity() {
+  local project_root="$1"
+  local config_path=".czarina/config.json"
+
+  local project_name=$(jq -r '.project.name' $config_path)
+  local worker_count=$(jq '.workers | length' $config_path)
+
+  cat > "$project_root/.czarina/CZAR_IDENTITY.md" << EOF
+# Czar Identity: Orchestration Coordinator
+
+You are the **Czar** - the orchestration coordinator for this czarina project.
+
+## Your Role
+
+**Project:** $project_name
+**Workers:** $worker_count
+**Session:** Current tmux session
+
+## Your Responsibilities
+
+### 1. Monitor Worker Progress
+- Track completion of worker tasks
+- Identify blockers and dependencies
+- Coordinate handoffs between workers
+- Review worker logs for status
+
+### 2. Manage Integration
+- Review PRs from workers as they complete
+- Coordinate merges when dependencies are met
+- Ensure integration tests pass
+- Resolve conflicts
+
+### 3. Track Project Health
+- Monitor test coverage and quality
+- Watch for conflicts or duplicate work
+- Keep project documentation updated
+- Verify deliverables meet success criteria
+
+### 4. Coordinate Communication
+- Facilitate cross-worker discussions
+- Escalate issues that need user input
+- Document decisions and changes
+
+## Quick Commands
+
+### Tmux Navigation
+\`\`\`bash
+# Switch to worker windows
+Ctrl+b 1    # Worker 1
+Ctrl+b 2    # Worker 2
+# ... etc
+Ctrl+b 0    # Back to Czar (you!)
+
+# List windows
+Ctrl+b w
+
+# Switch sessions
+Ctrl+b s    # Main session <-> Management session
+
+# Detach
+Ctrl+b d
+\`\`\`
+
+### Git Status
+\`\`\`bash
+# Check all worker branches
+cd .czarina/worktrees
+for worker in */ ; do
+    echo "=== \$worker ==="
+    cd \$worker && git status --short && cd ..
+done
+\`\`\`
+
+### Monitor Progress
+\`\`\`bash
+# View all worker logs (if using structured logging)
+tail -f .czarina/logs/*.log
+
+# Check worker status
+czarina status
+
+# View event stream
+cat .czarina/logs/events.jsonl | tail -20
+\`\`\`
+
+## Your Mission
+
+Keep this multi-agent project running smoothly. You're the glue that holds it together!
+
+1. **Stay informed** - Monitor worker windows and logs
+2. **Stay proactive** - Catch issues early
+3. **Stay coordinated** - Facilitate collaboration
+4. **Stay focused** - Keep everyone aligned on goals
+
+Good luck, Czar! 🎭
+EOF
+
+  echo "  ✅ Created CZAR_IDENTITY.md"
+}
+
 launch_claude() {
   local worker_id="$1"
   local window_index="$2"
   local session="$3"
 
-  local worktree_path=".czarina/worktrees/$worker_id"
+  # Czar runs from project root, workers from worktrees
+  if [ "$worker_id" == "czar" ]; then
+    local work_path="."
+    local identity_file=".czarina/CZAR_IDENTITY.md"
+    local instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+  else
+    local work_path=".czarina/worktrees/$worker_id"
+    local identity_file="WORKER_IDENTITY.md"
+    local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+  fi
 
   # Configure Claude settings for auto-approval
-  mkdir -p "$worktree_path/.claude"
-  cat > "$worktree_path/.claude/settings.local.json" << 'EOF'
+  mkdir -p "$work_path/.claude"
+  cat > "$work_path/.claude/settings.local.json" << 'EOF'
 {
   "permissions": {
     "allow": [
@@ -154,8 +270,8 @@ EOF
 
   echo "  ✅ Created Claude settings for $worker_id"
 
-  # Launch Claude with worker context
-  tmux send-keys -t $session:$window_index "claude --permission-mode bypassPermissions 'Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1'" C-m
+  # Launch Claude with context-specific prompt
+  tmux send-keys -t $session:$window_index "claude --permission-mode bypassPermissions '$instructions_prompt'" C-m
 
   echo "  ✅ Launched Claude for $worker_id"
 }
