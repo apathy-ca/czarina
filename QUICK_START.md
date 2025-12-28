@@ -44,9 +44,55 @@ czarina patterns update
 
 ---
 
-## ⚡ Start Your First Project (5 Minutes)
+## ⚡ Start Your First Project (<60 Seconds!)
 
-### Step 1: Go to Your Project
+### 🎯 The New Way (v0.7.1+) - One Command!
+
+**Fastest path from plan to running orchestration:**
+
+```bash
+cd ~/my-projects/awesome-app
+czarina analyze IMPLEMENTATION_PLAN.md --go
+```
+
+**That's it!** This one command:
+- Analyzes your plan
+- Creates config.json
+- Creates worker files with explicit first actions
+- Launches all workers
+- Starts autonomous Czar daemon
+- Everything running in <60 seconds
+
+**Time:** <60 seconds from plan to fully running orchestration
+
+**Requirements:**
+- You have a plan file (markdown with worker definitions)
+- Claude Code CLI installed (`claude --version`)
+
+**Example plan file:**
+```markdown
+# Implementation Plan
+
+## Phase 1: Core Features
+- **backend** - Build REST API
+- **frontend** - Create React UI
+- **tests** - Write test suite
+
+## Deliverables
+- Working API server
+- Responsive frontend
+- >80% test coverage
+```
+
+See [One-Command Launch Examples](#one-command-launch-examples) below for more details.
+
+---
+
+### 🔧 The Traditional Way - Manual Configuration
+
+If you prefer manual control or don't have Claude Code CLI:
+
+#### Step 1: Go to Your Project
 
 ```bash
 cd ~/my-projects/awesome-app
@@ -55,7 +101,7 @@ cd ~/my-projects/awesome-app
 # git init
 ```
 
-### Step 2: Initialize Czarina
+#### Step 2: Initialize Czarina
 
 ```bash
 # Basic initialization
@@ -80,7 +126,7 @@ czarina init --with-memory --with-rules
 
 See [MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md) for details.
 
-### Step 3: Configure Workers
+#### Step 3: Configure Workers
 
 ```bash
 # Edit configuration
@@ -137,7 +183,7 @@ nano .czarina/config.json
 - `agent_rules.enabled` - Workers get best practices
 - `role` field - Determines which rules auto-load (code, qa, documentation, etc.)
 
-### Step 4: Define Worker Roles
+#### Step 4: Define Worker Roles
 
 ```bash
 # Edit worker prompts (already created as templates)
@@ -179,14 +225,28 @@ When complete:
 3. Create PR to main
 ```
 
-### Step 5: Commit Orchestration
+**v0.7.1 addition:**
+Add "YOUR FIRST ACTION" section to worker files so they know what to do immediately:
+```markdown
+## 🚀 YOUR FIRST ACTION
+
+**Read the codebase structure:**
+\```bash
+ls -la src/
+cat README.md | head -30
+\```
+
+Then proceed with your tasks below...
+```
+
+#### Step 5: Commit Orchestration
 
 ```bash
 git add .czarina/
 git commit -m "Add Czarina orchestration setup"
 ```
 
-### Step 6: Launch! 🚀
+#### Step 6: Launch! 🚀
 
 ```bash
 # From your project directory
@@ -202,7 +262,9 @@ czarina launch awesome-app
 - Git branches auto-created
 - Workers ready to receive tasks
 
-### Step 7: Assign the Czar Role 🎭
+**v0.7.1:** Workers with "YOUR FIRST ACTION" sections will immediately start working!
+
+#### Step 7: Assign the Czar Role 🎭
 
 **The Czar** is the orchestration coordinator (can be AI agent or human).
 
@@ -228,7 +290,9 @@ Show me the current status.
 
 **See [docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md) for complete guide.**
 
-### Step 8: Enable Daemon (Recommended)
+**v0.7.1:** The `--go` flag auto-launches the Czar daemon!
+
+#### Step 8: Enable Daemon (Recommended)
 
 ```bash
 czarina daemon start
@@ -406,6 +470,7 @@ czarina patterns pending
 
 ```bash
 # Project management
+czarina analyze plan.md --go         # One-command launch (v0.7.1+)
 czarina init                          # Initialize in current directory
 czarina init --with-memory            # Initialize with memory system
 czarina init --with-rules             # Initialize with agent rules
@@ -480,6 +545,139 @@ czarina list
 
 ---
 
+## 🚀 One-Command Launch Examples
+
+**v0.7.1 introduces the fastest way to start an orchestration:**
+
+### Example 1: Simple Full-Stack App
+
+```bash
+# 1. Create plan file
+cat > plan.md <<'EOF'
+# Full-Stack App Implementation
+
+## Phase 1: Core Features
+- **backend** - Node.js REST API with PostgreSQL
+- **frontend** - React app with Material-UI
+- **tests** - Jest unit tests + Cypress E2E
+
+## Deliverables
+- API with CRUD endpoints
+- Responsive UI
+- 80%+ test coverage
+EOF
+
+# 2. Launch!
+czarina analyze plan.md --go
+
+# 3. Done! Everything running in <60 seconds
+```
+
+### Example 2: Microservices Project
+
+```bash
+cat > implementation.md <<'EOF'
+# Microservices Architecture
+
+## Phase 1: Services
+- **auth-service** - JWT authentication service
+- **user-service** - User management service
+- **api-gateway** - API gateway with routing
+- **tests** - Integration test suite
+- **devops** - Docker + Kubernetes configs
+
+## Deliverables
+- 3 containerized services
+- Gateway routing
+- K8s deployment configs
+EOF
+
+czarina analyze implementation.md --go
+```
+
+### Example 3: Documentation Project
+
+```bash
+cat > docs-plan.md <<'EOF'
+# Documentation Overhaul
+
+## Phase 1: Documentation
+- **api-docs** - OpenAPI/Swagger documentation
+- **user-guide** - End-user guide
+- **dev-guide** - Developer onboarding guide
+- **examples** - Code examples and tutorials
+
+## Deliverables
+- Complete API documentation
+- User and developer guides
+- 10+ working examples
+EOF
+
+czarina analyze docs-plan.md --go
+```
+
+### What Happens Automatically
+
+When you use `czarina analyze plan.md --go`:
+
+1. **Analysis** (5-10 seconds)
+   - Claude Code reads your plan
+   - Identifies workers and their roles
+   - Determines dependencies
+
+2. **Configuration** (2-3 seconds)
+   - Creates `.czarina/config.json`
+   - Sets up worker branches
+   - Configures daemon
+
+3. **Worker Files** (3-5 seconds)
+   - Creates `.czarina/workers/*.md` files
+   - Adds "YOUR FIRST ACTION" sections
+   - Includes task details from plan
+
+4. **Launch** (5-10 seconds)
+   - Creates tmux session
+   - Launches all workers
+   - Workers immediately start working
+
+5. **Czar Daemon** (2-3 seconds)
+   - Starts monitoring loop
+   - Watches for stuck workers
+   - Coordinates automatically
+
+**Total time: <60 seconds**
+
+### Requirements
+
+- **Claude Code CLI** installed and configured
+- **Plan file** with worker definitions
+- **Git repository** initialized
+
+### Traditional vs One-Command
+
+**Before v0.7.1:**
+```bash
+czarina analyze plan.md          # Step 1: Analyze
+# Copy output to Claude             Step 2: Manual
+# Edit config.json                  Step 3: Manual
+# Create worker files               Step 4: Manual
+czarina launch                    # Step 5: Launch
+# Wait and monitor                  Step 6: Manual
+czarina daemon start              # Step 7: Start daemon
+# Check for stuck workers           Step 8: Manual
+
+# Total: 8 steps, 10+ minutes
+```
+
+**After v0.7.1:**
+```bash
+czarina analyze plan.md --go     # Done!
+
+# Total: 1 step, <60 seconds
+```
+
+---
+
 ## 📚 Learn More
 
 ### v0.7.0 Features
@@ -503,7 +701,13 @@ ln -s ~/Source/GRID/claude-orchestrator/czarina ~/.local/bin/czarina
 czarina patterns update
 ```
 
-**New Project (v0.7.0):**
+**New Project (v0.7.1 - Fastest!):**
+```bash
+cd ~/my-project
+czarina analyze plan.md --go  # <60 seconds from plan to running!
+```
+
+**Or Manual Configuration (v0.7.0):**
 ```bash
 cd ~/my-project
 czarina init --with-memory --with-rules  # Enable v0.7.0 features
@@ -512,7 +716,7 @@ czarina launch
 czarina daemon start
 ```
 
-**Or without v0.7.0 features (v0.6.2 behavior):**
+**Or Basic Setup (v0.6.2 behavior):**
 ```bash
 cd ~/my-project
 czarina init

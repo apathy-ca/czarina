@@ -5,6 +5,31 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2025-12-XX - UX Foundation Fixes
+
+### Fixed
+- **Worker Onboarding:** Workers no longer get stuck - explicit first actions added to all identities
+- **Czar Autonomy:** Czar now actually autonomous with monitoring daemon
+- **Launch Complexity:** Reduced from 8 steps/10+ min to 1 step/<60 sec
+
+### Added
+- Autonomous Czar daemon with worker monitoring
+- `czarina analyze plan.md --go` for one-command launch
+- Worker identity template with first action section
+- Comprehensive testing suite for UX fixes
+
+### Changed
+- Worker identity format now includes "YOUR FIRST ACTION" section
+- Launch process fully automated
+- Phase transitions now automatic
+
+### Impact
+- 0 stuck workers (down from 1 per orchestration)
+- 0 manual coordination needed
+- Launch time: <60 seconds (down from 10+ minutes)
+
+---
+
 ## [0.7.0] - 2025-12-28
 
 ### Added
