@@ -58,15 +58,27 @@ cd ~/my-projects/awesome-app
 ### Step 2: Initialize Czarina
 
 ```bash
+# Basic initialization
 czarina init
+
+# Or with v0.7.0 features (recommended!)
+czarina init --with-memory --with-rules
 ```
 
 **This creates `.czarina/` directory with:**
 - `config.json` - Worker configuration
 - `workers/` - Worker role definitions
+- `memories.md` - Persistent memory (v0.7.0+, if --with-memory)
 - `status/` - Runtime logs (gitignored)
 - `README.md` - Quick reference
 - `.worker-init` - Auto-discovery script
+
+**v0.7.0 Features (Optional):**
+- `--with-memory` - Enable persistent learning across sessions
+- `--with-rules` - Enable 43K+ lines of best practices
+- Both features are opt-in and backward compatible
+
+See [MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md) for details.
 
 ### Step 3: Configure Workers
 
@@ -84,21 +96,30 @@ nano .czarina/config.json
     "repository": "/home/you/my-projects/awesome-app",
     "orchestration_dir": ".czarina"
   },
+  "memory": {
+    "enabled": true
+  },
+  "agent_rules": {
+    "enabled": true
+  },
   "workers": [
     {
       "id": "backend",
+      "role": "code",
       "agent": "aider",
       "branch": "feat/backend-api",
       "description": "Backend API Developer"
     },
     {
       "id": "frontend",
+      "role": "code",
       "agent": "aider",
       "branch": "feat/frontend-ui",
       "description": "Frontend UI Developer"
     },
     {
       "id": "tests",
+      "role": "qa",
       "agent": "aider",
       "branch": "feat/test-coverage",
       "description": "Test Engineer"
@@ -110,6 +131,11 @@ nano .czarina/config.json
   }
 }
 ```
+
+**v0.7.0 additions:**
+- `memory.enabled` - Workers remember past sessions
+- `agent_rules.enabled` - Workers get best practices
+- `role` field - Determines which rules auto-load (code, qa, documentation, etc.)
 
 ### Step 4: Define Worker Roles
 
@@ -380,23 +406,33 @@ czarina patterns pending
 
 ```bash
 # Project management
-czarina init                    # Initialize in current directory
-czarina list                    # List all projects
-czarina launch                  # Launch workers (from project dir)
-czarina launch <project>        # Launch from anywhere
-czarina status                  # Show status
+czarina init                          # Initialize in current directory
+czarina init --with-memory            # Initialize with memory system
+czarina init --with-rules             # Initialize with agent rules
+czarina init --with-memory --with-rules  # Initialize with both
+czarina list                          # List all projects
+czarina launch                        # Launch workers (from project dir)
+czarina launch <project>              # Launch from anywhere
+czarina status                        # Show status
+
+# Memory system (v0.7.0+)
+czarina memory init                   # Initialize memory
+czarina memory query "<search>"       # Search past sessions
+czarina memory extract                # Capture session learnings
+czarina memory rebuild                # Rebuild search index
+czarina memory status                 # Show memory status
 
 # Daemon management
-czarina daemon start            # Start auto-approval
-czarina daemon stop             # Stop daemon
-czarina daemon logs             # View logs
-czarina daemon status           # Check if running
+czarina daemon start                  # Start auto-approval
+czarina daemon stop                   # Stop daemon
+czarina daemon logs                   # View logs
+czarina daemon status                 # Check if running
 
 # Pattern library
-czarina patterns update         # Get latest patterns
-czarina patterns version        # Show version
-czarina patterns pending        # List discoveries
-czarina patterns contribute     # Contribution guide
+czarina patterns update               # Get latest patterns
+czarina patterns version              # Show version
+czarina patterns pending              # List discoveries
+czarina patterns contribute           # Contribution guide
 ```
 
 ---
@@ -446,6 +482,12 @@ czarina list
 
 ## 📚 Learn More
 
+### v0.7.0 Features
+- **[MEMORY_GUIDE.md](MEMORY_GUIDE.md)** - Memory system usage and best practices
+- **[AGENT_RULES.md](AGENT_RULES.md)** - Agent rules integration guide
+- **[MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md)** - Migration from v0.6.2
+
+### Core Documentation
 - **[Production Readiness](PRODUCTION_READINESS.md)** - Complete production checklist
 - **[Pattern Library](czarina-core/patterns/)** - Error recovery and multi-agent patterns
 - **[Documentation Hub](docs/)** - Comprehensive guides
@@ -461,7 +503,16 @@ ln -s ~/Source/GRID/claude-orchestrator/czarina ~/.local/bin/czarina
 czarina patterns update
 ```
 
-**New Project:**
+**New Project (v0.7.0):**
+```bash
+cd ~/my-project
+czarina init --with-memory --with-rules  # Enable v0.7.0 features
+nano .czarina/config.json
+czarina launch
+czarina daemon start
+```
+
+**Or without v0.7.0 features (v0.6.2 behavior):**
 ```bash
 cd ~/my-project
 czarina init
