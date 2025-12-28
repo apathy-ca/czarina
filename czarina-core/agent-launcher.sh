@@ -4,6 +4,10 @@
 
 set -e
 
+# Source context builder functions
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/context-builder.sh"
+
 launch_worker_agent() {
   local worker_id="$1"
   local window_index="$2"
@@ -11,6 +15,7 @@ launch_worker_agent() {
   local session="$4"
 
   local project_root="$(pwd)"
+  local config_path=".czarina/config.json"
 
   echo "🚀 Launching $agent_type agent for: $worker_id (window $window_index)"
 
@@ -27,6 +32,20 @@ launch_worker_agent() {
     sleep 1
     # Create worker identity file
     create_worker_identity "$worker_id" "$work_path"
+
+    # Build enhanced context (rules + memory) if enabled
+    if is_context_enhancement_enabled "$worker_id" "$config_path"; then
+      echo "  📚 Building enhanced context (rules + memory)..."
+      local role=$(get_worker_role "$worker_id" "$config_path")
+      local task=$(get_worker_task "$worker_id" "$config_path")
+      local context_file=$(build_worker_context "$worker_id" "$role" "$task" "$config_path")
+
+      # Copy context file to worktree
+      if [ -f "$context_file" ]; then
+        cp "$context_file" "$work_path/.czarina-context.md"
+        echo "  ✅ Enhanced context created at .czarina-context.md"
+      fi
+    fi
   fi
 
   # Launch appropriate agent
@@ -34,18 +53,33 @@ launch_worker_agent() {
     aider)
       launch_aider "$worker_id" "$window_index" "$session"
       ;;
-    claude)
+    claude|claude-code)
       launch_claude "$worker_id" "$window_index" "$session"
+      ;;
+    claude-desktop)
+      launch_claude_desktop "$worker_id" "$window_index" "$session"
       ;;
     kilocode)
       launch_kilocode "$worker_id" "$window_index" "$session"
       ;;
     cursor)
-      echo "⚠️  Cursor requires manual launch (GUI application)"
-      echo "   Worker $worker_id window: $window_index"
+      launch_cursor_guide "$worker_id" "$window_index" "$session"
+      ;;
+    windsurf)
+      launch_windsurf_guide "$worker_id" "$window_index" "$session"
+      ;;
+    copilot|github-copilot)
+      launch_copilot_guide "$worker_id" "$window_index" "$session"
+      ;;
+    chatgpt|chatgpt-code)
+      launch_chatgpt_guide "$worker_id" "$window_index" "$session"
+      ;;
+    codeium)
+      launch_codeium_guide "$worker_id" "$window_index" "$session"
       ;;
     *)
       echo "❌ Unknown agent type: $agent_type"
+      echo "   Supported: claude, claude-desktop, aider, kilocode, cursor, windsurf, copilot, chatgpt, codeium"
       return 1
       ;;
   esac
@@ -245,7 +279,13 @@ launch_claude() {
   else
     local work_path=".czarina/worktrees/$worker_id"
     local identity_file="WORKER_IDENTITY.md"
-    local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+
+    # Check if enhanced context is available
+    if [ -f "$work_path/.czarina-context.md" ]; then
+      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read .czarina-context.md for enhanced context (agent rules + project memory), then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+    else
+      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+    fi
   fi
 
   # Configure Claude settings for auto-approval
@@ -292,7 +332,13 @@ launch_kilocode() {
   else
     local work_path=".czarina/worktrees/$worker_id"
     local identity_file="WORKER_IDENTITY.md"
-    local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+
+    # Check if enhanced context is available
+    if [ -f "$work_path/.czarina-context.md" ]; then
+      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read .czarina-context.md for enhanced context (agent rules + project memory), then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+    else
+      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
+    fi
   fi
 
   echo "  ✅ Kilocode will use auto-approve mode (--yolo)"
@@ -314,10 +360,20 @@ launch_aider() {
   local worktree_path=".czarina/worktrees/$worker_id"
 
   # Create aider startup commands
-  cat > "$worktree_path/.aider-init" << EOF
+  if [ -f "$worktree_path/.czarina-context.md" ]; then
+    # Include enhanced context if available
+    cat > "$worktree_path/.aider-init" << EOF
+/add ../workers/$worker_id.md
+/add .czarina-context.md
+/ask You are the $worker_id worker. First read .czarina-context.md for enhanced context (agent rules + project memory), then read your instructions in ../workers/$worker_id.md and begin with Task 1.
+EOF
+  else
+    # Standard initialization
+    cat > "$worktree_path/.aider-init" << EOF
 /add ../workers/$worker_id.md
 /ask You are the $worker_id worker. Read your instructions in the file I just added and begin with Task 1.
 EOF
+  fi
 
   echo "  ✅ Created aider init file for $worker_id"
 
@@ -325,6 +381,156 @@ EOF
   tmux send-keys -t $session:$window_index "aider --yes-always --load .aider-init" C-m
 
   echo "  ✅ Launched aider for $worker_id"
+}
+
+launch_claude_desktop() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  Claude Desktop requires manual launch (desktop application)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open Claude Desktop application"
+  echo "   2. Navigate to: $work_path"
+  echo "   3. Send this prompt:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      Read WORKER_IDENTITY.md, then .czarina-context.md for enhanced context,"
+    echo "      then ../workers/$worker_id.md and begin Task 1"
+  else
+    echo "      Read WORKER_IDENTITY.md, then ../workers/$worker_id.md and begin Task 1"
+  fi
+  echo ""
+}
+
+launch_cursor_guide() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  Cursor requires manual launch (GUI application)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open Cursor IDE"
+  echo "   2. Open workspace: $work_path"
+  echo "   3. Open Cursor Chat and reference files with @:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      @WORKER_IDENTITY.md @.czarina-context.md @../workers/$worker_id.md"
+    echo ""
+    echo "      First read the context file for agent rules and memory,"
+    echo "      then follow the worker instructions and begin Task 1."
+  else
+    echo "      @WORKER_IDENTITY.md @../workers/$worker_id.md"
+    echo ""
+    echo "      Follow the worker instructions exactly and begin Task 1."
+  fi
+  echo ""
+}
+
+launch_windsurf_guide() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  Windsurf requires manual launch (GUI application)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open Windsurf IDE"
+  echo "   2. Open workspace: $work_path"
+  echo "   3. Use @ to reference files in chat:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      @WORKER_IDENTITY.md @.czarina-context.md @../workers/$worker_id.md"
+    echo ""
+    echo "      I am this worker. First read the enhanced context, then begin tasks."
+  else
+    echo "      @WORKER_IDENTITY.md @../workers/$worker_id.md"
+    echo ""
+    echo "      I am this worker. Follow the prompt and begin tasks."
+  fi
+  echo ""
+}
+
+launch_copilot_guide() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  GitHub Copilot requires manual setup (VS Code/IDE)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open VS Code or supported IDE"
+  echo "   2. Open workspace: $work_path"
+  echo "   3. Open Copilot Chat and send:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      Read WORKER_IDENTITY.md, .czarina-context.md, and ../workers/$worker_id.md"
+    echo "      First review the enhanced context, then follow worker instructions."
+  else
+    echo "      Read WORKER_IDENTITY.md and ../workers/$worker_id.md"
+    echo "      Follow the worker instructions exactly."
+  fi
+  echo ""
+}
+
+launch_chatgpt_guide() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  ChatGPT Code Interpreter requires manual setup (web/desktop)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open ChatGPT with Code Interpreter enabled"
+  echo "   2. Upload or reference repository files"
+  echo "   3. Send this prompt:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      Read files: WORKER_IDENTITY.md, .czarina-context.md, ../workers/$worker_id.md"
+    echo "      Review the context for agent rules and memory, then begin tasks."
+  else
+    echo "      Read files: WORKER_IDENTITY.md, ../workers/$worker_id.md"
+    echo "      Follow the worker prompt exactly."
+  fi
+  echo ""
+  echo "   Note: You may need to copy/paste file contents directly"
+  echo ""
+}
+
+launch_codeium_guide() {
+  local worker_id="$1"
+  local window_index="$2"
+  local session="$3"
+
+  local work_path=".czarina/worktrees/$worker_id"
+
+  echo "⚠️  Codeium requires manual setup (IDE extension)"
+  echo ""
+  echo "📋 Instructions for $worker_id:"
+  echo "   1. Open your IDE with Codeium extension"
+  echo "   2. Open workspace: $work_path"
+  echo "   3. Use Codeium chat to send:"
+  echo ""
+  if [ -f "$work_path/.czarina-context.md" ]; then
+    echo "      Read WORKER_IDENTITY.md, .czarina-context.md, and ../workers/$worker_id.md"
+    echo "      Review enhanced context, then act as the worker and begin tasks."
+  else
+    echo "      Read WORKER_IDENTITY.md and ../workers/$worker_id.md"
+    echo "      Act as this worker and begin tasks."
+  fi
+  echo ""
 }
 
 # Main execution
