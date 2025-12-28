@@ -173,6 +173,10 @@
             "type": "string",
             "description": "Human-readable task description"
           },
+          "first_action": {
+            "type": "string",
+            "description": "Explicit first action for worker to take (prevents onboarding confusion)"
+          },
           "versions": {
             "type": "array",
             "description": "Version tags for this worker",
