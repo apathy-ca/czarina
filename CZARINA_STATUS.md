@@ -231,14 +231,38 @@ Generated: $(date +"%Y-%m-%d")
 
 The system is stable, well-documented, and actively maintained. Recent enhancements (dependency coordination, Kilocode support) demonstrate ongoing commitment to quality and user experience.
 
-**Recommended Action:** 
-- ✅ Safe for production use
-- ✅ Ready for new projects
-- ✅ Stable for long-term deployments
+**Recommended Action:**
+- ✅ v0.6.2: Safe for production use
+- ⚠️ v0.7.0: ON HOLD - Critical UX issues identified
+- 🎯 v0.7.1: Top priority - Fix foundation before new features
+
+## Critical UX Issues (Blocking v0.7.0)
+
+From production dogfooding (Czarina-on-Czarina, Czarina-on-Hopper, Czarina-on-SARK):
+
+1. **Workers Can't Find Their Spot** (High Priority)
+   - Pattern: 1 worker per orchestration gets stuck
+   - Impact: Manual intervention required
+   - Fix: Add explicit "YOUR FIRST ACTION" to identities
+
+2. **Czar Not Actually Autonomous** (Critical Priority)
+   - Pattern: Czar sits idle, human coordinates everything
+   - Impact: Defeats purpose of orchestration
+   - Fix: Implement autonomous Czar daemon with monitoring loop
+
+3. **Launch Process Too Complex** (High Priority)
+   - Pattern: 8 manual steps, 10+ minutes
+   - Impact: Friction kills momentum
+   - Fix: Implement `czarina analyze plan.md --go`
+
+**Decision:** Fix UX foundation (v0.7.1) before building new features (v0.7.0)
+
+See: `.czarina/hopper/issue-*.md` for detailed analysis
 
 ---
 
-**Generated:** 2025-12-27  
-**Version:** 0.6.2  
-**Next Review:** After Option B/C implementation
+**Generated:** 2025-12-28
+**Version:** 0.6.2 (current stable)
+**Next Version:** 0.7.1 (UX fixes) → 0.7.0 (memory + rules)
+**Next Review:** After v0.7.1 release
 
