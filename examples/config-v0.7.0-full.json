@@ -1,0 +1,217 @@
+{
+  "project": {
+    "name": "Awesome Web App",
+    "slug": "awesome-web-app",
+    "description": "Example project with all v0.7.0 features enabled",
+    "repository": "/home/user/projects/awesome-web-app",
+    "orchestration_dir": ".czarina"
+  },
+
+  "orchestration": {
+    "mode": "local"
+  },
+
+  "memory": {
+    "enabled": true,
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "similarity_threshold": 0.7,
+    "max_results": 5,
+    "auto_extract": true,
+    "index_path": ".czarina/memories.index"
+  },
+
+  "agent_rules": {
+    "enabled": true,
+    "library_path": ".czarina/agent-rules",
+    "mode": "auto",
+    "condensed": true,
+    "max_context_kb": 20,
+    "role_mappings": {
+      "code": ["python", "patterns", "testing", "security", "workflows"],
+      "architect": ["patterns", "documentation", "workflows", "orchestration"],
+      "qa": ["testing", "security", "workflows"],
+      "debug": ["python", "patterns", "security"],
+      "documentation": ["documentation", "workflows", "templates"],
+      "orchestrator": ["orchestration", "workflows", "patterns"],
+      "integration": ["testing", "workflows", "patterns"]
+    }
+  },
+
+  "czar": {
+    "agent": "claude",
+    "autonomous": false
+  },
+
+  "workers": [
+    {
+      "id": "architect",
+      "role": "architect",
+      "agent": "claude",
+      "branch": "feat/architecture",
+      "description": "System Architect - Design and architecture decisions",
+      "dependencies": [],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true,
+        "max_context_kb": 10
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "condensed": true
+      }
+    },
+    {
+      "id": "backend-core",
+      "role": "code",
+      "agent": "aider",
+      "branch": "feat/backend-core",
+      "description": "Backend Core - Business logic and API endpoints",
+      "dependencies": ["architect"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["python", "patterns", "testing", "security"]
+      }
+    },
+    {
+      "id": "backend-db",
+      "role": "code",
+      "agent": "aider",
+      "branch": "feat/backend-database",
+      "description": "Backend Database - Schema, migrations, queries",
+      "dependencies": ["architect"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "project_rules": ["database-patterns.md"]
+      }
+    },
+    {
+      "id": "frontend",
+      "role": "code",
+      "agent": "cursor",
+      "branch": "feat/frontend",
+      "description": "Frontend - React UI components and state management",
+      "dependencies": ["architect", "backend-core"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true
+      }
+    },
+    {
+      "id": "testing-unit",
+      "role": "qa",
+      "agent": "aider",
+      "branch": "feat/testing-unit",
+      "description": "Unit Tests - Backend and frontend unit test coverage",
+      "dependencies": ["backend-core", "frontend"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true
+      }
+    },
+    {
+      "id": "testing-integration",
+      "role": "qa",
+      "agent": "aider",
+      "branch": "feat/testing-integration",
+      "description": "Integration Tests - End-to-end and API integration tests",
+      "dependencies": ["backend-core", "frontend", "testing-unit"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true
+      }
+    },
+    {
+      "id": "security",
+      "role": "qa",
+      "agent": "claude",
+      "branch": "feat/security-audit",
+      "description": "Security - Security audit and vulnerability fixes",
+      "dependencies": ["backend-core", "frontend"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": false,
+        "domains": ["security", "testing"]
+      }
+    },
+    {
+      "id": "documentation",
+      "role": "documentation",
+      "agent": "claude",
+      "branch": "feat/documentation",
+      "description": "Documentation - API docs, README, guides",
+      "dependencies": ["backend-core", "frontend"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true
+      }
+    },
+    {
+      "id": "integration",
+      "role": "integration",
+      "agent": "windsurf",
+      "branch": "feat/integration",
+      "description": "Integration - Merge all work, resolve conflicts, final testing",
+      "dependencies": ["backend-core", "backend-db", "frontend", "testing-unit", "testing-integration", "security", "documentation"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      },
+      "rules": {
+        "enabled": true,
+        "auto_load": true
+      }
+    }
+  ],
+
+  "daemon": {
+    "enabled": true,
+    "auto_approve": ["read", "write", "commit"],
+    "activity_threshold": 300
+  },
+
+  "hopper": {
+    "enabled": true,
+    "priority_algorithm": "priority_times_complexity"
+  }
+}

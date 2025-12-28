@@ -1,0 +1,39 @@
+{
+  "project": {
+    "name": "Simple Project",
+    "slug": "simple-project"
+  },
+
+  "memory": {
+    "enabled": true
+  },
+
+  "agent_rules": {
+    "enabled": true
+  },
+
+  "workers": [
+    {
+      "id": "backend",
+      "role": "code",
+      "agent": "aider",
+      "branch": "feat/backend"
+    },
+    {
+      "id": "frontend",
+      "role": "code",
+      "agent": "aider",
+      "branch": "feat/frontend"
+    },
+    {
+      "id": "tests",
+      "role": "qa",
+      "agent": "aider",
+      "branch": "feat/tests"
+    }
+  ],
+
+  "daemon": {
+    "enabled": true
+  }
+}
