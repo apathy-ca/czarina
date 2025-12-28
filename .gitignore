@@ -43,3 +43,6 @@ czarina-*/status/
 
 # User projects (should live in separate repos)
 projects/
+
+# Agent rules library symlink target (symlink is tracked, but not contents)
+czarina-core/agent-rules/*

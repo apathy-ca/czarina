@@ -99,6 +99,7 @@ czarina daemon start
 - 🔀 **Auto Branches** - Worker branches created and managed automatically
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
 - 📚 **Pattern Library** - 30-50% faster debugging with proven patterns
+- 📖 **Agent Rules Library** - 43K+ lines of best practices created BY Czarina FOR Czarina
 
 ### ✨ What's New in v0.6.1
 
@@ -290,6 +291,7 @@ czarina patterns pending  # List discoveries to share
 - **[docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md)** - **Czar coordination role** (critical!)
 - **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)** - Production checklist
 - **[docs/guides/WORKER_SETUP_GUIDE.md](docs/guides/WORKER_SETUP_GUIDE.md)** - Worker configuration
+- **[AGENT_RULES.md](AGENT_RULES.md)** - 53+ rules & templates for quality code (NEW!)
 
 ### Advanced
 - **[docs/PHASE_MANAGEMENT.md](docs/PHASE_MANAGEMENT.md)** - Phase lifecycle & smart cleanup
