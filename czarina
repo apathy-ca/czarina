@@ -437,6 +437,14 @@ The config.json should include:
 - worker definitions (id, agent, branch, dependencies, role)
 - any special configuration (hopper, daemon settings, etc.)
 
+CRITICAL - Branch Naming Convention:
+- Worker branches MUST follow the pattern: cz<phase>/feat/<worker-id>
+- Omnibus branch MUST follow the pattern: cz<phase>/release/v<version>
+- For example, if phase is "1" or "implementation":
+  * Worker branch: cz1/feat/logging OR czimplementation/feat/logging
+  * Omnibus branch: cz1/release/v0.6.0 OR czimplementation/release/v0.6.0
+- DO NOT use the old "worker/" prefix - it will fail validation!
+
 Each worker markdown file should include:
 - Mission and deliverables
 - Detailed task breakdown
@@ -1278,6 +1286,14 @@ The config.json should include:
 - project metadata (name, slug, version, phase)
 - worker definitions (id, branch, dependencies)
 - any special configuration (hopper, orchestration mode, etc.)
+
+CRITICAL - Branch Naming Convention:
+- Worker branches MUST follow the pattern: cz<phase>/feat/<worker-id>
+- Omnibus branch MUST follow the pattern: cz<phase>/release/v<version>
+- For example, if phase is "1" or "implementation":
+  * Worker branch: cz1/feat/logging OR czimplementation/feat/logging
+  * Omnibus branch: cz1/release/v0.6.0 OR czimplementation/release/v0.6.0
+- DO NOT use the old "worker/" prefix - it will fail validation!
 
 Each worker markdown file should include:
 - Mission and deliverables

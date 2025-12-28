@@ -171,10 +171,10 @@ fi
 **Solution**:
 ```
 main
-├── worker/architect
-├── worker/backend
-├── worker/frontend
-└── worker/tests
+├── cz1/feat/architect
+├── cz1/feat/backend
+├── cz1/feat/frontend
+└── cz1/feat/tests
 ```
 
 **Workflow**:
@@ -186,7 +186,11 @@ main
 
 **Prevention**:
 - Automated branch creation
-- Branch naming convention: `worker/<role>`
+- Branch naming convention: `cz<phase>/feat/<worker-id>`
+  * Example: `cz1/feat/logging` for phase 1
+  * Example: `czimplementation/feat/architect` for phase "implementation"
+- Omnibus branch: `cz<phase>/release/v<version>`
+  * Example: `cz1/release/v0.6.0`
 - PR template for worker submissions
 - Merge frequently to avoid divergence
 
