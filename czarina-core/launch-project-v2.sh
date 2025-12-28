@@ -344,13 +344,21 @@ echo ""
 echo -e "${BLUE}🪝 Installing git hooks in worktrees...${NC}"
 "${ORCHESTRATOR_DIR}/czarina-core/install-hooks.sh" "$CZARINA_DIR" "$PROJECT_ROOT"
 
-# Create daemon window
-echo "   • Daemon (auto-starting)"
-tmux send-keys -t "${MGMT_SESSION}:info" "echo '- Daemon (auto-monitoring)'" C-m
+# Create daemon window (auto-approvals)
+echo "   • Daemon (auto-approvals)"
+tmux send-keys -t "${MGMT_SESSION}:info" "echo '- Daemon (auto-approvals)'" C-m
 tmux new-window -t "$MGMT_SESSION" -n "daemon"
 tmux send-keys -t "${MGMT_SESSION}:daemon" "cd ${PROJECT_ROOT}" C-m
 sleep 0.1
 tmux send-keys -t "${MGMT_SESSION}:daemon" "${ORCHESTRATOR_DIR}/czarina-core/daemon/czar-daemon.sh ${CZARINA_DIR}" C-m
+
+# Create autonomous coordination daemon window
+echo "   • Autonomous Czar (coordination)"
+tmux send-keys -t "${MGMT_SESSION}:info" "echo '- Autonomous Czar (phase coordination)'" C-m
+tmux new-window -t "$MGMT_SESSION" -n "czar-auto"
+tmux send-keys -t "${MGMT_SESSION}:czar-auto" "cd ${PROJECT_ROOT}" C-m
+sleep 0.1
+tmux send-keys -t "${MGMT_SESSION}:czar-auto" "${ORCHESTRATOR_DIR}/czarina-core/autonomous-czar-daemon.sh ${CZARINA_DIR}" C-m
 
 # Create dashboard window
 echo "   • Dashboard (auto-starting)"
@@ -388,7 +396,8 @@ echo "   • Workers 1-${WORKERS_IN_MAIN}: Windows 1-${WORKERS_IN_MAIN} of main 
 if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
     echo "   • Workers 10-${WORKER_COUNT}: Mgmt session"
 fi
-echo "   • Daemon: Auto-monitoring (mgmt session)"
+echo "   • Daemon: Auto-approvals (mgmt session)"
+echo "   • Autonomous Czar: Phase coordination (mgmt session)"
 echo "   • Dashboard: Live updating (mgmt session)"
 echo ""
 echo -e "${CYAN}🎯 To close out:${NC}"

@@ -1,26 +1,26 @@
-# Worker Identity: worker-onboarding-fix
+# Worker Identity: autonomous-czar-daemon
 
-You are the **worker-onboarding-fix** worker in this czarina orchestration.
+You are the **autonomous-czar-daemon** worker in this czarina orchestration.
 
 ## Your Role
-Fix workers getting stuck by adding explicit first actions
+Implement autonomous Czar daemon with monitoring loop
 
 ## Your Instructions
-Full task list: $(pwd)/../workers/worker-onboarding-fix.md
+Full task list: $(pwd)/../workers/autonomous-czar-daemon.md
 
 Read it now:
 ```bash
-cat ../workers/worker-onboarding-fix.md | less
+cat ../workers/autonomous-czar-daemon.md | less
 ```
 
 Or use this one-liner to start:
 ```bash
-cat ../workers/worker-onboarding-fix.md
+cat ../workers/autonomous-czar-daemon.md
 ```
 
 ## Quick Reference
-- **Branch:** cz1/feat/worker-onboarding-fix
-- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/worker-onboarding-fix
+- **Branch:** cz1/feat/autonomous-czar-daemon
+- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/autonomous-czar-daemon
 - **Dependencies:** None
 
 ## Logging
@@ -53,7 +53,7 @@ czarina_log_worker_complete
 This helps the Czar monitor your progress!
 
 ## Your Mission
-1. Read your full instructions at ../workers/worker-onboarding-fix.md
+1. Read your full instructions at ../workers/autonomous-czar-daemon.md
 2. Understand your deliverables and success metrics
 3. Begin with Task 1
 4. Follow commit checkpoints in the instructions
