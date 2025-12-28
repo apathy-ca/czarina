@@ -31,6 +31,11 @@ Usage:
     czarina hopper assign <worker> <file>        - Assign to worker
     czarina deps check [worker-id]               - Check dependency status for workers
     czarina deps validate <worker-id>            - Validate dependencies ready for worker
+    czarina memory init                          - Initialize memory system
+    czarina memory query "<text>"                - Search memories for relevant context
+    czarina memory rebuild                       - Rebuild vector index from memories.md
+    czarina memory extract                       - Extract session learnings to memory
+    czarina memory core                          - Show architectural core
     czarina patterns update                      - Update pattern library
     czarina patterns version                     - Show pattern version
     czarina patterns pending                     - List patterns ready to contribute
@@ -1063,6 +1068,194 @@ def cmd_patterns_contribute():
     print("  3. Follow guide to submit upstream")
 
 
+def cmd_memory_init(project_name=None):
+    """Initialize memory system for the project"""
+    czarina_dir, project_root = get_project_context(project_name)
+
+    # Import memory module
+    sys.path.insert(0, str(get_orchestrator_dir() / "czarina-core"))
+    from memory import MemorySystem
+
+    # Determine embedding provider (check for OpenAI API key)
+    provider = "openai" if os.environ.get("OPENAI_API_KEY") else "local"
+
+    if provider == "local":
+        print("ℹ️  OPENAI_API_KEY not found, using local embeddings")
+        print("   To use OpenAI: export OPENAI_API_KEY=your-key")
+        print()
+
+    memory = MemorySystem(czarina_dir, embedding_provider=provider)
+
+    # Get project name from config
+    config_file = czarina_dir / "config.json"
+    if config_file.exists():
+        with open(config_file) as f:
+            config = json.load(f)
+            project_name = config.get("project", {}).get("name", "My Project")
+    else:
+        project_name = project_name or project_root.name
+
+    memory.initialize_memories_file(project_name)
+
+    print()
+    print("📝 Next steps:")
+    print("  1. Edit .czarina/memories.md to add architectural context")
+    print("  2. Run 'czarina memory rebuild' to build the search index")
+    print("  3. Use 'czarina memory query \"task\"' to search memories")
+
+
+def cmd_memory_rebuild():
+    """Rebuild the vector index from memories.md"""
+    czarina_dir, project_root = get_project_context()
+
+    sys.path.insert(0, str(get_orchestrator_dir() / "czarina-core"))
+    from memory import MemorySystem
+
+    memories_file = czarina_dir / "memories.md"
+    if not memories_file.exists():
+        print("❌ memories.md not found")
+        print("💡 Run 'czarina memory init' first")
+        sys.exit(1)
+
+    # Determine embedding provider
+    provider = "openai" if os.environ.get("OPENAI_API_KEY") else "local"
+
+    if provider == "local":
+        print("ℹ️  Using local embeddings (sentence-transformers)")
+        print()
+
+    memory = MemorySystem(czarina_dir, embedding_provider=provider)
+    metadata = memory.build_index(verbose=True)
+
+    print()
+    print(f"✅ Index rebuilt successfully")
+    print(f"   Model: {metadata['embedding_model']}")
+    print(f"   Chunks: {metadata['chunk_count']}")
+
+
+def cmd_memory_query(query_text: str, top_k: int = 5):
+    """Query memories for relevant context"""
+    czarina_dir, project_root = get_project_context()
+
+    sys.path.insert(0, str(get_orchestrator_dir() / "czarina-core"))
+    from memory import MemorySystem
+
+    memories_file = czarina_dir / "memories.md"
+    if not memories_file.exists():
+        print("❌ memories.md not found")
+        print("💡 Run 'czarina memory init' first")
+        sys.exit(1)
+
+    # Determine embedding provider
+    provider = "openai" if os.environ.get("OPENAI_API_KEY") else "local"
+
+    memory = MemorySystem(czarina_dir, embedding_provider=provider)
+
+    print(f"🔍 Searching memories for: \"{query_text}\"")
+    print()
+
+    results = memory.query(query_text, top_k=top_k)
+
+    if not results:
+        print("No relevant memories found.")
+        return
+
+    print("=" * 70)
+    print(memory.format_context(results))
+    print("=" * 70)
+    print()
+    print(f"Found {len(results)} relevant memories")
+
+
+def cmd_memory_extract():
+    """Extract learnings from current session to memories.md"""
+    czarina_dir, project_root = get_project_context()
+
+    sys.path.insert(0, str(get_orchestrator_dir() / "czarina-core"))
+    from memory import MemorySystem
+
+    memories_file = czarina_dir / "memories.md"
+    if not memories_file.exists():
+        print("❌ memories.md not found")
+        print("💡 Run 'czarina memory init' first")
+        sys.exit(1)
+
+    print("📝 Session Extraction")
+    print("=" * 70)
+    print()
+    print("Please provide a session summary in markdown format.")
+    print("Press Ctrl+D (Unix) or Ctrl+Z (Windows) when done.")
+    print()
+    print("Template:")
+    print("### Session: YYYY-MM-DD - [Description]")
+    print()
+    print("**What We Did:**")
+    print("- ")
+    print()
+    print("**What Broke:**")
+    print("- ")
+    print()
+    print("**Root Cause:**")
+    print("- ")
+    print()
+    print("**Resolution:**")
+    print("- ")
+    print()
+    print("**Learnings:**")
+    print("- ")
+    print()
+    print("=" * 70)
+    print()
+    print("Enter your session summary:")
+
+    # Read multiline input
+    lines = []
+    try:
+        while True:
+            line = input()
+            lines.append(line)
+    except EOFError:
+        pass
+
+    session_summary = "\n".join(lines).strip()
+
+    if not session_summary:
+        print("\n❌ Empty summary, aborting")
+        sys.exit(1)
+
+    memory = MemorySystem(czarina_dir)
+    success = memory.extract_session(session_summary)
+
+    if success:
+        print()
+        print("💡 Don't forget to rebuild the index:")
+        print("   czarina memory rebuild")
+
+
+def cmd_memory_show_core():
+    """Show the architectural core (always-loaded context)"""
+    czarina_dir, project_root = get_project_context()
+
+    sys.path.insert(0, str(get_orchestrator_dir() / "czarina-core"))
+    from memory import MemorySystem
+
+    memories_file = czarina_dir / "memories.md"
+    if not memories_file.exists():
+        print("❌ memories.md not found")
+        print("💡 Run 'czarina memory init' first")
+        sys.exit(1)
+
+    memory = MemorySystem(czarina_dir)
+    core = memory.get_architectural_core()
+
+    if core:
+        print("=" * 70)
+        print(core)
+        print("=" * 70)
+    else:
+        print("No architectural core found in memories.md")
+
+
 def cmd_deps_check(worker_id=None):
     """Check dependency status for a worker or all workers"""
     czarina_dir, project_root = get_project_context()
@@ -1490,6 +1683,44 @@ def main():
         # Pass remaining arguments to hopper script
         hopper_args = sys.argv[2:] if len(sys.argv) > 2 else []
         cmd_hopper(hopper_args)
+    elif command == "memory":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina memory <init|query|rebuild|extract|core>")
+            sys.exit(1)
+        subcommand = sys.argv[2]
+        if subcommand == "init":
+            project_name = sys.argv[3] if len(sys.argv) > 3 else None
+            cmd_memory_init(project_name)
+        elif subcommand == "query":
+            if len(sys.argv) < 4:
+                print("❌ Usage: czarina memory query \"<text>\"")
+                sys.exit(1)
+            query_text = " ".join(sys.argv[3:])
+            # Check for optional --top-k flag
+            top_k = 5
+            if "--top-k" in sys.argv:
+                idx = sys.argv.index("--top-k")
+                if idx + 1 < len(sys.argv):
+                    try:
+                        top_k = int(sys.argv[idx + 1])
+                        # Remove --top-k and its value from query_text
+                        query_parts = sys.argv[3:]
+                        query_parts.remove("--top-k")
+                        query_parts.remove(sys.argv[idx + 1])
+                        query_text = " ".join(query_parts)
+                    except ValueError:
+                        pass
+            cmd_memory_query(query_text, top_k)
+        elif subcommand == "rebuild":
+            cmd_memory_rebuild()
+        elif subcommand == "extract":
+            cmd_memory_extract()
+        elif subcommand == "core":
+            cmd_memory_show_core()
+        else:
+            print(f"❌ Unknown memory subcommand: {subcommand}")
+            print("   Valid: init, query, rebuild, extract, core")
+            sys.exit(1)
     elif command == "patterns":
         if len(sys.argv) < 3:
             print("❌ Usage: czarina patterns <update|version|pending|contribute>")

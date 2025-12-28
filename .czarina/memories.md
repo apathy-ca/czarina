@@ -1,64 +1,78 @@
-# Project Memory: Czarina Multi-Agent Orchestration System
+# Project Memory: czarina
+
+Last Updated: 2025-12-28
+
+---
 
 ## Architectural Core
 
+**Essential project context - keep tight (target: 2-4KB)**
+
 ### Component Dependencies
-<!-- Document critical component relationships and load order here -->
-<!-- Example: AuthContext must mount before any component making authenticated API calls -->
+<!-- Key components and their relationships -->
 
 ### Known Couplings
-<!-- Document explicit and implicit couplings discovered through development -->
-<!-- Example: UI re-renders can race with token refresh → auth failures -->
+<!-- Implicit dependencies and gotchas -->
 
-### Constraints
-<!-- Document critical constraints that must not be violated -->
-<!-- Example: All API calls through /api prefix for proxy routing -->
+### Critical Constraints
+<!-- Invariants that must not be violated -->
 
 ### Technology Stack
-<!-- Document key technologies, frameworks, and patterns in use -->
-<!-- Example: Bash orchestration, Python workers, git worktrees, tmux sessions -->
+<!-- Key technologies and patterns -->
 
 ---
 
 ## Project Knowledge
 
-<!-- Session entries are added here after each work session -->
-<!-- Each session follows this template: -->
+**Searchable session history - what we learned**
 
-<!--
-### Session: YYYY-MM-DD - [Brief Description]
+<!-- Sessions are added here automatically via `czarina memory extract` -->
+<!-- Each session should follow this structure:
 
-#### What We Did
-- [Task 1]
-- [Task 2]
+### Session: YYYY-MM-DD - [Description]
 
-#### What Broke
-- [Issue 1]
-- [Issue 2]
+**What We Did:**
+-
 
-#### Root Cause
-- [Analysis of why the issues occurred]
+**What Broke:**
+-
 
-#### Resolution
-- [How we fixed it]
+**Root Cause:**
+-
 
-#### Prevention
-- [What we learned to prevent this in the future]
-- TODO: [Action items]
+**Resolution:**
+-
+
+**Learnings:**
+-
+
 -->
 
 ---
 
 ## Patterns and Decisions
 
-<!-- Document important architectural decisions and patterns -->
-<!-- Each entry follows this template: -->
+**Architectural decisions and their rationale**
 
-<!--
-### [Pattern/Decision Name]
-- **Context**: Why this came up
-- **Decision**: What we chose
-- **Rationale**: Why we made this choice
-- **Revisit if**: Conditions that would warrant reconsideration
+<!-- Example:
+
+### [Pattern Name]
+
+**Context:** Why this came up
+
+**Decision:** What we chose
+
+**Rationale:** Why we chose it
+
+**Revisit if:** Conditions that would change this decision
+
 -->
 
+---
+
+## Notes
+
+- This file is the **source of truth** for project memory
+- The .index file is a regenerable cache (do not edit manually)
+- Edit this file directly to add, update, or remove memories
+- Run `czarina memory rebuild` after manual edits to regenerate the index
