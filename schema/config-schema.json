@@ -1,0 +1,347 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/anthropics/czarina/schema/config.json",
+  "title": "Czarina Configuration Schema",
+  "description": "Configuration schema for Czarina multi-agent orchestration system",
+  "type": "object",
+  "required": ["project", "workers"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "description": "Project-level configuration",
+      "required": ["name", "repository"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name"
+        },
+        "slug": {
+          "type": "string",
+          "description": "Project slug (URL-safe identifier)",
+          "pattern": "^[a-z0-9-_]+$"
+        },
+        "repository": {
+          "type": "string",
+          "description": "Path to the git repository"
+        },
+        "orchestration_dir": {
+          "type": "string",
+          "description": "Directory for orchestration metadata",
+          "default": ".czarina"
+        },
+        "version": {
+          "type": "string",
+          "description": "Project version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "phase": {
+          "type": "integer",
+          "description": "Current development phase",
+          "minimum": 1
+        },
+        "omnibus_branch": {
+          "type": "string",
+          "description": "Main integration branch for this phase"
+        },
+        "description": {
+          "type": "string",
+          "description": "Project description"
+        }
+      }
+    },
+    "agent_rules": {
+      "type": "object",
+      "description": "Global agent rules configuration",
+      "properties": {
+        "library_path": {
+          "type": "string",
+          "description": "Path to agent rules library",
+          "default": ".czarina/agent-rules"
+        },
+        "mode": {
+          "type": "string",
+          "description": "Rule loading mode",
+          "enum": ["auto", "manual", "disabled"],
+          "default": "auto"
+        },
+        "condensed": {
+          "type": "boolean",
+          "description": "Use condensed rule format",
+          "default": true
+        }
+      }
+    },
+    "memory": {
+      "type": "object",
+      "description": "Global memory system configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable memory system",
+          "default": true
+        },
+        "embedding_provider": {
+          "type": "string",
+          "description": "Embedding provider",
+          "enum": ["openai", "anthropic", "local"],
+          "default": "openai"
+        },
+        "embedding_model": {
+          "type": "string",
+          "description": "Embedding model to use",
+          "default": "text-embedding-3-small"
+        },
+        "similarity_threshold": {
+          "type": "number",
+          "description": "Minimum similarity score for memory retrieval",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.7
+        },
+        "max_results": {
+          "type": "integer",
+          "description": "Maximum number of memory results to return",
+          "minimum": 1,
+          "default": 5
+        }
+      }
+    },
+    "hopper": {
+      "type": "object",
+      "description": "Two-level hopper system configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable hopper system",
+          "default": true
+        },
+        "project_hopper": {
+          "type": "string",
+          "description": "Path to project-level hopper",
+          "default": ".czarina/hopper"
+        },
+        "phase_hopper": {
+          "type": "string",
+          "description": "Path to phase-level hopper"
+        },
+        "czar_monitoring": {
+          "type": "object",
+          "description": "Czar monitoring configuration",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "description": "Enable Czar monitoring of hopper",
+              "default": false
+            },
+            "check_interval": {
+              "type": "integer",
+              "description": "Hopper check interval in seconds",
+              "minimum": 60,
+              "default": 900
+            }
+          }
+        }
+      }
+    },
+    "workers": {
+      "type": "array",
+      "description": "Worker definitions",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "agent", "branch"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique worker identifier",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "agent": {
+            "type": "string",
+            "description": "Agent type (claude, aider, cursor, etc.)"
+          },
+          "branch": {
+            "type": "string",
+            "description": "Git branch for this worker"
+          },
+          "role": {
+            "type": "string",
+            "description": "Worker role for rule loading",
+            "enum": ["code", "plan", "review", "test", "integration", "research"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable task description"
+          },
+          "versions": {
+            "type": "array",
+            "description": "Version tags for this worker",
+            "items": {
+              "type": "string"
+            }
+          },
+          "token_budget": {
+            "type": "integer",
+            "description": "Maximum token budget",
+            "minimum": 0
+          },
+          "dependencies": {
+            "type": "array",
+            "description": "Worker IDs that must complete first",
+            "items": {
+              "type": "string"
+            }
+          },
+          "merges": {
+            "type": "array",
+            "description": "Worker branches to merge (for integration workers)",
+            "items": {
+              "type": "string"
+            }
+          },
+          "planned_duration": {
+            "type": "string",
+            "description": "Estimated duration (for planning purposes)"
+          },
+          "rules": {
+            "type": "object",
+            "description": "Worker-level rules configuration",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "Enable rules for this worker",
+                "default": true
+              },
+              "auto_load": {
+                "type": "boolean",
+                "description": "Auto-load rules based on role and context",
+                "default": true
+              },
+              "domains": {
+                "type": "array",
+                "description": "Specific rule domains to load",
+                "items": {
+                  "type": "string",
+                  "enum": ["python", "javascript", "typescript", "testing", "security", "documentation", "performance", "git"]
+                }
+              }
+            }
+          },
+          "memory": {
+            "type": "object",
+            "description": "Worker-level memory configuration",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "description": "Enable memory for this worker",
+                "default": true
+              },
+              "use_core": {
+                "type": "boolean",
+                "description": "Use core memory system",
+                "default": true
+              },
+              "search_on_start": {
+                "type": "boolean",
+                "description": "Search memory when worker starts",
+                "default": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "orchestration": {
+      "type": "object",
+      "description": "Orchestration mode configuration",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "description": "Orchestration mode",
+          "enum": ["local", "github", "parallel_spike", "sequential_dependencies", "hybrid"],
+          "default": "local"
+        },
+        "auto_push_branches": {
+          "type": "boolean",
+          "description": "Auto-push branches (github mode only)",
+          "default": false
+        },
+        "allow_parallel_when_possible": {
+          "type": "boolean",
+          "description": "Allow parallel execution when dependencies permit",
+          "default": true
+        },
+        "timeout_hours": {
+          "type": "integer",
+          "description": "Maximum hours to wait for dependencies",
+          "minimum": 1,
+          "default": 24
+        },
+        "notes": {
+          "type": "string",
+          "description": "Configuration notes"
+        }
+      }
+    },
+    "daemon": {
+      "type": "object",
+      "description": "Daemon monitoring configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable background daemon",
+          "default": true
+        },
+        "auto_approve": {
+          "type": "array",
+          "description": "Operations to auto-approve",
+          "items": {
+            "type": "string",
+            "enum": ["read", "write", "edit", "commit", "push"]
+          }
+        }
+      }
+    },
+    "omnibus": {
+      "type": "object",
+      "description": "Omnibus integration branch configuration",
+      "properties": {
+        "branch": {
+          "type": "string",
+          "description": "Omnibus branch name"
+        },
+        "merge_order": {
+          "type": "array",
+          "description": "Order for merging worker branches",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "checkpoints": {
+      "type": "array",
+      "description": "Integration checkpoints",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Checkpoint identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "Checkpoint description"
+          },
+          "workers": {
+            "type": "array",
+            "description": "Workers included in this checkpoint",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

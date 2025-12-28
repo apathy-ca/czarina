@@ -94,12 +94,94 @@ czarina daemon start
 
 - 🤖 **Agent-Agnostic** - Works with 9+ AI coding assistants (Claude Code, Aider, Cursor, Kilocode, Windsurf, etc.)
 - ⚡ **90% Autonomy** - Daemon system reduces manual intervention from 100% to ~10%
+- 🧠 **Persistent Memory** - Workers remember and learn from past sessions (v0.7.0+)
+- 📚 **43K+ Agent Rules** - Production-tested best practices built-in (v0.7.0+)
 - 🎯 **Embedded** - `.czarina/` lives in your project (like `.git/`)
 - 🌳 **Git Worktrees** - Each worker gets isolated workspace for true parallelism
 - 🔀 **Auto Branches** - Worker branches created and managed automatically
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
-- 📚 **Pattern Library** - 30-50% faster debugging with proven patterns
-- 📖 **Agent Rules Library** - 43K+ lines of best practices created BY Czarina FOR Czarina
+
+### ✨ What's New in v0.7.0
+
+**Major Release - Learning & Knowledge-Powered Workers** (December 2025)
+
+Transform workers from amnesiacs into continuous learners with institutional knowledge:
+
+#### 🧠 Persistent Memory System
+Workers now remember and learn across sessions:
+
+```bash
+czarina init --with-memory
+czarina memory query "database timeout issues"
+czarina memory extract  # Capture session learnings
+```
+
+**3-tier architecture:**
+- **Architectural Core** - Essential context loaded every session
+- **Project Knowledge** - Semantic search of past sessions
+- **Session Context** - Ephemeral working state
+
+**Benefits:**
+- Workers remember past mistakes and solutions
+- Build institutional knowledge over time
+- Avoid repeating debugging sessions
+- Maintain architectural understanding
+
+See [MEMORY_GUIDE.md](MEMORY_GUIDE.md)
+
+#### 📚 Agent Rules Library (43K+ Lines)
+Workers start with production-tested best practices built-in:
+
+- Python development standards
+- Role-specific guidance (Architect, Code, QA, Debug, Docs, Orchestrator)
+- Workflow best practices
+- Design patterns (tool use, streaming, caching, error recovery)
+- Testing and security standards
+- Documentation templates
+
+**Automatic loading based on worker role:**
+```json
+{
+  "agent_rules": { "enabled": true },
+  "workers": [
+    { "id": "backend", "role": "code" }  // Auto-loads Python, testing, security rules
+  ]
+}
+```
+
+**Quality impact:**
+- 30-40% reduction in common errors
+- Faster debugging (workers know patterns)
+- More consistent code quality
+- Better test coverage
+
+See [AGENT_RULES.md](AGENT_RULES.md)
+
+#### 🔄 The Synergy
+Memory + Rules work together powerfully:
+
+- **Agent Rules** = Universal best practices ("use connection pooling")
+- **Memory** = Project-specific learnings ("our DB connections timeout at 30s")
+- **Together** = Workers apply both universal wisdom AND project experience
+
+#### 🆕 New CLI Commands
+```bash
+# Memory system
+czarina memory init              # Initialize memory
+czarina memory query "<search>"  # Search past sessions
+czarina memory extract           # Capture learnings
+czarina memory rebuild           # Rebuild search index
+
+# Enhanced init
+czarina init --with-memory --with-rules
+```
+
+#### 🎯 100% Backward Compatible
+All new features are **opt-in**. Existing orchestrations work unchanged.
+
+See [MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md) for migration guide.
+
+---
 
 ### ✨ What's New in v0.6.1
 
@@ -267,19 +349,29 @@ This demonstrates Czarina can handle large-scale projects with 10+ workers in pa
 
 ```bash
 # Project Management
-czarina init              # Initialize in current directory
-czarina list              # List all projects
-czarina launch            # Launch workers
-czarina status            # Show status
+czarina init                        # Initialize in current directory
+czarina init --with-memory          # Initialize with memory system
+czarina init --with-rules           # Initialize with agent rules
+czarina init --with-memory --with-rules  # Initialize with both
+czarina list                        # List all projects
+czarina launch                      # Launch workers
+czarina status                      # Show status
+
+# Memory System (v0.7.0+)
+czarina memory init                 # Initialize memory system
+czarina memory query "<search>"     # Search past sessions
+czarina memory extract              # Extract session learnings
+czarina memory rebuild              # Rebuild search index
+czarina memory status               # Show memory status
 
 # Daemon (Auto-Approval)
-czarina daemon start      # Start auto-approval
-czarina daemon stop       # Stop daemon
-czarina daemon logs       # View logs
+czarina daemon start                # Start auto-approval
+czarina daemon stop                 # Stop daemon
+czarina daemon logs                 # View logs
 
 # Pattern Library
-czarina patterns update   # Get latest patterns
-czarina patterns pending  # List discoveries to share
+czarina patterns update             # Get latest patterns
+czarina patterns pending            # List discoveries to share
 ```
 
 ---
@@ -288,10 +380,16 @@ czarina patterns pending  # List discoveries to share
 
 ### Getting Started
 - **[QUICK_START.md](QUICK_START.md)** - 5-minute guide
+- **[MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md)** - **v0.6.2 → v0.7.0 migration guide**
 - **[docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md)** - **Czar coordination role** (critical!)
 - **[PRODUCTION_READINESS.md](PRODUCTION_READINESS.md)** - Production checklist
 - **[docs/guides/WORKER_SETUP_GUIDE.md](docs/guides/WORKER_SETUP_GUIDE.md)** - Worker configuration
 - **[AGENT_RULES.md](AGENT_RULES.md)** - 53+ rules & templates for quality code (NEW!)
+
+### v0.7.0 Features
+- **[MEMORY_GUIDE.md](MEMORY_GUIDE.md)** - **Memory system usage & best practices**
+- **[AGENT_RULES.md](AGENT_RULES.md)** - **Agent rules integration guide**
+- **[czarina_memory_spec.md](czarina_memory_spec.md)** - Memory architecture specification
 
 ### Advanced
 - **[docs/PHASE_MANAGEMENT.md](docs/PHASE_MANAGEMENT.md)** - Phase lifecycle & smart cleanup

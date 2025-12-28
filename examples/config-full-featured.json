@@ -1,0 +1,159 @@
+{
+  "$schema": "../schema/config-schema.json",
+  "project": {
+    "name": "my-project",
+    "slug": "my-project",
+    "repository": "/home/user/projects/my-project",
+    "orchestration_dir": ".czarina",
+    "version": "1.0.0",
+    "phase": 1,
+    "omnibus_branch": "cz1/release/v1.0.0",
+    "description": "Full-featured project with all v0.7.0 capabilities"
+  },
+  "agent_rules": {
+    "library_path": ".czarina/agent-rules",
+    "mode": "auto",
+    "condensed": true
+  },
+  "memory": {
+    "enabled": true,
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "similarity_threshold": 0.7,
+    "max_results": 5
+  },
+  "hopper": {
+    "enabled": true,
+    "project_hopper": ".czarina/hopper",
+    "phase_hopper": ".czarina/phase1-hopper",
+    "czar_monitoring": {
+      "enabled": true,
+      "check_interval": 900
+    }
+  },
+  "workers": [
+    {
+      "id": "architecture",
+      "agent": "claude",
+      "role": "plan",
+      "branch": "feat/architecture",
+      "description": "System architecture and design",
+      "token_budget": 1500000,
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["documentation", "security"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "backend",
+      "agent": "claude",
+      "role": "code",
+      "branch": "feat/backend",
+      "description": "Backend API implementation",
+      "token_budget": 2000000,
+      "dependencies": ["architecture"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["python", "testing", "security", "performance"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "frontend",
+      "agent": "cursor",
+      "role": "code",
+      "branch": "feat/frontend",
+      "description": "Frontend UI implementation",
+      "token_budget": 1500000,
+      "dependencies": ["architecture"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["javascript", "typescript", "testing", "performance"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "testing",
+      "agent": "aider",
+      "role": "test",
+      "branch": "feat/testing",
+      "description": "Integration and E2E testing",
+      "token_budget": 1000000,
+      "dependencies": ["backend", "frontend"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["testing", "security"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "documentation",
+      "agent": "claude",
+      "role": "review",
+      "branch": "feat/documentation",
+      "description": "Documentation and code review",
+      "token_budget": 800000,
+      "dependencies": ["backend", "frontend"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["documentation"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "integration",
+      "agent": "claude",
+      "role": "integration",
+      "branch": "cz1/release/v1.0.0",
+      "description": "Integration, QA, and release",
+      "token_budget": 1500000,
+      "dependencies": ["testing", "documentation"],
+      "merges": ["architecture", "backend", "frontend", "testing", "documentation"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["git", "testing", "documentation"]
+      },
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    }
+  ],
+  "orchestration": {
+    "mode": "sequential_dependencies",
+    "allow_parallel_when_possible": true,
+    "timeout_hours": 48
+  },
+  "daemon": {
+    "enabled": true,
+    "auto_approve": ["read", "write", "edit", "commit"]
+  }
+}
