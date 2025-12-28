@@ -1,0 +1,65 @@
+{
+  "$schema": "../schema/config-schema.json",
+  "project": {
+    "name": "my-project",
+    "slug": "my-project",
+    "repository": "/home/user/projects/my-project",
+    "orchestration_dir": ".czarina",
+    "version": "1.0.0",
+    "description": "Project with agent rules enabled"
+  },
+  "agent_rules": {
+    "library_path": ".czarina/agent-rules",
+    "mode": "auto",
+    "condensed": true
+  },
+  "workers": [
+    {
+      "id": "backend",
+      "agent": "claude",
+      "role": "code",
+      "branch": "feat/backend",
+      "description": "Backend API implementation",
+      "token_budget": 2000000,
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["python", "testing", "security"]
+      }
+    },
+    {
+      "id": "frontend",
+      "agent": "cursor",
+      "role": "code",
+      "branch": "feat/frontend",
+      "description": "Frontend UI implementation",
+      "token_budget": 1500000,
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["javascript", "typescript", "testing"]
+      }
+    },
+    {
+      "id": "qa",
+      "agent": "aider",
+      "role": "test",
+      "branch": "feat/testing",
+      "description": "QA and integration testing",
+      "token_budget": 1000000,
+      "dependencies": ["backend", "frontend"],
+      "rules": {
+        "enabled": true,
+        "auto_load": true,
+        "domains": ["testing", "security"]
+      }
+    }
+  ],
+  "orchestration": {
+    "mode": "sequential_dependencies"
+  },
+  "daemon": {
+    "enabled": true,
+    "auto_approve": ["read", "write", "edit", "commit"]
+  }
+}

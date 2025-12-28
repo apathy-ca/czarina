@@ -1,0 +1,54 @@
+{
+  "$schema": "../schema/config-schema.json",
+  "project": {
+    "name": "my-project",
+    "slug": "my-project",
+    "repository": "/home/user/projects/my-project",
+    "orchestration_dir": ".czarina",
+    "version": "1.0.0",
+    "description": "Project with memory system enabled"
+  },
+  "memory": {
+    "enabled": true,
+    "embedding_provider": "openai",
+    "embedding_model": "text-embedding-3-small",
+    "similarity_threshold": 0.7,
+    "max_results": 5
+  },
+  "workers": [
+    {
+      "id": "research",
+      "agent": "claude",
+      "role": "research",
+      "branch": "feat/research",
+      "description": "Research and architecture planning",
+      "token_budget": 1500000,
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    },
+    {
+      "id": "implementation",
+      "agent": "cursor",
+      "role": "code",
+      "branch": "feat/implementation",
+      "description": "Feature implementation",
+      "token_budget": 2000000,
+      "dependencies": ["research"],
+      "memory": {
+        "enabled": true,
+        "use_core": true,
+        "search_on_start": true
+      }
+    }
+  ],
+  "orchestration": {
+    "mode": "sequential_dependencies"
+  },
+  "daemon": {
+    "enabled": true,
+    "auto_approve": ["read", "write", "edit", "commit"]
+  }
+}
