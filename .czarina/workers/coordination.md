@@ -13,6 +13,22 @@
 
 Make czarina autonomous and proactive. The Czar should coordinate workers without manual prompting, the daemon should provide useful status updates, and closeout should generate comprehensive reports.
 
+## 🚀 YOUR FIRST ACTION
+
+**Design the Czar coordination logic:**
+
+```bash
+# Create the Czar coordination script
+touch czarina-core/czar.sh
+
+# Review foundation worker's logging system to understand how to read worker logs
+cat czarina-core/logging.sh
+
+# Plan the coordination functions you'll implement
+```
+
+**Then:** Start implementing czar_check_workers() function as described in Task 1.1.
+
 ## Goals
 
 - Czar monitors workers and coordinates proactively

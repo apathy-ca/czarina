@@ -13,6 +13,26 @@
 
 Integrate all v0.5.0 enhancements, verify they work together, conduct testing, update documentation, and prepare for release.
 
+## 🚀 YOUR FIRST ACTION
+
+**Create the integration branch and check the status of all feature branches:**
+
+```bash
+# Create integration/omnibus branch
+git checkout -b feat/v0.5.0-omnibus main
+
+# List all feature branches to be merged
+git branch -a | grep "feat/"
+
+# Check the completion status of each dependency worker
+for worker in foundation coordination ux-polish dependencies dashboard; do
+  echo "=== $worker ==="
+  tail -1 .czarina/logs/$worker.log 2>/dev/null || echo "Not started"
+done
+```
+
+**Then:** Start merging feature branches one by one, resolving any conflicts (Task 1.1).
+
 ## Goals
 
 - All 5 enhancement streams integrated

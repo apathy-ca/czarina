@@ -10,6 +10,23 @@
 
 Enhance the agent launcher to automatically load agent rules and memory context when starting workers.
 
+## 🚀 YOUR FIRST ACTION
+
+**Examine the current agent launcher to understand its structure:**
+
+```bash
+# Read the agent launcher script
+cat czarina-core/agent-launcher.sh
+
+# Understand how workers are currently launched
+grep -A 10 "load_worker_file" czarina-core/agent-launcher.sh
+
+# Check which agent types are supported
+grep "case.*agent.*in" czarina-core/agent-launcher.sh
+```
+
+**Then:** Plan the integration points for rules and memory loading, and proceed to Objective 1 (modify launcher).
+
 ## Objectives
 
 1. Modify `czarina-core/agent-launcher.sh` to load enriched context

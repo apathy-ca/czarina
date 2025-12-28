@@ -10,6 +10,22 @@
 
 Build semantic search functionality using vector embeddings to retrieve relevant memories from past sessions.
 
+## 🚀 YOUR FIRST ACTION
+
+**Research and choose the embedding provider:**
+
+```bash
+# Review the memory specification for embedding requirements
+cat czarina_memory_spec.md | grep -A 10 "embedding"
+
+# Check if OpenAI API key is available
+echo $OPENAI_API_KEY
+
+# Document your decision: create a brief comparison
+```
+
+**Then:** Document your choice (OpenAI API vs local) with rationale and proceed to Objective 2 (implement vector indexing).
+
 ## Objectives
 
 1. Choose embedding provider (OpenAI API vs local sentence-transformers)

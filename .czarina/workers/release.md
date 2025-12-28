@@ -10,6 +10,24 @@
 
 Perform final QA, create the v0.7.0 release tag, and publish Czarina v0.7.0 to the world.
 
+## 🚀 YOUR FIRST ACTION
+
+**Run comprehensive tests to verify all features are functional:**
+
+```bash
+# Run the full test suite
+./tests/run-all-tests.sh
+
+# Or if individual test files exist
+pytest tests/ -v
+
+# Check that all features work end-to-end
+czarina memory query "test query"
+czarina init test-project --with-memory --with-rules
+```
+
+**Then:** Review test results and proceed to Objective 2 (security review) if all tests pass.
+
 ## Objectives
 
 1. **Final Testing**

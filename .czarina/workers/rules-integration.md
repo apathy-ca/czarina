@@ -10,6 +10,20 @@
 
 Integrate the agent-rules library into Czarina to make 43K+ lines of production-tested best practices available to all workers.
 
+## 🚀 YOUR FIRST ACTION
+
+**Create the symlink to the agent-rules library:**
+
+```bash
+# Create symlink from Czarina to agent-rules library
+ln -s ~/Source/agent-rules/agent-rules ./czarina-core/agent-rules
+
+# Verify it worked
+ls -la czarina-core/agent-rules
+```
+
+**Then:** Add the symlink to .gitignore and proceed to Objective 3 (documentation).
+
 ## Objectives
 
 1. Create symlink: `czarina-core/agent-rules -> ~/Source/agent-rules/agent-rules`

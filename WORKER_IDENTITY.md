@@ -1,71 +1,62 @@
-# Worker Identity: integration
+# Worker Identity: worker-onboarding-fix
 
-You are the **integration** worker in this czarina orchestration.
+You are the **worker-onboarding-fix** worker in this czarina orchestration.
 
 ## Your Role
-Merge all branches and perform E2E testing
+Fix workers getting stuck by adding explicit first actions
 
 ## Your Instructions
-Full task list: $(pwd)/../workers/integration.md
+Full task list: $(pwd)/../workers/worker-onboarding-fix.md
 
 Read it now:
 ```bash
-cat ../workers/integration.md | less
+cat ../workers/worker-onboarding-fix.md | less
 ```
 
 Or use this one-liner to start:
 ```bash
-cat ../workers/integration.md
+cat ../workers/worker-onboarding-fix.md
 ```
 
 ## Quick Reference
-- **Branch:** cz1/feat/integration
-- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/integration
-- **Dependencies:** rules-integration, memory-core, memory-search, cli-commands, config-schema, launcher-enhancement
+- **Branch:** cz1/feat/worker-onboarding-fix
+- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/worker-onboarding-fix
+- **Dependencies:** None
 
 ## Logging
 
 You have structured logging available. Use these commands:
 
 ```bash
-# Source logging functions
-source /home/jhenry/Source/czarina/czarina-core/logging.sh
+# Source logging functions (if not already available)
+source $(git rev-parse --show-toplevel)/czarina-core/logging.sh
 
-# Log task start
-czarina_log_task_start "Task 1: Description"
+# Log your progress
+czarina_log_task_start "Task 1.1: Description"
+czarina_log_checkpoint "feature_implemented"
+czarina_log_task_complete "Task 1.1: Description"
 
-# Log task completion
-czarina_log_task_complete "Task 1: Description"
-
-# Log checkpoint
-czarina_log_checkpoint "checkpoint_name"
-
-# Log worker completion
+# When all tasks done
 czarina_log_worker_complete
 ```
 
-## Important Notes
+**Your logs:**
+- Worker log: ${CZARINA_WORKER_LOG}
+- Event stream: ${CZARINA_EVENTS_LOG}
 
-⚠️ **You have dependencies!**
+**Log important milestones:**
+- Task starts
+- Checkpoints (after commits)
+- Task completions
+- Worker completion
 
-Before you start merging, verify that these workers have completed:
-1. rules-integration
-2. memory-core
-3. memory-search
-4. cli-commands
-5. config-schema
-6. launcher-enhancement
+This helps the Czar monitor your progress!
 
-Check their branches for commits and completion status.
+## Your Mission
+1. Read your full instructions at ../workers/worker-onboarding-fix.md
+2. Understand your deliverables and success metrics
+3. Begin with Task 1
+4. Follow commit checkpoints in the instructions
+5. Log your progress (when logging system is ready)
 
-If any dependencies are incomplete, **WAIT** until they're done. Your job is to integrate their completed work, not to work in parallel.
-
-## Getting Started
-
-1. Read your full task instructions: `cat ../workers/integration.md`
-2. Verify all dependencies are complete
-3. Begin merging feature branches one by one
-4. Test thoroughly after each merge
-5. Create comprehensive test report
-
-Good luck! You're the convergence point for all v0.7.0 work.
+Let's build this! 🚀

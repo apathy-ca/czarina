@@ -10,6 +10,23 @@
 
 Extend the config.json schema to support agent rules and memory system configuration.
 
+## 🚀 YOUR FIRST ACTION
+
+**Examine the current config.json schema structure:**
+
+```bash
+# Read the existing schema file
+cat schema/config-schema.json | jq '.'
+
+# Check example configs to understand current usage
+cat .czarina/config.json | jq '.'
+
+# Review rules-integration output to understand what needs to be configured
+ls -la czarina-core/agent-rules/
+```
+
+**Then:** Plan the schema extensions for rules and memory sections (Objective 1).
+
 ## Objectives
 
 1. Extend config.json schema with `rules` section (global config)

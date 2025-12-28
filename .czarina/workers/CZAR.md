@@ -15,6 +15,29 @@ Coordinate 5 workers to fix the 3 critical UX issues blocking v0.7.0 development
 2. **Czar Not Actually Autonomous** - Human coordinates everything manually
 3. **Launch Too Complex** - 8 steps, 10+ minutes
 
+## 🚀 YOUR FIRST ACTION
+
+**Monitor all workers and check orchestration progress:**
+
+```bash
+# Check which workers have been launched
+ls -la .czarina/worktrees/
+
+# Monitor Phase 1 workers (parallel foundation)
+for worker in rules-integration memory-core memory-search cli-commands; do
+  echo "=== $worker (Phase 1) ==="
+  tail -3 .czarina/logs/$worker.log 2>/dev/null || echo "Not started yet"
+done
+
+# Check Phase 2 status
+for worker in config-schema launcher-enhancement integration documentation release; do
+  echo "=== $worker (Phase 2) ==="
+  tail -3 .czarina/logs/$worker.log 2>/dev/null || echo "Waiting for Phase 1"
+done
+```
+
+**Then:** Continue monitoring per your coordination responsibilities - nudge stuck workers, detect phase completion, generate status reports.
+
 ## Orchestration Strategy
 
 ### Single Phase: Parallel Execution

@@ -10,6 +10,26 @@
 
 Merge all feature branches, resolve conflicts, and perform comprehensive end-to-end testing of the complete v0.7.0 system.
 
+## 🚀 YOUR FIRST ACTION
+
+**Check the status of all dependency branches and plan merge order:**
+
+```bash
+# List all feature branches
+git branch -a | grep "feat/v0.7.0"
+
+# Check each branch's status
+for branch in rules-integration memory-core memory-search cli-commands config-schema launcher-enhancement; do
+  echo "=== $branch ==="
+  git log main..feat/v0.7.0-$branch --oneline | head -5
+done
+
+# Identify potential merge conflicts early
+git log --all --decorate --oneline --graph | head -30
+```
+
+**Then:** Create a merge plan and start with the foundation branches (Objective 1).
+
 ## Objectives
 
 1. Merge all 6 feature branches into integration branch:

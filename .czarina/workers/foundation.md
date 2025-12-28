@@ -13,6 +13,20 @@
 
 Implement the foundational infrastructure for czarina v0.5.0: structured logging system and session workspace architecture. These are the building blocks for all other enhancements.
 
+## 🚀 YOUR FIRST ACTION
+
+**Create the structured logging infrastructure:**
+
+```bash
+# Create the logging script file
+touch czarina-core/logging.sh
+
+# Add the basic log directory structure and initialization function
+# Start implementing czarina_log_init() as described in Task 1.1
+```
+
+**Then:** Implement the logging functions (czarina_log_worker, czarina_log_daemon, czarina_log_event) as per Task 1.1.
+
 ## Goals
 
 - Workers can log to `.czarina/logs/<worker>.log`

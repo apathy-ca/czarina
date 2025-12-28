@@ -13,6 +13,23 @@
 
 Implement worker dependency enforcement so workers can wait for dependencies to complete before starting work. Make parallel vs sequential execution explicit and configurable.
 
+## 🚀 YOUR FIRST ACTION
+
+**Examine how dependencies are currently defined in config.json:**
+
+```bash
+# Check the current config schema
+cat .czarina/config.json | jq '.workers[] | {id, dependencies}'
+
+# Look for any existing dependency handling
+grep -r "dependencies" czarina czarina-core/
+
+# Review the foundation worker's logging to understand WORKER_COMPLETE events
+cat czarina-core/logging.sh 2>/dev/null || echo "Logging system not yet implemented"
+```
+
+**Then:** Create the dependencies.sh script and start implementing the dependency parser (Task 1.1).
+
 ## Goals
 
 - Workers respect dependency chains from config.json

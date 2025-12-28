@@ -13,6 +13,23 @@
 
 Improve user experience with better tmux window naming and structured commit checkpoints in worker definitions. Small but impactful quality-of-life improvements.
 
+## 🚀 YOUR FIRST ACTION
+
+**Locate and examine the tmux window creation logic:**
+
+```bash
+# Find where tmux windows are created during launch
+grep -n "tmux new-window" czarina
+
+# Check how worker IDs are currently used
+jq '.workers[] | {id, agent, description}' .czarina/config.json
+
+# Understand the current window naming pattern
+grep -A 5 -B 5 "window.*worker" czarina
+```
+
+**Then:** Fix the window naming to use worker IDs instead of generic numbers (Task 1.1).
+
 ## Goals
 
 - Tmux windows show worker IDs (security-1, devops) not generic names (worker1, worker2)

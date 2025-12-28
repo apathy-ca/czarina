@@ -13,6 +13,23 @@
 
 Investigate why the dashboard window shows an empty UI frame and fix it. The dashboard should provide live monitoring of worker activity.
 
+## 🚀 YOUR FIRST ACTION
+
+**Investigate the current dashboard implementation:**
+
+```bash
+# Find dashboard-related code
+grep -r "dashboard" czarina czarina-core/
+
+# Check what's currently in the dashboard window
+tmux capture-pane -t czarina-*-mgmt:2 -p 2>/dev/null || echo "Dashboard window not found"
+
+# Look for dashboard initialization in the main script
+grep -A 20 "dashboard" czarina
+```
+
+**Then:** Document your findings in an investigation.md file and proceed to Task 2 (implement fix based on what you find).
+
 ## Goals
 
 - Understand why dashboard is non-functional

@@ -10,6 +10,20 @@
 
 Implement the core memory file structure and basic I/O operations for Czarina's persistent learning system.
 
+## 🚀 YOUR FIRST ACTION
+
+**Read the memory specification to understand the schema:**
+
+```bash
+# Read the complete memory specification
+cat czarina_memory_spec.md
+
+# Or if it's in the docs folder
+cat docs/czarina_memory_spec.md
+```
+
+**Then:** Design the memories.md schema based on what you learned and proceed to Objective 2 (implement file I/O).
+
 ## Objectives
 
 1. Design `memories.md` schema based on `czarina_memory_spec.md`

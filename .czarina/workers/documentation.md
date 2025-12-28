@@ -10,6 +10,23 @@
 
 Create comprehensive documentation for v0.7.0 memory and agent rules features, including migration guides and examples.
 
+## 🚀 YOUR FIRST ACTION
+
+**Review the implemented features from the integration worker:**
+
+```bash
+# Read the integration worker's completion report to understand what was built
+cat .czarina/work/*/workers/integration/completion.md
+
+# Or check the integration branch directly
+git log feat/v0.7.0-integration --oneline | head -20
+
+# Review the actual implementations to document accurately
+ls -la czarina-core/
+```
+
+**Then:** Start creating AGENT_RULES.md based on the actual implementation (Objective 1).
+
 ## Objectives
 
 1. Create `AGENT_RULES.md` - Complete guide to agent rules integration

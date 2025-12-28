@@ -10,6 +10,23 @@
 
 Add CLI commands to the `czarina` Python script for memory management and enhanced initialization.
 
+## 🚀 YOUR FIRST ACTION
+
+**Examine the existing CLI structure:**
+
+```bash
+# Read the czarina CLI script to understand the structure
+cat czarina | less
+
+# Find existing command patterns (look for cmd_ functions)
+grep "^def cmd_" czarina
+
+# Check how subcommands are implemented
+grep -A 5 "subparsers" czarina
+```
+
+**Then:** Plan where to add the new memory command group and proceed to Objective 1 (implement memory query).
+
 ## Objectives
 
 1. Add `czarina memory query "<task description>"` command
