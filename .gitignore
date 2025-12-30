@@ -46,3 +46,10 @@ projects/
 
 # Agent rules library symlink target (symlink is tracked, but not contents)
 czarina-core/agent-rules/*
+
+# Czarina worktrees (git worktree artifacts)
+.czarina/worktrees/
+
+# Czarina runtime files
+.czarina/logs/
+.czarina/worker-status.json
