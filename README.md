@@ -4,43 +4,64 @@
 
 [![Production Ready](https://img.shields.io/badge/status-production%20ready-green)]() [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Czarina enables autonomous teams of AI agents (Claude Code, Aider, Cursor, Kilocode, etc.) to collaborate on software development with 90% autonomy and 3-4x speedup.
+Czarina enables autonomous teams of 9+ AI coding agents (Claude Code, Aider, Cursor, Kilocode, Windsurf, Cline, etc.) to collaborate on software development with 95-98% autonomy and 3-4x speedup.
 
 ---
 
 ## 🎯 How It Works
 
 ```mermaid
-graph LR
+graph TB
     H[👤 Human<br/>Sets Goals] --> C[🎭 Czar<br/>Coordinates]
 
     C --> W1[👷 Worker 1<br/>Claude Code]
     C --> W2[👷 Worker 2<br/>Aider]
     C --> W3[👷 Worker 3<br/>Cursor]
+    C --> W4[👷 Worker 4<br/>Kilocode]
+    C --> W5[👷 Worker 5<br/>Windsurf]
+    C --> W6[👷 Worker 6<br/>Cline]
 
     D[⚡ Daemon<br/>Auto-Approves] -.->|95-98%<br/>autonomy| W1
     D -.-> W2
     D -.-> W3
+    D -.-> W4
+    D -.-> W5
+    D -.-> W6
 
     W1 --> G[📦 Git<br/>Pull Requests]
     W2 --> G
     W3 --> G
+    W4 --> G
+    W5 --> G
+    W6 --> G
 
     G -.->|Review & Merge| H
+
+    M[🧠 Memory<br/>Learns] -.->|Past Sessions| W1
+    M -.-> W2
+    M -.-> W3
+
+    R[📚 Rules<br/>43K+ lines] -.->|Best Practices| W1
+    R -.-> W4
+    R -.-> W5
 
     style H fill:#e8f5e9
     style C fill:#e1f5ff
     style D fill:#fff3e0
     style G fill:#f3e5f5
+    style M fill:#e3f2fd
+    style R fill:#fce4ec
 ```
 
 **The Flow:**
 1. **Human** sets project goals and worker roles
 2. **Czar** (AI or human) launches and monitors workers autonomously
-3. **Daemon** auto-approves file operations (90% reduction in manual intervention)
-4. **Workers** code in parallel in isolated git worktrees
-5. **Git** collects work via pull requests
-6. **Human** reviews and merges
+3. **Daemon** auto-approves file operations (95-98% autonomy)
+4. **Workers** (6+ agent types) code in parallel in isolated git worktrees
+5. **Memory** provides workers with learnings from past sessions
+6. **Rules** equip workers with 43K+ lines of best practices
+7. **Git** collects work via pull requests
+8. **Human** reviews and merges
 
 **The Czar** monitors all workers, manages the daemon, tracks token budgets, and coordinates the orchestration. Can be Claude Code, Cursor, human, or any agent. See [docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md) for details.
 
@@ -89,8 +110,8 @@ czarina launch
 
 ## 🌟 Key Features
 
-- 🤖 **Agent-Agnostic** - Works with 9+ AI coding assistants (Claude Code, Aider, Cursor, Kilocode, Windsurf, etc.)
-- ⚡ **90% Autonomy** - Daemon system reduces manual intervention from 100% to ~10%
+- 🤖 **Agent-Agnostic** - Works with 9+ AI coding assistants (Claude Code, Aider, Cursor, Kilocode, Windsurf, Cline, Roo-Code, Continue, Copilot Edits)
+- ⚡ **95-98% Autonomy** - Daemon system with auto-approval reduces manual intervention to 2-5%
 - 🧠 **Persistent Memory** - Workers remember and learn from past sessions (v0.7.0+)
 - 📚 **43K+ Agent Rules** - Production-tested best practices built-in (v0.7.0+)
 - 🎯 **Embedded** - `.czarina/` lives in your project (like `.git/`)
@@ -389,14 +410,21 @@ See [czarina-core/docs/DAEMON.md](czarina-core/docs/DAEMON.md)
 
 ## 🤖 Supported Agents
 
+Czarina orchestrates 9+ AI coding assistants with varying autonomy levels:
+
 | Agent | Autonomy | Best For |
 |-------|----------|----------|
-| **Aider** | 95-98% | Full automation |
-| **Windsurf** | 85-95% | AI-native IDE |
-| **Cursor** | 80-90% | VS Code users |
-| **Claude Code** | 70-80% | Desktop UI |
-| **Continue.dev** | 75-85% | Local/free |
-| **GitHub Copilot** | 70-80% | GitHub integration |
+| **Aider** | 95-98% | Full automation, rapid iteration |
+| **Windsurf** | 85-95% | AI-native IDE, cascade workflows |
+| **Cursor** | 80-90% | VS Code users, UI/UX work |
+| **Continue.dev** | 75-85% | Local/free, customizable |
+| **Claude Code** | 70-80% | Architecture, complex reasoning |
+| **Kilocode** | 80-90% | Performance, large codebases |
+| **Cline** | 75-85% | Claude-powered VS Code |
+| **Roo-Code** | 70-80% | Terminal-native, CLI tools |
+| **GitHub Copilot** | 70-80% | GitHub integration, PR reviews |
+
+**Mix and match** agents within a single orchestration - assign each worker the best tool for their role.
 
 **See [AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md) for detailed comparison.**
 
@@ -408,7 +436,7 @@ See [czarina-core/docs/DAEMON.md](czarina-core/docs/DAEMON.md)
 - **Team:** 10 AI workers (6 engineers, 2 QA, 2 docs)
 - **Timeline:** 6-8 weeks (vs. 22-26 weeks sequential)
 - **Speedup:** 3-4x faster delivery
-- **Autonomy:** 90% with daemon
+- **Autonomy:** 95-98% with daemon auto-approval
 - **Status:** ✅ Successfully deployed
 
 This demonstrates Czarina can handle large-scale projects with 10+ workers in parallel.
@@ -545,7 +573,7 @@ czarina-orchestrator/
 
 **Production Ready** ✅
 - Multi-agent orchestration (9+ agents)
-- Autonomous daemon (90% autonomy)
+- Autonomous daemon (95-98% autonomy)
 - Git workflow automation
 - Real-world tested (10 workers)
 - Pattern library (auto-updating)
