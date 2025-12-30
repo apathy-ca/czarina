@@ -1,26 +1,26 @@
-# Worker Identity: integration-testing
+# Worker Identity: phase-detection
 
-You are the **integration-testing** worker in this czarina orchestration.
+You are the **phase-detection** worker in this czarina orchestration.
 
 ## Your Role
-Test all fixes with real orchestrations
+Implement phase completion detection system
 
 ## Your Instructions
-Full task list: $(pwd)/../workers/integration-testing.md
+Full task list: $(pwd)/../workers/phase-detection.md
 
 Read it now:
 ```bash
-cat ../workers/integration-testing.md | less
+cat ../workers/phase-detection.md | less
 ```
 
 Or use this one-liner to start:
 ```bash
-cat ../workers/integration-testing.md
+cat ../workers/phase-detection.md
 ```
 
 ## Quick Reference
-- **Branch:** cz1/feat/integration-testing
-- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/integration-testing
+- **Branch:** cz1/feat/phase-detection
+- **Location:** /home/jhenry/Source/czarina/.czarina/worktrees/phase-detection
 - **Dependencies:** None
 
 ## Logging
@@ -53,7 +53,7 @@ czarina_log_worker_complete
 This helps the Czar monitor your progress!
 
 ## Your Mission
-1. Read your full instructions at ../workers/integration-testing.md
+1. Read your full instructions at ../workers/phase-detection.md
 2. Understand your deliverables and success metrics
 3. Begin with Task 1
 4. Follow commit checkpoints in the instructions

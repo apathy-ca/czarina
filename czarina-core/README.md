@@ -113,6 +113,7 @@ nano config.sh  # Set PROJECT_ROOT, worker definitions
 - **[Configuration Guide](docs/CONFIG.md)** - Detailed setup
 - **[Czar Guide](CZAR_GUIDE.md)** - How the autonomous Czar works
 - **[Dashboard Guide](docs/DASHBOARD.md)** - Monitoring and visualization
+- **[Phase Completion Detection](docs/PHASE_COMPLETION_DETECTION.md)** - Multi-phase automation
 - **[Distributed Workers](DISTRIBUTED_WORKERS.md)** - SSH to remote build servers (v2.1+)
 - **[Lessons Learned](LESSONS_LEARNED.md)** - Real-world insights
 - **[Improvement Plan](IMPROVEMENT_PLAN.md)** - Roadmap and future features
@@ -123,14 +124,15 @@ nano config.sh  # Set PROJECT_ROOT, worker definitions
 
 ```
 czarina/
-├── czar-autonomous.sh       # Autonomous monitoring loop
-├── inject-task.sh           # Task delivery system
-├── update-worker-status.sh  # Status tracking
-├── detect-*.sh              # Health detection
-├── dashboard.py             # Live visualization
-├── pr-manager.sh            # PR orchestration
-├── orchestrator.sh          # Interactive control
-└── config.sh                # Project configuration
+├── czar-autonomous.sh              # Autonomous monitoring loop
+├── inject-task.sh                  # Task delivery system
+├── update-worker-status.sh         # Status tracking
+├── phase-completion-detector.sh    # Phase completion detection
+├── detect-*.sh                     # Health detection
+├── dashboard.py                    # Live visualization
+├── pr-manager.sh                   # PR orchestration
+├── orchestrator.sh                 # Interactive control
+└── config.sh                       # Project configuration
 ```
 
 ### Data Flow
