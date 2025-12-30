@@ -5,6 +5,103 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-01-XX
+
+### Added
+
+**Automated Multi-Phase Orchestration** - Seamless phase transitions with full automation
+  - `czarina-core/phase-completion-detector.sh` (361 lines) - Multi-signal completion detection
+  - `test-phase-completion-detector.sh` (299 lines) - Comprehensive test suite (100% coverage)
+  - Automatic phase completion detection via daemon monitoring
+  - Multi-signal detection (worker logs, git branches, status files)
+  - Three completion modes: `any` (default), `strict`, `all`
+  - Automatic phase archival with complete state preservation
+  - Phase state tracking in `status/phase-state.json`
+  - Decision logging (human-readable and JSON formats)
+  - Smart phase initialization with auto-detection
+  - Complete phase history in `.czarina/phases/phase-N-vX.Y.Z/`
+  - Phase summary auto-generation
+
+**Enhanced Phase Commands**
+  - Phase completion check: `./czarina-core/phase-completion-detector.sh --verbose`
+  - JSON output for scripting: `--json` flag
+  - Exit codes: 0=complete, 1=incomplete, 2=error
+  - Smart `czarina init` - auto-detects closed phases, no `--force` needed
+
+**Configuration Enhancements**
+  - `project.phase` - Current phase number (integer, ≥ 1)
+  - `project.omnibus_branch` - Integration branch for phase (e.g., "cz1/release/v1.0.0")
+  - `phase_completion_mode` - Completion detection mode (any/strict/all)
+  - `workers[].phase` - Phase number for each worker
+  - `workers[].role` - Worker role (feature/integration)
+  - Phase-aware branch naming convention: `cz<phase>/feat/<worker-id>`
+
+**Autonomous Daemon Integration**
+  - 5-minute phase completion check intervals
+  - Worker health monitoring (active/idle/stuck/complete states)
+  - Automatic phase detection and archival
+  - Complete decision audit trail
+  - Machine-readable event stream (`logs/events.jsonl`)
+  - Human-readable decision log (`status/autonomous-decisions.log`)
+
+**Phase Archive Structure**
+  - Configuration snapshot (`config.json`)
+  - Phase summary document (`PHASE_SUMMARY.md`)
+  - Complete worker logs (`logs/workers/*.log`)
+  - Event stream (`logs/events.jsonl`)
+  - Worker status snapshots (`status/worker-status.json`)
+  - Worker prompt snapshots (`workers/*.md`)
+  - Phase state at completion (`status/phase-state.json`)
+
+**Comprehensive Documentation**
+  - `docs/MULTI_PHASE_ORCHESTRATION.md` - Complete multi-phase guide (900+ lines)
+  - `docs/troubleshooting/PHASE_TRANSITIONS.md` - Troubleshooting guide (800+ lines)
+  - Updated `docs/CONFIGURATION.md` with phase configuration schema
+  - Updated `QUICK_START.md` with multi-phase examples
+  - `RELEASE_NOTES_v0.7.2.md` - Detailed release documentation
+
+### Changed
+
+- Enhanced `czarina init` with smart phase detection
+- Enhanced `autonomous-czar-daemon.sh` with phase completion monitoring
+- Updated configuration schema with phase-aware fields
+- Improved phase archival to include complete audit trail
+- Worker health detection thresholds (idle: 10min, stuck: 30min)
+
+### Performance Impact
+
+- Phase detection overhead: <1 second
+- Archive creation: <5 seconds
+- Daemon check interval: 5 minutes
+- Zero performance impact on workers during operation
+
+### Migration Notes
+
+- **100% Backward Compatible** - All v0.7.1 orchestrations work unchanged
+- **Opt-In Features** - Multi-phase features enabled by adding phase config
+- **No Breaking Changes** - Existing configs, commands work as before
+- **Incremental Adoption** - Add phase fields when ready for multi-phase workflows
+- See MIGRATION_v0.7.2.md for complete migration guide
+
+---
+
+**Release Focus:**
+Automated multi-phase orchestration with intelligent completion detection and seamless phase transitions. Perfect for long-running projects with multiple release cycles, complex orchestrations requiring phased rollout, and projects needing complete audit trails.
+
+**Key Innovation:**
+Multi-signal completion detection with flexible modes eliminates guesswork about when phases are done. Automatic archival preserves complete development history for every phase.
+
+**Use Cases:**
+- Sequential feature development across multiple releases
+- Long-running projects with clear phase boundaries
+- Compliance-driven development requiring audit trails
+- Complex orchestrations with 5+ sequential phases
+
+**Dogfooding:**
+Built using Czarina to orchestrate its own v0.7.2 development (3 workers: phase-detection, phase-transition, documentation). Meta-orchestration continues!
+
+[Full Changelog](https://github.com/apathy-ca/czarina/compare/v0.7.1...v0.7.2)
+
 ## [0.7.0] - 2025-12-28
 
 ### Added

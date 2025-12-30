@@ -480,7 +480,88 @@ czarina list
 
 ---
 
+## 🔄 Multi-Phase Orchestration (v0.7.2+)
+
+Run sequential development phases on the same codebase with **automatic phase transitions**!
+
+### Quick Multi-Phase Example
+
+```bash
+# Phase 1: Core Features (v1.0.0)
+cd ~/my-project
+czarina analyze docs/phase-1-plan.md --interactive --init
+czarina launch --go
+
+# ✅ Autonomous daemon detects when all workers complete
+# ✅ Phase 1 automatically archived to .czarina/phases/phase-1-v1.0.0/
+# ✅ Ready for Phase 2!
+
+# Phase 2: Security & Performance (v1.1.0)
+czarina analyze docs/phase-2-plan.md --interactive --init
+czarina launch --go
+
+# ✅ Repeat for as many phases as needed
+# ✅ Complete audit trail preserved
+```
+
+### What Happens Automatically
+
+**Phase Completion Detection:**
+- Monitors worker log markers (`czarina_log_worker_complete`)
+- Checks git branch merge status
+- Validates worker status files
+- Multiple detection modes: `any`, `strict`, `all`
+
+**Phase Archival:**
+- Complete config snapshot
+- All worker logs and prompts
+- Phase summary auto-generated
+- Saved to `.czarina/phases/phase-N-vX.Y.Z/`
+
+**Phase History:**
+```bash
+# View all completed phases
+czarina phase list
+
+# Review past phase
+cat .czarina/phases/phase-1-v1.0.0/PHASE_SUMMARY.md
+```
+
+### Configuration
+
+Add to `.czarina/config.json`:
+
+```json
+{
+  "project": {
+    "phase": 1,
+    "omnibus_branch": "cz1/release/v1.0.0"
+  },
+  "phase_completion_mode": "any",
+  "workers": [
+    {
+      "id": "api",
+      "phase": 1,
+      "branch": "cz1/feat/api"
+    }
+  ]
+}
+```
+
+**Branch Naming Convention:**
+- Phase 1: `cz1/feat/*`, `cz1/release/*`
+- Phase 2: `cz2/feat/*`, `cz2/release/*`
+- Phases are isolated - no branch conflicts
+
+**Complete Guide:** [docs/MULTI_PHASE_ORCHESTRATION.md](docs/MULTI_PHASE_ORCHESTRATION.md)
+
+---
+
 ## 📚 Learn More
+
+### v0.7.2 Features
+- **[docs/MULTI_PHASE_ORCHESTRATION.md](docs/MULTI_PHASE_ORCHESTRATION.md)** - Multi-phase orchestration guide
+- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - Phase completion configuration
 
 ### v0.7.0 Features
 - **[MEMORY_GUIDE.md](MEMORY_GUIDE.md)** - Memory system usage and best practices
