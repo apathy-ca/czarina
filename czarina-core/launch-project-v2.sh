@@ -125,11 +125,11 @@ else
 fi
 if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
     MGMT_SESSION="${SESSION_NAME}-mgmt"
-    echo -e "${BLUE}   Main session: Czar + Workers 1-9${NC}"
-    echo -e "${BLUE}   Mgmt session: Workers 10-${WORKER_COUNT}, Daemon, Dashboard${NC}"
+    echo -e "${BLUE}   Main session: Czar + Workers 1-${MAX_WORKERS_IN_MAIN} (windows 0-${MAX_WORKERS_IN_MAIN})${NC}"
+    echo -e "${BLUE}   Mgmt session: Workers $((MAX_WORKERS_IN_MAIN + 1))-${WORKER_COUNT}, Daemon, Dashboard${NC}"
 else
     MGMT_SESSION="${SESSION_NAME}-mgmt"  # Always create mgmt for daemon/dashboard
-    echo -e "${BLUE}   Main session: Czar + Workers 1-${WORKER_COUNT}${NC}"
+    echo -e "${BLUE}   Main session: Czar + Workers 1-${WORKER_COUNT} (windows 0-${WORKER_COUNT})${NC}"
     echo -e "${BLUE}   Mgmt session: Daemon, Dashboard${NC}"
 fi
 echo ""
@@ -327,16 +327,15 @@ if [ -n "$CZAR_AGENT" ] && [ "$CZAR_AGENT" != "null" ]; then
     "${ORCHESTRATOR_DIR}/czarina-core/agent-launcher.sh" launch "czar" 0 "$CZAR_AGENT" "$SESSION_NAME"
 fi
 
-# Create workers 1-9 in main session
-# Need to iterate through all workers and only launch phase-filtered ones
-WORKERS_IN_MAIN=$((WORKER_COUNT < MAX_WORKERS_IN_MAIN ? WORKER_COUNT : MAX_WORKERS_IN_MAIN))
+# Create workers 1-9 in main session (limit to MAX_WORKERS_IN_MAIN)
+# Main session has windows 0-9: Window 0 = Czar, Windows 1-9 = Workers 1-9
 worker_num=0
 for worker_idx in $(seq 0 $((TOTAL_WORKER_COUNT - 1))); do
     if ! is_phase_worker $worker_idx; then
         continue
     fi
     worker_num=$((worker_num + 1))
-    if [ $worker_num -le $WORKERS_IN_MAIN ]; then
+    if [ $worker_num -le $MAX_WORKERS_IN_MAIN ]; then
         create_worker_window "$SESSION_NAME" $worker_num $worker_idx
     fi
 done
@@ -370,7 +369,7 @@ if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
             continue
         fi
         worker_num=$((worker_num + 1))
-        if [ $worker_num -gt $WORKERS_IN_MAIN ]; then
+        if [ $worker_num -gt $MAX_WORKERS_IN_MAIN ]; then
             create_worker_window "$MGMT_SESSION" $worker_num $worker_idx
         fi
     done
@@ -397,6 +396,17 @@ tmux send-keys -t "${MGMT_SESSION}:czar-auto" "cd ${PROJECT_ROOT}" C-m
 sleep 0.1
 tmux send-keys -t "${MGMT_SESSION}:czar-auto" "${ORCHESTRATOR_DIR}/czarina-core/autonomous-czar-daemon.sh ${CZARINA_DIR}" C-m
 
+# Create LLM monitor daemon window (if enabled)
+LLM_MONITOR_ENABLED=$(jq -r '.llm_monitor.enabled // false' "$CONFIG_FILE")
+if [ "$LLM_MONITOR_ENABLED" = "true" ]; then
+    echo "   • LLM Monitor (intelligent analysis)"
+    tmux send-keys -t "${MGMT_SESSION}:info" "echo '- LLM Monitor (AI-powered worker analysis)'" C-m
+    tmux new-window -t "$MGMT_SESSION" -n "llm-monitor"
+    tmux send-keys -t "${MGMT_SESSION}:llm-monitor" "cd ${PROJECT_ROOT}" C-m
+    sleep 0.1
+    tmux send-keys -t "${MGMT_SESSION}:llm-monitor" "python3 ${ORCHESTRATOR_DIR}/czarina-core/llm-monitor-daemon.py ${CZARINA_DIR}" C-m
+fi
+
 # Create dashboard window
 echo "   • Dashboard (auto-starting)"
 tmux send-keys -t "${MGMT_SESSION}:info" "echo '- Dashboard (live monitoring)'" C-m
@@ -418,20 +428,27 @@ echo -e "${GREEN}✅ Czarina orchestration launched!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo -e "${CYAN}📺 Attach to sessions:${NC}"
-echo "   ${SESSION_NAME}      - Czar + Workers 1-${WORKERS_IN_MAIN}"
-echo "   ${MGMT_SESSION}  - Management (Workers 10+, Daemon, Dashboard)"
+if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
+    echo "   ${SESSION_NAME}      - Czar + Workers 1-${MAX_WORKERS_IN_MAIN}"
+    echo "   ${MGMT_SESSION}  - Management (Workers $((MAX_WORKERS_IN_MAIN + 1))+, Daemon, Dashboard)"
+else
+    echo "   ${SESSION_NAME}      - Czar + Workers 1-${WORKER_COUNT}"
+    echo "   ${MGMT_SESSION}  - Management (Daemon, Dashboard)"
+fi
 echo ""
 echo -e "${CYAN}🔧 Quick start:${NC}"
-echo "   tmux attach -t ${SESSION_NAME}   # Main session"
+echo "   tmux attach -t ${SESSION_NAME}   # Main session (windows 0-${MAX_WORKERS_IN_MAIN})"
 echo "   Ctrl+b w                         # List all windows"
 echo "   Ctrl+b s                         # Switch sessions"
-echo "   Ctrl+b <number>                  # Switch to window"
+echo "   Ctrl+b <number>                  # Switch to window (Ctrl+b 1 = Worker 1)"
 echo ""
 echo -e "${CYAN}📊 What's running:${NC}"
 echo "   • Czar: Window 0 of main session"
-echo "   • Workers 1-${WORKERS_IN_MAIN}: Windows 1-${WORKERS_IN_MAIN} of main session"
 if [ $WORKER_COUNT -gt $MAX_WORKERS_IN_MAIN ]; then
-    echo "   • Workers 10-${WORKER_COUNT}: Mgmt session"
+    echo "   • Workers 1-${MAX_WORKERS_IN_MAIN}: Windows 1-${MAX_WORKERS_IN_MAIN} of main session"
+    echo "   • Workers $((MAX_WORKERS_IN_MAIN + 1))-${WORKER_COUNT}: Mgmt session"
+else
+    echo "   • Workers 1-${WORKER_COUNT}: Windows 1-${WORKER_COUNT} of main session"
 fi
 echo "   • Daemon: Auto-approvals (mgmt session)"
 echo "   • Autonomous Czar: Phase coordination (mgmt session)"

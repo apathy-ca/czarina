@@ -1,0 +1,45 @@
+{
+  "project": {
+    "name": "Example Project",
+    "slug": "example-project",
+    "version": "1.0.0",
+    "phase": "1",
+    "repository": "/path/to/project",
+    "orchestration_dir": ".czarina",
+    "description": "Example configuration with LLM monitor enabled"
+  },
+  "orchestration": {
+    "mode": "parallel-then-sequential",
+    "omnibus_branch": "cz1/release/v1.0.0",
+    "base_branch": "main",
+    "auto_pr": true
+  },
+  "llm_monitor": {
+    "enabled": true,
+    "model": "claude-3-5-haiku-20241022",
+    "check_interval": 30,
+    "stale_threshold": 300,
+    "max_context_lines": 100,
+    "auto_approve": true,
+    "log_all_decisions": true
+  },
+  "workers": [
+    {
+      "id": "worker1",
+      "name": "Example Worker",
+      "agent": "claude",
+      "branch": "cz1/feat/worker1",
+      "dependencies": [],
+      "priority": 1,
+      "description": "Example worker"
+    }
+  ],
+  "daemon": {
+    "enabled": true,
+    "auto_approve": [
+      "read",
+      "write",
+      "commit"
+    ]
+  }
+}

@@ -5,6 +5,43 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-01-16
+
+### Added
+
+**LLM-Powered Intelligent Monitoring** - AI-driven worker analysis using Claude Haiku
+  - `czarina-core/llm-monitor-daemon.py` (735 lines) - Event-driven intelligent worker monitoring
+  - Real-time analysis of worker terminal output using Claude Haiku
+  - Event-driven architecture with `watchdog` for instant log-based triggers
+  - Intelligent action execution (auto-approve, send keys, flag for intervention)
+  - Comprehensive decision audit trail (human + machine readable)
+  - Cost tracking (~$0.002 per analysis, ~$0.40 per 8-hour orchestration)
+  - Configuration via `llm_monitor` section in config.json
+  - Full documentation: `czarina-core/docs/LLM_MONITOR.md`
+
+**Enhanced Validation System**
+  - Agent availability checking before launch (validates aider, claude, kilocode are installed)
+  - Auto-fix for branch naming mismatches with interactive prompt
+  - `czarina phase set <number>` - Set phase and auto-update all branch names
+  - Improved error messages with actionable quick-fix suggestions
+  - `--fix` flag for non-interactive auto-fixing
+
+**UX Improvements**
+  - Better output formatting in validation with clear window numbering
+  - Fixed worker 10+ appearing in main session (now correctly in mgmt session)
+  - Enhanced launch output showing explicit window assignments
+
+### Changed
+  - `validate-config.sh` - Added agent availability checks and auto-fix prompts
+  - `launch-project-v2.sh` - Fixed MAX_WORKERS_IN_MAIN enforcement, added LLM monitor integration
+  - `czarina` CLI - Added `phase set` command, updated help text
+
+### Fixed
+  - Worker 10+ now correctly placed in management session instead of main session (windows 0-9 limit)
+  - Branch naming validation now offers interactive fix instead of just failing
+
+---
+
 ## [0.7.2] - 2026-01-XX
 
 ### Added

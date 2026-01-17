@@ -1,0 +1,5 @@
+# LLM Monitor Daemon Requirements
+# Install with: pip install -r llm-monitor-requirements.txt
+
+anthropic>=0.39.0
+watchdog>=3.0.0

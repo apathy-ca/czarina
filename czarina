@@ -19,6 +19,7 @@ Usage:
     czarina launch                               - Launch workers (searches current dir and parents)
     czarina status                               - Show project status
     czarina dashboard                            - Live monitoring dashboard
+    czarina phase set <number> [project]         - Set phase number and update branch names
     czarina phase close [project]                - Close current phase, keep project for next phase
     czarina phase list [project]                 - List all phases
     czarina closeout [project]                   - Stop all workers and clean up completely
@@ -45,7 +46,7 @@ Usage:
     czarina version                              - Show version information
 """
 
-CZARINA_VERSION = "0.7.0"
+CZARINA_VERSION = "0.7.3"
 
 import sys
 import subprocess
@@ -857,6 +858,52 @@ def cmd_dashboard(project_name=None):
 
     os.chdir(project_root)
     subprocess.run([sys.executable, str(dashboard_script)])
+
+
+def cmd_phase_set(phase_number, project_name=None):
+    """Set phase number and update all branch names to match"""
+    czarina_dir, project_root = get_project_context(project_name)
+
+    # Load config
+    config_file = czarina_dir / "config.json"
+    with open(config_file) as f:
+        config = json.load(f)
+
+    old_phase = config["project"].get("phase", "1")
+
+    print(f"🔄 Updating phase: {old_phase} → {phase_number}")
+    print()
+
+    # Update phase in config
+    config["project"]["phase"] = str(phase_number)
+
+    # Save updated config
+    with open(config_file, "w") as f:
+        json.dump(config, f, indent=2)
+
+    print(f"✅ Updated phase to {phase_number} in config.json")
+    print()
+
+    # Now validate and auto-fix branch names
+    orchestrator_dir = get_orchestrator_dir()
+    validate_script = orchestrator_dir / "czarina-core" / "validate-config.sh"
+
+    if validate_script.exists():
+        print("🔧 Auto-fixing branch names to match new phase...")
+        result = subprocess.run(
+            ["bash", str(validate_script), str(config_file), "--fix"],
+            cwd=project_root
+        )
+        if result.returncode == 0:
+            print()
+            print(f"✅ Phase {phase_number} set successfully!")
+            print(f"   All branch names updated to cz{phase_number}/*")
+        else:
+            print()
+            print("⚠️  Phase updated but branch validation had issues")
+    else:
+        print("⚠️  Validation script not found, branch names may need manual update")
+        print(f"   Quick fix: sed -i 's/cz{old_phase}\\//cz{phase_number}\\//g' {config_file}")
 
 
 def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
@@ -1993,10 +2040,17 @@ def main():
         cmd_dashboard(project_name)
     elif command == "phase":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina phase <close|list> [options]")
+            print("❌ Usage: czarina phase <set|close|list> [options]")
             sys.exit(1)
         phase_cmd = sys.argv[2]
-        if phase_cmd == "close":
+        if phase_cmd == "set":
+            if len(sys.argv) < 4:
+                print("❌ Usage: czarina phase set <number> [project]")
+                sys.exit(1)
+            phase_number = sys.argv[3]
+            project_name = sys.argv[4] if len(sys.argv) > 4 else None
+            cmd_phase_set(phase_number, project_name)
+        elif phase_cmd == "close":
             # Parse flags and project name
             project_name = None
             keep_worktrees = False
@@ -2017,7 +2071,7 @@ def main():
             cmd_phase_list(project_name)
         else:
             print(f"❌ Unknown phase command: {phase_cmd}")
-            print("   Available: close, list")
+            print("   Available: set, close, list")
             sys.exit(1)
     elif command == "closeout":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
