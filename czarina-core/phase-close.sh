@@ -70,14 +70,23 @@ echo ""
 echo -e "${YELLOW}1. Stopping tmux sessions...${NC}"
 SESSIONS_FOUND=0
 
+# Disable exit-on-error for session cleanup
+set +e
+
 # Find all czarina sessions for this project
-for session in $(tmux list-sessions -F "#{session_name}" 2>/dev/null || echo ""); do
-    if [[ "$session" =~ czarina-${PROJECT_SLUG} ]] || [[ "$session" == "${PROJECT_SLUG}" ]]; then
-        echo "   Stopping session: $session"
-        tmux kill-session -t "$session" 2>/dev/null || true
-        ((SESSIONS_FOUND++))
-    fi
-done
+SESSIONS=$(tmux list-sessions -F "#{session_name}" 2>/dev/null || echo "")
+if [ -n "$SESSIONS" ]; then
+    while IFS= read -r session; do
+        if [[ "$session" =~ czarina-${PROJECT_SLUG} ]] || [[ "$session" == "${PROJECT_SLUG}" ]]; then
+            echo "   Stopping session: $session"
+            tmux kill-session -t "$session" 2>/dev/null
+            ((SESSIONS_FOUND++))
+        fi
+    done <<< "$SESSIONS"
+fi
+
+# Re-enable exit-on-error
+set -e
 
 if [ $SESSIONS_FOUND -eq 0 ]; then
     echo "   No active sessions found"
@@ -88,13 +97,16 @@ echo ""
 
 # 2. Stop daemon
 echo -e "${YELLOW}2. Stopping daemon...${NC}"
+
+set +e
 DAEMON_SESSION="${PROJECT_SLUG}-daemon"
 if tmux has-session -t "$DAEMON_SESSION" 2>/dev/null; then
-    tmux kill-session -t "$DAEMON_SESSION" 2>/dev/null || true
+    tmux kill-session -t "$DAEMON_SESSION" 2>/dev/null
     echo -e "   ${GREEN}✅ Daemon stopped${NC}"
 else
     echo "   No daemon session found"
 fi
+set -e
 echo ""
 
 # 3. Archive current phase state
@@ -236,23 +248,27 @@ echo ""
 # 5. Clear phase artifacts (already archived)
 echo -e "${YELLOW}5. Clearing phase artifacts...${NC}"
 
+set +e
+
 # Clear config (already archived)
 if [ -f "${CZARINA_DIR}/config.json" ]; then
-    rm -f "${CZARINA_DIR}/config.json"
+    rm -f "${CZARINA_DIR}/config.json" 2>/dev/null
     echo "   ✅ Config cleared"
 fi
 
 # Clear workers directory entirely (already archived)
 if [ -d "${CZARINA_DIR}/workers" ]; then
-    rm -rf "${CZARINA_DIR}/workers"
+    rm -rf "${CZARINA_DIR}/workers" 2>/dev/null
     echo "   ✅ Worker prompts cleared"
 fi
 
 # Clear status directory entirely (already archived)
 if [ -d "${CZARINA_DIR}/status" ]; then
-    rm -rf "${CZARINA_DIR}/status"
+    rm -rf "${CZARINA_DIR}/status" 2>/dev/null
     echo "   ✅ Status cleared"
 fi
+
+set -e
 
 echo -e "   ${GREEN}✅ Phase cleared, ready for next phase${NC}"
 echo ""
