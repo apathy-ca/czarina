@@ -6,6 +6,7 @@ Simple interface for managing multi-agent orchestration projects
 Version: 0.8.0
 
 Usage:
+    czarina plan <project.md>   - Generate implementation plan from project plan (AI-assisted)
     czarina init <plan.md>      - Initialize orchestration from implementation plan
     czarina launch              - Launch Czar + workers + daemons + dashboard
     czarina closeout            - Stop all workers and clean up completely
@@ -326,7 +327,172 @@ You are the **Czar** - the orchestration coordinator for this multi-agent projec
     print("  2. czarina launch")
 
 
-def cmd_init(plan_file):
+def cmd_plan(project_plan_file, output_file=None):
+    """Generate implementation plan from project plan using AI agent"""
+    current_dir = Path.cwd()
+    project_plan_path = Path(project_plan_file).resolve()
+
+    if not project_plan_path.exists():
+        print(f"❌ Project plan file not found: {project_plan_file}")
+        sys.exit(1)
+
+    # Default output file
+    if output_file is None:
+        output_file = "IMPLEMENTATION_PLAN.md"
+    output_path = current_dir / output_file
+
+    print("🤖 AI-Assisted Implementation Planning")
+    print("=" * 60)
+    print()
+    print(f"📄 Input: {project_plan_file}")
+    print(f"📝 Output: {output_file}")
+    print()
+    print("🚀 Launching Claude Code agent to analyze project plan...")
+    print("   The agent will:")
+    print("   • Read your project plan")
+    print("   • Identify milestones and deliverables")
+    print("   • Break down work into logical workers")
+    print("   • Generate implementation plan with czarina format")
+    print()
+    print("=" * 60)
+    print()
+
+    # Create prompt for Claude Code agent
+    prompt = f"""I need you to analyze a project plan and generate a czarina implementation plan with proper worker breakdown.
+
+**Your Task:**
+1. Read the project plan at: {project_plan_path}
+2. Analyze milestones, deliverables, architecture, and requirements
+3. Break down the work into 5-12 logical workers
+4. Generate IMPLEMENTATION_PLAN.md with proper czarina format
+
+**Czarina Worker Format Requirements:**
+
+Each worker must follow this format:
+
+```markdown
+### Worker N: `worker-id`
+**Role:** Code|QA|Docs|Integration
+**Agent:** Claude Code|Aider|Cursor|Windsurf (choose appropriate agent)
+**Branch:** cz1/feat/worker-id
+**Dependencies:** other-worker-id, another-worker-id (or "None")
+
+**Mission:** Single paragraph describing what this worker needs to accomplish
+
+**First Action:** The very first thing the worker should do when they start
+
+**Tasks:**
+1. First task
+2. Second task
+3. Third task (be specific and actionable)
+
+**Deliverable:** What will be produced by this worker
+```
+
+**Worker Breakdown Guidelines:**
+- Create 5-12 workers (typically 6-10 for most projects)
+- Assign roles: Code (implementation), QA (testing), Docs (documentation), Integration (merge/release)
+- Map dependencies based on component relationships
+- Workers without dependencies can run in parallel
+- Final worker should be Integration with dependencies on all others
+- Use branch naming: cz1/feat/* for Phase 1 workers
+- Omnibus branch: cz1/release/vX.Y.Z
+
+**Implementation Plan Structure:**
+
+```markdown
+# Project Name vX.Y.Z Implementation Plan
+
+**Version:** X.Y.Z
+**Objective:** Brief description of what this implementation achieves
+
+---
+
+## Project Overview
+
+[Summary of the project, key features, architecture]
+
+---
+
+## Phase 1: [Phase Name] (N Workers)
+
+### Worker 1: `worker-id`
+[Worker definition as shown above]
+
+---
+
+### Worker 2: `another-worker-id`
+[Worker definition]
+
+[... continue for all workers ...]
+
+---
+
+## Success Criteria
+
+**Technical Requirements:**
+- ✅ Requirement 1
+- ✅ Requirement 2
+
+**Functional Requirements:**
+- ✅ Feature 1
+- ✅ Feature 2
+
+[... etc ...]
+
+---
+
+## Phase Completion
+
+**Phase 1 Exit Criteria:**
+1. All N workers completed and merged
+2. All tests passing
+3. Documentation complete
+[... etc ...]
+
+---
+
+**Implementation Plan Version:** 1.0
+**Created:** {datetime.now().strftime('%Y-%m-%d')}
+**Status:** Ready for Czarina Initialization
+```
+
+**Important:**
+- Worker IDs must be lowercase with dashes (e.g., `rust-foundation`, `python-proxy`)
+- Be specific in tasks - avoid vague items like "implement feature"
+- First Action should be concrete (e.g., "Read X file, create Y structure, verify Z")
+- Dependencies should reference actual worker IDs
+- Write the output to: {output_path}
+
+Please analyze the project plan and generate the implementation plan now."""
+
+    # Launch Claude Code agent
+    orchestrator_dir = get_orchestrator_dir()
+    claude_code_bin = orchestrator_dir / "bin" / "claude"
+
+    if not claude_code_bin.exists():
+        # Fallback to system claude command
+        claude_code_bin = "claude"
+
+    try:
+        # Use os.execvp to replace current process with claude
+        # This gives the user full interactive control
+        import os
+        os.execvp(str(claude_code_bin), [str(claude_code_bin), "chat", prompt])
+
+    except FileNotFoundError:
+        print()
+        print("❌ Claude Code not found")
+        print("   Please install Claude Code CLI:")
+        print("   https://github.com/anthropics/claude-code")
+        sys.exit(1)
+    except Exception as e:
+        print()
+        print(f"❌ Error launching agent: {e}")
+        sys.exit(1)
+
+
+def cmd_init(plan_file, auto_assist=False):
     """Initialize Czarina orchestration from implementation plan"""
     current_dir = Path.cwd()
     plan_path = Path(plan_file).resolve()
@@ -402,9 +568,53 @@ def cmd_init(plan_file):
 
     # Validate parsed data
     if not plan_data['workers']:
-        print("❌ Error: No workers found in plan file")
-        print("   Plans must include '### Worker N:' or '#### Worker N:' sections")
-        sys.exit(1)
+        if auto_assist:
+            # Auto-assist mode: generate implementation plan from project plan
+            print("⚠️  No workers found in plan file")
+            print("   Detected project plan format - generating implementation plan...")
+            print()
+
+            # Generate implementation plan
+            impl_plan_file = "IMPLEMENTATION_PLAN.md"
+            cmd_plan(plan_file, output_file=impl_plan_file)
+
+            # Re-parse the generated implementation plan
+            impl_plan_path = current_dir / impl_plan_file
+            if not impl_plan_path.exists():
+                print()
+                print("❌ Failed to generate implementation plan")
+                sys.exit(1)
+
+            print()
+            print("🔄 Re-initializing from generated implementation plan...")
+            print()
+
+            # Parse the generated plan
+            try:
+                plan_data = parse_plan(impl_plan_path)
+            except Exception as e:
+                print(f"❌ Error parsing generated plan: {e}")
+                import traceback
+                traceback.print_exc()
+                sys.exit(1)
+
+            if not plan_data['workers']:
+                print("❌ Generated plan has no workers - this shouldn't happen")
+                sys.exit(1)
+
+            print(f"   ✅ Found project: {plan_data['project']['name']}")
+            print(f"   ✅ Version: {plan_data['project']['version']}")
+            print(f"   ✅ Workers: {len(plan_data['workers'])}")
+            print()
+        else:
+            print("❌ Error: No workers found in plan file")
+            print("   Plans must include '### Worker N:' or '#### Worker N:' sections")
+            print()
+            print("💡 To auto-generate implementation plan from project plan:")
+            print(f"   czarina plan {plan_file}")
+            print("   OR")
+            print(f"   czarina init {plan_file} --assist")
+            sys.exit(1)
 
     # Create directory structure
     if not czarina_dir.exists():
@@ -1696,9 +1906,15 @@ def show_usage():
     """Show usage information"""
     print(__doc__)
     print("\nExamples:")
-    print("  # Initialize from a plan")
+    print("  # Generate implementation plan from project plan (AI-assisted)")
+    print("  czarina plan docs/PROJECT_PLAN.md")
+    print("")
+    print("  # Initialize from an implementation plan")
     print("  cd ~/my-project")
-    print("  czarina init implementation-plan.md")
+    print("  czarina init IMPLEMENTATION_PLAN.md")
+    print("")
+    print("  # One-shot: generate + initialize (fast mode)")
+    print("  czarina init docs/PROJECT_PLAN.md --assist")
     print("")
     print("  # Launch everything")
     print("  czarina launch")
@@ -1723,12 +1939,21 @@ def main():
 
     command = sys.argv[1]
 
-    if command == "init":
+    if command == "plan":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina init <plan.md>")
+            print("❌ Usage: czarina plan <project-plan.md> [output-file]")
+            sys.exit(1)
+        project_plan_file = sys.argv[2]
+        output_file = sys.argv[3] if len(sys.argv) > 3 else None
+        cmd_plan(project_plan_file, output_file)
+    elif command == "init":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina init <plan.md> [--assist]")
             sys.exit(1)
         plan_file = sys.argv[2]
-        cmd_init(plan_file)
+        # Check for --assist flag
+        auto_assist = "--assist" in sys.argv[3:] if len(sys.argv) > 3 else False
+        cmd_init(plan_file, auto_assist=auto_assist)
     elif command == "launch":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_launch(project_name)
