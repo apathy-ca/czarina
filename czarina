@@ -395,12 +395,27 @@ def validate_plan(plan_file):
         issues.append(f"Duplicate worker IDs found: {', '.join(set(duplicates))}")
 
     # Validate each worker has required fields
-    for worker_id in workers:
-        worker_section = content.split(f'### Worker')[content.split(f'### Worker').index(f' {workers.index(worker_id)+1}: `{worker_id}`'):]
-        if len(worker_section) > 1:
-            worker_section = worker_section[0]
+    for i, worker_id in enumerate(workers):
+        # Extract worker section - find this worker and the next worker (or end)
+        worker_num = i + 1
+        worker_header = f"### Worker {worker_num}: `{worker_id}`"
+
+        # Find start of this worker's section
+        worker_start = content.find(worker_header)
+        if worker_start == -1:
+            continue
+
+        # Find start of next worker (if exists)
+        if i + 1 < len(workers):
+            next_worker_header = f"### Worker {i + 2}:"
+            worker_end = content.find(next_worker_header, worker_start)
+            if worker_end == -1:
+                worker_section = content[worker_start:]
+            else:
+                worker_section = content[worker_start:worker_end]
         else:
-            worker_section = worker_section[0]
+            # Last worker - take rest of content
+            worker_section = content[worker_start:]
 
         required_fields = [
             ("**Role:**", f"Worker '{worker_id}' missing Role field"),
