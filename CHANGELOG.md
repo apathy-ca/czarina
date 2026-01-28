@@ -5,6 +5,47 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-01-27
+
+### Added
+
+**AI-Powered Orchestration Setup**
+  - `czarina init` now launches Claude Code to analyze plans and create orchestration
+  - Works with any plan format (not just pre-formatted worker sections)
+  - AI determines optimal worker breakdown, phases, and dependencies
+  - Comprehensive context provided: docs, templates, examples, agent-knowledge
+
+**Agent Knowledge Integration**
+  - Integration with agent-knowledge library (43K+ lines of best practices)
+  - Auto-detects agent-knowledge at `../agent-knowledge/`
+  - Public repository: https://github.com/apathy-ca/agent-knowledge
+  - Includes: Python standards, design patterns, testing, security, workflows, templates
+
+**Custom Knowledge Files Per Worker**
+  - Init agent creates `<worker-id>-knowledge.md` for each worker
+  - AI browses agent-knowledge and extracts relevant rules/patterns
+  - Tailored to worker's role and specific tasks (~10KB per worker)
+  - Python backend workers get Python/API/testing patterns
+  - QA workers get testing/security/validation patterns
+  - Solves context overflow without runtime complexity
+
+### Changed
+
+**Simplified Init Command**
+  - Removed `--assist` flag (init always uses AI now)
+  - Updated usage documentation and examples
+  - Init complements `czarina plan` for end-to-end workflow
+
+**Worker Identity Template**
+  - Added Knowledge Base section pointing to custom knowledge file
+  - Workers instructed to read knowledge before starting work
+
+### Fixed
+
+**F-string Syntax Errors**
+  - Built conditional prompt sections outside f-string to avoid backslash issues
+  - Ensures compatibility across Python versions
+
 ## [0.8.0] - 2026-01-18
 
 ### Changed

@@ -3,7 +3,7 @@
 Czarina - Multi-Agent Orchestration CLI
 Simple interface for managing multi-agent orchestration projects
 
-Version: 0.8.0
+Version: 0.9.0
 
 Usage:
     czarina plan <project.md> [--style agile|waterfall|lean|balanced] [--output FILE]
@@ -27,7 +27,7 @@ Planning Styles:
     balanced   - Pragmatic mix (6-10) - default
 """
 
-CZARINA_VERSION = "0.8.0"
+CZARINA_VERSION = "0.9.0"
 
 import sys
 import subprocess
