@@ -10,9 +10,7 @@ Usage:
                                 - Generate implementation plan from project plan (AI-assisted)
     czarina plan validate <plan.md>
                                 - Validate implementation plan quality
-    czarina init <plan.md>      - Initialize orchestration from implementation plan
-    czarina init <project.md> --assist
-                                - Auto-generate plan then initialize (one-shot)
+    czarina init <plan.md>      - Initialize orchestration from plan (AI agent analyzes and creates setup)
     czarina launch              - Launch Czar + workers + daemons + dashboard
     czarina closeout            - Stop all workers and clean up completely
     czarina phase set <number>  - Set phase number and update branch names
@@ -804,8 +802,8 @@ def cmd_plan_validate(plan_file):
     print("=" * 60)
 
 
-def cmd_init(plan_file, auto_assist=False):
-    """Initialize Czarina orchestration from implementation plan"""
+def cmd_init(plan_file):
+    """Initialize Czarina orchestration by launching AI agent to analyze plan"""
     current_dir = Path.cwd()
     plan_path = Path(plan_file).resolve()
 
@@ -863,115 +861,275 @@ def cmd_init(plan_file, auto_assist=False):
         if workers_dir.exists():
             shutil.rmtree(workers_dir)
 
-    # Parse the plan automatically
-    print("📖 Parsing plan file...")
-    try:
-        plan_data = parse_plan(plan_path)
-    except Exception as e:
-        print(f"❌ Error parsing plan: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
-    print(f"   ✅ Found project: {plan_data['project']['name']}")
-    print(f"   ✅ Version: {plan_data['project']['version']}")
-    print(f"   ✅ Workers: {len(plan_data['workers'])}")
-    print()
-
-    # Validate parsed data
-    if not plan_data['workers']:
-        if auto_assist:
-            # Auto-assist mode: generate implementation plan from project plan
-            print("⚠️  No workers found in plan file")
-            print("   Detected project plan format - generating implementation plan...")
-            print()
-
-            # Generate implementation plan
-            impl_plan_file = "IMPLEMENTATION_PLAN.md"
-            cmd_plan(plan_file, output_file=impl_plan_file)
-
-            # Re-parse the generated implementation plan
-            impl_plan_path = current_dir / impl_plan_file
-            if not impl_plan_path.exists():
-                print()
-                print("❌ Failed to generate implementation plan")
-                sys.exit(1)
-
-            print()
-            print("🔄 Re-initializing from generated implementation plan...")
-            print()
-
-            # Parse the generated plan
-            try:
-                plan_data = parse_plan(impl_plan_path)
-            except Exception as e:
-                print(f"❌ Error parsing generated plan: {e}")
-                import traceback
-                traceback.print_exc()
-                sys.exit(1)
-
-            if not plan_data['workers']:
-                print("❌ Generated plan has no workers - this shouldn't happen")
-                sys.exit(1)
-
-            print(f"   ✅ Found project: {plan_data['project']['name']}")
-            print(f"   ✅ Version: {plan_data['project']['version']}")
-            print(f"   ✅ Workers: {len(plan_data['workers'])}")
-            print()
-        else:
-            print("❌ Error: No workers found in plan file")
-            print("   Plans must include '### Worker N:' or '#### Worker N:' sections")
-            print()
-            print("💡 To auto-generate implementation plan from project plan:")
-            print(f"   czarina plan {plan_file}")
-            print("   OR")
-            print(f"   czarina init {plan_file} --assist")
-            sys.exit(1)
-
-    # Create directory structure
+    # Create directory structure if needed
     if not czarina_dir.exists():
         print("📁 Creating .czarina directory structure...")
         czarina_dir.mkdir()
         (czarina_dir / "workers").mkdir()
         print("   ✅ Created .czarina/")
         print("   ✅ Created .czarina/workers/")
+        print()
+
+    # Get orchestrator directory for referencing docs/templates
+    orchestrator_dir = get_orchestrator_dir()
+
+    # Check for agent-knowledge directory
+    agent_knowledge_dir = orchestrator_dir.parent / "agent-knowledge"
+    agent_knowledge_available = agent_knowledge_dir.exists()
+
+    # Build conditional sections for agent-knowledge
+    if agent_knowledge_available:
+        agent_knowledge_section = f"""### Agent Knowledge Library
+- `{agent_knowledge_dir}/` - 43K+ lines of production-tested best practices
+- `{agent_knowledge_dir}/README.md` - Overview and usage guide
+- `{agent_knowledge_dir}/core-rules/` - Python, security, testing, workflows
+- `{agent_knowledge_dir}/patterns/` - Design patterns and best practices
+- `{agent_knowledge_dir}/templates/` - Project templates and scaffolding
+- Workers can reference these rules via config.json agent_rules section"""
+
+        agent_rules_config = f'''  "agent_rules": {{
+    "enabled": true,  // Enable agent knowledge library
+    "library_path": "{agent_knowledge_dir}",  // Path to agent-knowledge repo
+    "mode": "auto",  // Auto-load rules based on worker role
+    "condensed": true  // Use condensed summaries to save context
+  }},'''
+
+        planning_guidance_extra = """- **Agent knowledge**: Enable agent_rules in config to give workers 43K+ lines of best practices
+- **Rules auto-load**: Workers automatically get role-appropriate rules (code→python/testing, qa→testing/security, etc.)"""
+
+        agent_knowledge_integration = f"""## Agent Knowledge Integration (RECOMMENDED)
+
+If you enable agent_rules in config.json, workers will automatically receive:
+- **Python workers** get: python-standards, design-patterns, testing, security rules
+- **QA workers** get: testing rules, security validation, coverage requirements
+- **Architect workers** get: design-patterns, documentation, orchestration patterns
+- **Integration workers** get: git workflows, testing patterns, orchestration
+
+The library contains 43K+ lines of production-tested best practices from real projects.
+Reference: `{agent_knowledge_dir}/core-rules/INDEX.md` for full rule catalog.
+"""
     else:
-        workers_dir = czarina_dir / "workers"
-        if not workers_dir.exists():
-            workers_dir.mkdir()
-            print("   ✅ Created .czarina/workers/")
+        agent_knowledge_section = """### Agent Knowledge Library
+- Agent knowledge library available at: https://github.com/apathy-ca/agent-knowledge
+- Clone with: git clone git@github.com:apathy-ca/agent-knowledge.git ../agent-knowledge"""
+
+        agent_rules_config = ""
+
+        planning_guidance_extra = "- **Agent knowledge**: Available at https://github.com/apathy-ca/agent-knowledge (clone to ../agent-knowledge)"
+
+        agent_knowledge_integration = ""
+
+    # Build comprehensive Claude Code prompt with all available context
+    prompt = f"""# Czarina Orchestration Setup
+
+You are helping to set up a Czarina multi-agent orchestration from an implementation plan.
+
+## Your Task
+
+Read the implementation plan at `{plan_path}` and create a complete Czarina orchestration setup with:
+1. `.czarina/config.json` - Full project configuration
+2. `.czarina/workers/*.md` - Worker identity files with missions and objectives
+
+## Reference Documentation
+
+You have access to comprehensive Czarina documentation and examples:
+
+### Core Documentation (READ THESE FIRST!)
+- `{orchestrator_dir}/docs/PROJECT_PLANNING_STANDARDS.md` - How to plan versions and phases
+- `{orchestrator_dir}/docs/guides/WORKER_SETUP_GUIDE.md` - Worker setup patterns
+- `{orchestrator_dir}/docs/CONFIGURATION.md` - config.json structure and options
+- `{orchestrator_dir}/docs/WRITING_EFFECTIVE_FIRST_ACTIONS.md` - How to write strong first actions
+- `{orchestrator_dir}/docs/FIRST_ACTION_EXAMPLES.md` - Examples of effective first actions
+- `{orchestrator_dir}/docs/BRANCH_NAMING.md` - Branch naming conventions
+
+### Templates & Examples
+- `{orchestrator_dir}/examples/config-full-featured.json` - Full config with all features
+- `{orchestrator_dir}/examples/config-basic.json` - Minimal config
+- `{orchestrator_dir}/examples/config-with-memory.json` - Memory system enabled
+- `{orchestrator_dir}/examples/config-with-rules.json` - Agent rules enabled
+- `{orchestrator_dir}/czarina-core/templates/worker-identity-template.md` - Worker file template
+
+{agent_knowledge_section}
+
+### Additional Context
+- `{orchestrator_dir}/docs/MULTI_PHASE_ORCHESTRATION.md` - Managing multi-phase projects
+- `{orchestrator_dir}/docs/CZAR_COORDINATION.md` - How the Czar coordinates workers
+- `{orchestrator_dir}/docs/AGENT_RULES.md` - Agent rules system
+- `{orchestrator_dir}/AGENT_COMPATIBILITY.md` - Supported AI agents
+
+## Critical Requirements
+
+### config.json Structure
+```json
+{{
+  "project": {{
+    "name": "project-name",
+    "slug": "project-slug",
+    "repository": "{str(current_dir)}",  // MUST BE THIS EXACT PATH
+    "orchestration_dir": ".czarina",
+    "version": "0.1.0",  // Follow semver
+    "phase": 1,  // Integer phase number
+    "omnibus_branch": "cz1/release/v0.1.0",  // Integration branch
+    "description": "Project description"
+  }},
+{agent_rules_config}
+  "workers": [
+    {{
+      "id": "worker-id",  // kebab-case, descriptive
+      "agent": "claude",  // REQUIRED: claude, cursor, aider, etc.
+      "role": "code|plan|test|review|integration",  // Worker type
+      "branch": "cz1/feat/worker-id",  // MUST follow pattern!
+      "description": "What this worker does",
+      "phase": 1,  // REQUIRED: must match project phase
+      "dependencies": ["other-worker"],  // Workers this depends on
+      "token_budget": 500000  // Optional: estimated tokens
+    }}
+  ],
+  "orchestration": {{
+    "mode": "local",
+    "allow_parallel_when_possible": true
+  }},
+  "daemon": {{
+    "enabled": true,
+    "auto_approve": ["read", "write", "edit", "commit"]
+  }}
+}}
+```
+
+### Branch Naming (CRITICAL - WILL FAIL IF WRONG!)
+- Worker branches: `cz<phase>/feat/<worker-id>`
+  - Examples: `cz1/feat/backend`, `cz1/feat/testing`, `cz2/feat/optimization`
+- Omnibus/Integration branch: `cz<phase>/release/v<version>`
+  - Examples: `cz1/release/v0.1.0`, `cz2/release/v0.2.0`
+- DO NOT use old "worker/" prefix!
+
+### Worker Identity Files (.czarina/workers/<worker-id>.md)
+Each worker needs a clear, actionable identity file:
+
+```markdown
+# Worker Identity: <worker-id>
+
+**Role:** <Plan/Code/Test/Review/Integration>
+**Agent:** <claude/cursor/aider>
+**Branch:** cz<phase>/feat/<worker-id>
+**Phase:** <phase-number>
+**Dependencies:** <comma-separated list or "None">
+
+## Mission
+
+<Clear 2-3 sentence mission statement>
+
+## 🚀 YOUR FIRST ACTION
+
+<CRITICAL: Tell the worker EXACTLY what to do first - be specific!>
+
+Example:
+Read the backend architecture doc at `docs/architecture.md` and create the initial project structure with:
+```bash
+mkdir -p src/{{api,models,controllers,utils}}
+touch src/api/server.py src/models/__init__.py
+```
+
+Then review the API requirements and create a task list.
+
+## Objectives
+
+1. <Specific, measurable objective>
+2. <Another objective>
+...
+
+## Deliverables
+
+- <Concrete deliverable>
+- <Another deliverable>
+
+## Success Criteria
+
+- [ ] All objectives completed
+- [ ] Code committed to branch
+- [ ] Tests passing (if applicable)
+- [ ] Ready for integration worker review
+```
+
+## Your Process
+
+1. **Read and analyze** the implementation plan thoroughly
+2. **Review the reference docs** (especially PROJECT_PLANNING_STANDARDS.md)
+3. **Identify workers** - What distinct roles/responsibilities are needed?
+4. **Determine phases** - Can this be done in one phase or does it need multiple?
+5. **Plan dependencies** - What order must work happen in?
+6. **Estimate token budgets** - Rough estimates based on complexity
+7. **Create config.json** - Follow examples, include all required fields
+8. **Create worker files** - Each with clear mission and strong first action
+9. **Verify** - Check branch names, dependencies, required fields
+
+## Planning Guidance
+
+- **Versions not time**: Plan as v0.1.0, v0.2.0, etc. (see PROJECT_PLANNING_STANDARDS.md)
+- **Phases for large work**: If >500K tokens, break into phases (v0.1.0-phase1, v0.1.0-phase2)
+- **Worker types**: plan, code, test, review, integration
+- **Integration worker**: Usually last, depends on all others, merges branches
+- **Strong first actions**: Be specific! Not "start working" but "Read X, create Y, then Z"
+- **Token budgets**: Rough estimates - 100-500K for code workers, less for others
+{planning_guidance_extra}
+
+## Common Patterns
+
+- **Simple project (1 phase)**: architecture → implementation → testing → integration
+- **Multi-phase project**: Phase 1: foundation, Phase 2: features, Phase 3: polish
+- **Parallel workers**: Frontend + backend can work in parallel if both depend on architecture
+- **Integration worker**: Last worker that merges all branches and does final QA
+
+{agent_knowledge_integration}
+Read the docs, study the examples, and create an excellent orchestration setup!"""
+
+    print("🚀 Launching Claude Code to analyze plan and create orchestration...")
+    print()
+    print("💡 Claude will help you create:")
+    print("   - .czarina/config.json")
+    print("   - .czarina/workers/*.md files")
     print()
 
-    # Generate and write config.json
-    print("📝 Generating config.json...")
-    config = generate_config_from_plan(plan_data, current_dir)
-    config_path = czarina_dir / "config.json"
+    # Show agent-knowledge status
+    if agent_knowledge_available:
+        print("✅ Agent knowledge library detected at ../agent-knowledge/")
+        print("   Workers will have access to 43K+ lines of best practices")
+        print()
+    else:
+        print("💡 Tip: Clone agent-knowledge for enhanced worker capabilities:")
+        print("   git clone git@github.com:apathy-ca/agent-knowledge.git ../agent-knowledge")
+        print("   This gives workers 43K+ lines of production-tested best practices")
+        print()
 
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=2)
-    print(f"   ✅ Written to {config_path}")
-    print()
+    # Launch Claude Code
+    try:
+        result = subprocess.run(["claude", prompt], check=True)
 
-    # Generate and write worker identity files
-    print("📝 Generating worker identities...")
-    for worker in plan_data['workers']:
-        worker_content = generate_worker_identity(worker, plan_data)
-        worker_path = czarina_dir / "workers" / f"{worker['id']}.md"
+        print()
+        print("=" * 60)
+        print()
+        print("✅ Claude Code session complete!")
+        print()
+        print("📋 Next steps:")
+        print("   1. Verify .czarina/config.json was created")
+        print("   2. Verify .czarina/workers/*.md files exist")
+        print("   3. Launch the orchestration:")
+        print("      czarina launch")
+        print()
+        print("=" * 60)
 
-        with open(worker_path, 'w') as f:
-            f.write(worker_content)
-        print(f"   ✅ Created {worker['id']}.md")
-    print()
+    except FileNotFoundError:
+        print()
+        print("❌ Error: 'claude' command not found")
+        print("   Please install Claude Code CLI: https://code.claude.com")
+        print()
+        sys.exit(1)
 
-    print("=" * 60)
-    print("✅ Orchestration initialized!")
-    print()
-    print("📋 Next steps:")
-    print("   1. Review .czarina/config.json (optional edits)")
-    print("   2. Review .czarina/workers/*.md files")
-    print("   3. Launch: czarina launch")
-    print()
-    print("=" * 60)
+    except Exception as e:
+        print()
+        print(f"❌ Failed to launch Claude Code: {e}")
+        print()
+        sys.exit(1)
 
 
 def cmd_launch(project_name=None):
@@ -2230,8 +2388,9 @@ def show_usage():
     print("  cd ~/my-project")
     print("  czarina init IMPLEMENTATION_PLAN.md")
     print("")
-    print("  # One-shot: generate + initialize (fast mode)")
-    print("  czarina init docs/PROJECT_PLAN.md --assist")
+    print("  # Or use AI to generate plan first, then init")
+    print("  czarina plan docs/PROJECT_PLAN.md --output IMPLEMENTATION_PLAN.md")
+    print("  czarina init IMPLEMENTATION_PLAN.md")
     print("")
     print("  # Launch everything")
     print("  czarina launch")
@@ -2297,12 +2456,10 @@ def main():
             cmd_plan(project_plan_file, output_file, style)
     elif command == "init":
         if len(sys.argv) < 3:
-            print("❌ Usage: czarina init <plan.md> [--assist]")
+            print("❌ Usage: czarina init <plan.md>")
             sys.exit(1)
         plan_file = sys.argv[2]
-        # Check for --assist flag
-        auto_assist = "--assist" in sys.argv[3:] if len(sys.argv) > 3 else False
-        cmd_init(plan_file, auto_assist=auto_assist)
+        cmd_init(plan_file)
     elif command == "launch":
         project_name = sys.argv[2] if len(sys.argv) > 2 else None
         cmd_launch(project_name)
