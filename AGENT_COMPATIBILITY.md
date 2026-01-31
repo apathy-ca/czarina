@@ -13,6 +13,7 @@ Czarina works with **any AI coding assistant** that can read files and execute g
 | **Windsurf** | ✅ Native | ✅ Native | ⚠️ Manual | ✅ Works | **95%** | Similar to Cursor |
 | **Aider** | ✅ Native | ✅ Native | ✅ CLI | ✅ Works | **98%** | Excellent CLI support |
 | **Kilocode** | ✅ Native | ✅ Native | ✅ Auto | ✅ Works | **95%** | Autonomous with auto-approval |
+| **Shelley** | ✅ Native | ✅ Native | ✅ Web | ✅ Works | **95%** | exe.dev native, subagents |
 | **ChatGPT Code** | ✅ Native | ⚠️ Limited | ⚠️ Manual | ✅ Works | **85%** | Git via code interpreter |
 | **Codeium** | ✅ Native | ✅ Native | ⚠️ Manual | ✅ Works | **95%** | Works in supported IDEs |
 | **OpenAI o1** | ✅ Native | ⚠️ Limited | ⚠️ Manual | ✅ Works | **85%** | Limited shell access |
@@ -166,6 +167,50 @@ czarina launch  # If worker config specifies "agent": "kilocode"
 - Supports multiple AI providers (OpenAI, Anthropic, etc.)
 - `--json` mode for programmatic control
 - `--parallel` for parallel mode with automatic branching
+
+---
+
+### Shelley (exe.dev)
+
+**Setup:** exe.dev VM with Shelley service running (default on exeuntu images)
+
+**URL:** `https://<vmname>.exe.xyz:9999/`
+
+**Usage:**
+```bash
+# In Shelley web UI, start a new conversation and send:
+cd .czarina/worktrees/engineer-1 && cat WORKER_IDENTITY.md
+
+# Then follow the instructions in the identity file
+```
+
+**Discovery:** Web-based conversation with file context
+
+**Best For:** Cloud-based development, exe.dev environments, browser-accessible agent, subagent parallelism
+
+**Autonomy:** 90-95% (high autonomy with auto-approved file/git operations)
+
+**Tips:**
+- Shelley has native bash/terminal access - git operations work seamlessly
+- Use subagents for parallel subtasks within a single worker
+- Shelley can browse the web and take screenshots for verification
+- Conversation history persists in SQLite (`~/.config/shelley/shelley.db`)
+- Supports multiple LLM models (Claude, GPT, Gemini)
+- Use multiple browser tabs for parallel workers
+- Worker prompts work best as markdown with clear task lists
+
+**Launcher:**
+```bash
+# Use the shelley-worker launcher script
+./agents/launchers/shelley-worker.sh \
+  --worker-file .czarina/workers/engineer-1.md \
+  --worktree .czarina/worktrees/engineer-1
+```
+
+**Requirements:**
+- exe.dev VM (exeuntu image recommended)
+- Shelley service running on port 9999
+- Web browser access to `https://<vmname>.exe.xyz:9999/`
 
 ---
 
