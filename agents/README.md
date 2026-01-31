@@ -75,6 +75,20 @@ python3 agents/profile-loader.py summary cursor
 - **Usage:** `kilocode --auto --yolo --workspace {path} '{prompt}'`
 - **Profile:** [kilocode.json](profiles/kilocode.json)
 
+### Shelley (exe.dev)
+- **Type:** Web
+- **Best for:** exe.dev VM environments, cloud-based development, browser-accessible agent
+- **Autonomy:** 90-95% (high autonomy with auto-approved file/git operations)
+- **Usage:** Open Shelley web UI, start conversation with `cd <worktree> && cat WORKER_IDENTITY.md`
+- **Profile:** [shelley.json](profiles/shelley.json)
+- **Features:**
+  - Native bash/terminal access
+  - Subagent support for parallel subtasks
+  - Web browsing and screenshot capabilities
+  - Persistent conversation history in SQLite
+  - Multiple LLM model support (Claude, GPT, Gemini)
+- **Requirements:** exe.dev VM with Shelley service running (port 9999)
+
 ## Agent Profile Schema
 
 Each agent profile is a JSON file that defines:
