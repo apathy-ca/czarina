@@ -346,6 +346,52 @@
           }
         }
       }
+    },
+    "wiggum": {
+      "type": "object",
+      "description": "Wiggum Mode: iterative, fault-tolerant AI coding with disposable workers (Ralphs)",
+      "properties": {
+        "agent_command": {
+          "type": "string",
+          "description": "Command to invoke the AI agent inside the worktree",
+          "default": "claude -p .czarina/mission_brief.md"
+        },
+        "sandbox_prefix": {
+          "type": "string",
+          "description": "Directory prefix for temporary worktrees",
+          "default": ".wiggum_sandboxes/"
+        },
+        "default_retries": {
+          "type": "integer",
+          "description": "Maximum number of retry attempts before aborting",
+          "minimum": 1,
+          "default": 5
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Per-attempt timeout in seconds (kills the Ralph if exceeded)",
+          "minimum": 30,
+          "default": 300
+        },
+        "protected_files": {
+          "type": "array",
+          "description": "Files the Czar will automatically revert if Ralph modifies them",
+          "items": {
+            "type": "string"
+          },
+          "default": ["czarina.toml", "go.mod", ".env"]
+        },
+        "verify_command": {
+          "type": "string",
+          "description": "Command to run for verification gate (e.g. npm test, go test ./...)"
+        },
+        "merge_strategy": {
+          "type": "string",
+          "description": "How to merge successful worktree changes back",
+          "enum": ["merge", "squash", "rebase"],
+          "default": "squash"
+        }
+      }
     }
   }
 }

@@ -18,7 +18,14 @@ Usage:
     czarina phase list          - List all completed phases
     czarina status              - Show project status
     czarina dashboard           - Live monitoring dashboard
+    czarina wiggum <prompt>     - Run Wiggum Mode (iterative AI worker lifecycle)
     czarina version             - Show version information
+
+Wiggum Mode Options:
+    --retries N                 Max retry attempts (default: 5)
+    --timeout N                 Timeout per attempt in seconds (default: 300)
+    --verify-command CMD        Verification command (e.g. "npm test")
+    --agent-command CMD         Agent command override
 
 Planning Styles:
     agile      - Iterative, small workers (5-8), flexible
@@ -2428,6 +2435,69 @@ Let's get started!"""
     print("=" * 60)
 
 
+def cmd_wiggum(task_prompt, retries=None, timeout=None, verify_command=None, agent_command=None):
+    """Run Wiggum Mode: iterative AI worker lifecycle with fault tolerance"""
+    czarina_dir, project_root = get_project_context()
+    orchestrator_dir = get_orchestrator_dir()
+    wiggum_script = orchestrator_dir / "czarina-core" / "wiggum.sh"
+
+    if not wiggum_script.exists():
+        print(f"❌ Wiggum script not found: {wiggum_script}")
+        sys.exit(1)
+
+    # Check for required tools
+    for tool in ["tmux", "jq", "git"]:
+        result = subprocess.run(["which", tool], capture_output=True)
+        if result.returncode != 0:
+            print(f"❌ Required tool not found: {tool}")
+            sys.exit(1)
+
+    config_file = czarina_dir / "config.json"
+    if not config_file.exists():
+        print("❌ No config.json found")
+        print("💡 Run 'czarina init <plan.md>' first, or create a config with a [wiggum] section")
+        sys.exit(1)
+
+    with open(config_file) as f:
+        config = json.load(f)
+
+    # Show configuration summary
+    wiggum_config = config.get("wiggum", {})
+    effective_retries = retries or wiggum_config.get("default_retries", 5)
+    effective_timeout = timeout or wiggum_config.get("timeout_seconds", 300)
+    effective_verify = verify_command or wiggum_config.get("verify_command", "")
+    effective_agent = agent_command or wiggum_config.get("agent_command", "claude -p .czarina/mission_brief.md")
+
+    print("=" * 60)
+    print("  WIGGUM MODE")
+    print("  Iterative AI Worker Lifecycle")
+    print("=" * 60)
+    print()
+    print(f"  Task:     {task_prompt[:72]}{'...' if len(task_prompt) > 72 else ''}")
+    print(f"  Retries:  {effective_retries}")
+    print(f"  Timeout:  {effective_timeout}s per attempt")
+    print(f"  Verify:   {effective_verify or '<none>'}")
+    print(f"  Agent:    {effective_agent}")
+    print(f"  Project:  {project_root}")
+    print()
+
+    # Build command
+    cmd = ["bash", str(wiggum_script), str(czarina_dir), task_prompt]
+
+    if retries is not None:
+        cmd.extend(["--retries", str(retries)])
+    if timeout is not None:
+        cmd.extend(["--timeout", str(timeout)])
+    if verify_command is not None:
+        cmd.extend(["--verify-command", verify_command])
+    if agent_command is not None:
+        cmd.extend(["--agent-command", agent_command])
+
+    os.chdir(project_root)
+    result = subprocess.run(cmd)
+    sys.exit(result.returncode)
+
+
 def show_usage():
     """Show usage information"""
     print(__doc__)
@@ -2462,6 +2532,10 @@ def show_usage():
     print("")
     print("  # Clean up completely")
     print("  czarina closeout")
+    print("")
+    print("  # Run Wiggum Mode (iterative AI worker with retries)")
+    print("  czarina wiggum 'Fix the auth bug' --verify-command 'npm test'")
+    print("  czarina wiggum 'Add caching layer' --retries 3 --timeout 600")
 
 
 def main():
@@ -2550,6 +2624,47 @@ def main():
             print(f"❌ Unknown phase command: {phase_cmd}")
             print("   Available: set, close, list")
             sys.exit(1)
+    elif command == "wiggum":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina wiggum <task-prompt> [options]")
+            print()
+            print("Options:")
+            print("  --retries N            Max retry attempts (default: from config or 5)")
+            print("  --timeout N            Timeout per attempt in seconds (default: from config or 300)")
+            print("  --verify-command CMD   Verification command (e.g. 'npm test')")
+            print("  --agent-command CMD    Agent command override")
+            print()
+            print("Example:")
+            print("  czarina wiggum 'Fix the login bug in auth.ts' --verify-command 'npm test'")
+            print("  czarina wiggum 'Add rate limiting to the API' --retries 3 --timeout 600")
+            sys.exit(1)
+
+        task_prompt = sys.argv[2]
+
+        # Parse options
+        retries = None
+        timeout = None
+        verify_command = None
+        agent_command = None
+        i = 3
+        while i < len(sys.argv):
+            if sys.argv[i] == "--retries" and i + 1 < len(sys.argv):
+                retries = int(sys.argv[i + 1])
+                i += 2
+            elif sys.argv[i] == "--timeout" and i + 1 < len(sys.argv):
+                timeout = int(sys.argv[i + 1])
+                i += 2
+            elif sys.argv[i] == "--verify-command" and i + 1 < len(sys.argv):
+                verify_command = sys.argv[i + 1]
+                i += 2
+            elif sys.argv[i] == "--agent-command" and i + 1 < len(sys.argv):
+                agent_command = sys.argv[i + 1]
+                i += 2
+            else:
+                print(f"❌ Unknown option: {sys.argv[i]}")
+                sys.exit(1)
+
+        cmd_wiggum(task_prompt, retries, timeout, verify_command, agent_command)
     elif command in ["version", "-v", "--version"]:
         print(f"Czarina v{CZARINA_VERSION}")
         print("Multi-Agent Orchestration CLI")

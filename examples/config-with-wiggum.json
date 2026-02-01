@@ -1,0 +1,40 @@
+{
+  "$schema": "../schema/config-schema.json",
+  "project": {
+    "name": "my-project",
+    "slug": "my-project",
+    "repository": "/home/user/projects/my-project",
+    "orchestration_dir": ".czarina",
+    "version": "1.0.0",
+    "description": "Project with Wiggum Mode for iterative AI coding tasks"
+  },
+  "workers": [
+    {
+      "id": "engineer",
+      "agent": "claude",
+      "branch": "feat/main-work",
+      "description": "Primary implementation worker"
+    }
+  ],
+  "wiggum": {
+    "agent_command": "claude -p .czarina/mission_brief.md",
+    "sandbox_prefix": ".wiggum_sandboxes/",
+    "default_retries": 5,
+    "timeout_seconds": 300,
+    "protected_files": [
+      "czarina.toml",
+      "go.mod",
+      ".env",
+      "package-lock.json"
+    ],
+    "verify_command": "npm test",
+    "merge_strategy": "squash"
+  },
+  "orchestration": {
+    "mode": "local"
+  },
+  "daemon": {
+    "enabled": true,
+    "auto_approve": ["read", "write", "edit", "commit"]
+  }
+}
