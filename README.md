@@ -89,8 +89,8 @@ graph TB
 
 ```bash
 # 1. Install Czarina (one-time)
-git clone https://github.com/apathy-ca/czarina.git ~/Source/GRID/claude-orchestrator
-ln -s ~/Source/GRID/claude-orchestrator/czarina ~/.local/bin/czarina
+git clone https://github.com/apathy-ca/czarina.git ~/czarina
+ln -s ~/czarina/czarina ~/.local/bin/czarina
 czarina patterns update
 
 # 2. One-command launch from your plan (v0.7.1+)

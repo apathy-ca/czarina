@@ -98,8 +98,8 @@ When complete:
 
 ## Pattern Library
 Review before starting:
-- czarina-core/patterns/ERROR_RECOVERY_PATTERNS.md
-- czarina-core/patterns/CZARINA_PATTERNS.md
+- czarina-core/patterns/agent-knowledge/patterns/error-recovery/
+- czarina-core/patterns/czarina-specific/CZARINA_PATTERNS.md
 ```
 
 ### For Workers (AI Agents)

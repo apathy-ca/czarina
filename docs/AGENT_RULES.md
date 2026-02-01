@@ -1,8 +1,8 @@
 # Agent Rules Integration Guide
 
-**Version:** 0.7.0
+**Version:** 0.9.0
 **Status:** Production Ready
-**Last Updated:** 2025-12-28
+**Last Updated:** 2026-02-01
 
 ## Overview
 
@@ -51,13 +51,13 @@ When a worker launches, Czarina automatically:
 
 | Worker Role | Loaded Rules |
 |-------------|--------------|
-| **code** | python/, patterns/, testing/, security/, workflows/ |
-| **architect** | patterns/, documentation/, workflows/, orchestration/ |
-| **qa** | testing/, security/, workflows/ |
-| **debug** | python/, patterns/, security/ |
-| **documentation** | documentation/, workflows/, templates/ |
-| **orchestrator** | orchestration/, workflows/, patterns/ |
-| **integration** | testing/, workflows/, patterns/ |
+| **code** | core-rules/python-standards/, core-rules/design-patterns/, core-rules/testing/, core-rules/security/, core-rules/workflows/ |
+| **architect** | patterns/, core-rules/documentation/, core-rules/workflows/, core-rules/orchestration/ |
+| **qa** | core-rules/testing/, core-rules/security/, core-rules/workflows/, patterns/testing-patterns/ |
+| **debug** | core-rules/python-standards/, patterns/error-recovery/, core-rules/security/ |
+| **documentation** | core-rules/documentation/, core-rules/workflows/, templates/ |
+| **orchestrator** | core-rules/orchestration/, core-rules/workflows/, patterns/ |
+| **integration** | core-rules/testing/, core-rules/workflows/, patterns/git-workflows/ |
 
 ### Context Size Management
 
@@ -119,20 +119,24 @@ For selective rule loading:
 
 ### Accessing Rules Directly
 
-Workers can reference full rules during their session:
+Workers can reference full rules during their session. Rules are synced via `czarina patterns update` to:
+
+```
+czarina-core/patterns/agent-knowledge/
+```
 
 ```bash
 # Read specific rule file
-cat .czarina/agent-rules/python/CODING_STANDARDS.md
+cat czarina-core/patterns/agent-knowledge/core-rules/python-standards/CODING_STANDARDS.md
 
 # Browse all available rules
-cat .czarina/agent-rules/INDEX.md
+cat czarina-core/patterns/agent-knowledge/core-rules/INDEX.md
 
 # Search for specific pattern
-grep -r "async context manager" .czarina/agent-rules/
+grep -r "async context manager" czarina-core/patterns/agent-knowledge/
 ```
 
-The `.czarina/agent-rules/` directory is a symlink to the full rules library, making all rules accessible.
+Run `czarina patterns update` to sync the latest rules from the agent-knowledge repository.
 
 ---
 
@@ -197,9 +201,21 @@ Project rules load **after** global rules, allowing you to override or supplemen
 
 ## Agent Rules Library Structure
 
-The full library is organized into 9 domains:
+The agent-knowledge library is synced to `czarina-core/patterns/agent-knowledge/` via `czarina patterns update`.
 
-### 1. Python Development (`python/`)
+```
+agent-knowledge/
+├── core-rules/          # Production-tested coding standards
+├── patterns/            # Development patterns
+├── templates/           # Project and documentation templates
+└── meta/                # Versioning and contribution guides
+```
+
+### Core Rules (`core-rules/`)
+
+Production-tested coding standards organized by domain:
+
+#### Python Standards (`core-rules/python-standards/`)
 - CODING_STANDARDS.md - Python code quality standards
 - ASYNC_PATTERNS.md - Async/await best practices
 - ERROR_HANDLING.md - Exception handling patterns
@@ -207,7 +223,7 @@ The full library is organized into 9 domains:
 - TESTING_PATTERNS.md - pytest patterns and practices
 - SECURITY_PATTERNS.md - Python security best practices
 
-### 2. Agent Roles (`agents/`)
+#### Agent Roles (`core-rules/agent-roles/`)
 - AGENT_ROLES.md - Role taxonomy and responsibilities
 - ARCHITECT_ROLE.md - System design and architecture patterns
 - CODE_ROLE.md - Implementation best practices
@@ -215,7 +231,7 @@ The full library is organized into 9 domains:
 - QA_ROLE.md - Testing and quality assurance
 - ORCHESTRATOR_ROLE.md - Multi-agent coordination
 
-### 3. Workflows (`workflows/`)
+#### Workflows (`core-rules/workflows/`)
 - GIT_WORKFLOW.md - Branch management, commit standards
 - PR_REQUIREMENTS.md - Pull request standards
 - DOCUMENTATION_WORKFLOW.md - Documentation practices
@@ -223,52 +239,105 @@ The full library is organized into 9 domains:
 - TOKEN_PLANNING.md - Context budget management
 - CLOSEOUT_PROCESS.md - Session and phase completion
 
-### 4. Design Patterns (`patterns/`)
+#### Design Patterns (`core-rules/design-patterns/`)
 - TOOL_USE_PATTERNS.md - Claude tool use best practices
 - STREAMING_PATTERNS.md - Real-time data streaming
 - CACHING_PATTERNS.md - Caching strategies
 - BATCH_OPERATIONS.md - Batch processing patterns
 - ERROR_RECOVERY.md - Failure handling and retry logic
-- STATE_MANAGEMENT.md - State machine patterns
 
-### 5. Testing (`testing/`)
+#### Testing (`core-rules/testing/`)
+- TESTING_POLICY.md - Testing philosophy and standards
 - UNIT_TESTING.md - Unit test standards
 - INTEGRATION_TESTING.md - Integration test patterns
 - COVERAGE_STANDARDS.md - Coverage requirements
-- MOCKING_PATTERNS.md - Mock and fixture patterns
-- TEST_ORGANIZATION.md - Test suite structure
-- PERFORMANCE_TESTING.md - Load and performance testing
+- MOCKING_STRATEGIES.md - Mock and fixture patterns
 
-### 6. Security (`security/`)
+#### Security (`core-rules/security/`)
 - AUTHENTICATION.md - Auth patterns and standards
 - AUTHORIZATION.md - Permission and RBAC patterns
 - SECRET_MANAGEMENT.md - Secrets handling
 - INJECTION_PREVENTION.md - SQL injection, XSS, etc.
-- API_SECURITY.md - API security best practices
 - AUDIT_LOGGING.md - Security audit requirements
 
-### 7. Templates (`templates/`)
-- agent-project-template.md - New agent project scaffold
-- documentation-template.md - Standard docs structure
-- testing-template.md - Test suite template
-- worker-template.md - Czarina worker template
-- phase-plan-template.md - Phase planning template
-
-### 8. Documentation (`documentation/`)
+#### Documentation (`core-rules/documentation/`)
+- DOCUMENTATION_STANDARDS.md - Documentation best practices
 - API_DOCUMENTATION.md - API docs standards
 - ARCHITECTURE_DOCS.md - Architecture documentation
 - CHANGELOG_STANDARDS.md - Changelog best practices
-- README_STANDARDS.md - README structure
-- INLINE_DOCUMENTATION.md - Code comment standards
+- README_TEMPLATE.md - README structure
 
-### 9. Orchestration (`orchestration/`)
+#### Orchestration (`core-rules/orchestration/`)
 - ORCHESTRATION_PATTERNS.md - Multi-agent coordination
-- WORKER_COORDINATION.md - Worker communication patterns
-- DEPENDENCY_MANAGEMENT.md - Handling worker dependencies
-- PARALLEL_EXECUTION.md - Parallel worker patterns
-- SEQUENTIAL_EXECUTION.md - Sequential coordination
 
-**Total:** 69 files, 43,000+ lines of production-tested knowledge
+### Patterns (`patterns/`)
+
+Development patterns for AI-assisted coding:
+
+#### Error Recovery (`patterns/error-recovery/`)
+- detection-patterns.md - Error detection strategies
+- recovery-strategies.md - Recovery approaches
+- retry-patterns.md - Retry logic patterns
+- fallback-patterns.md - Fallback strategies
+- escalation-patterns.md - When to escalate
+
+#### Git Workflows (`patterns/git-workflows/`)
+- branch-strategies.md - Branch management
+- commit-patterns.md - Commit message patterns
+- pr-workflows.md - Pull request workflows
+- conflict-resolution.md - Merge conflict handling
+
+#### Tool Use (`patterns/tool-use/`)
+- parallel-execution.md - Parallel tool calls
+- tool-selection.md - Choosing the right tool
+- optimization-patterns.md - Tool use optimization
+- caching-patterns.md - Caching strategies
+- batching-patterns.md - Batch operations
+
+#### Mode Capabilities (`patterns/mode-capabilities/`)
+- architect-mode.md - Planning and design
+- code-mode.md - Implementation
+- debug-mode.md - Debugging
+- ask-mode.md - Explanations
+- orchestrator-mode.md - Coordination
+- mode-transitions.md - Switching modes
+
+#### Context Management (`patterns/context-management/`)
+- context-windows.md - Managing context size
+- summarization.md - Summarization strategies
+- memory-tiers.md - Memory hierarchy
+- attention-shaping.md - Focus optimization
+
+#### Testing Patterns (`patterns/testing-patterns/`)
+- Test organization and strategy patterns
+
+### Templates (`templates/`)
+
+Project and documentation scaffolding:
+
+- agent-project-template.md - New agent project scaffold
+- python-project-template.md - Python project structure
+- api-documentation-template.md - API docs template
+- architecture-documentation-template.md - Architecture docs
+- readme-template.md - README structure
+- repository-structure-template.md - Repo organization
+- unit-test-template.md - Unit test scaffold
+- integration-test-template.md - Integration test scaffold
+- test-fixture-template.md - Test fixtures
+- worker-identity-template.md - Czarina worker template
+- worker-definition-template.md - Worker definition
+- worker-closeout-template.md - Worker closeout
+
+### Meta (`meta/`)
+
+Library metadata and contribution guides:
+
+- versioning.md - Version management
+- pattern-template.md - Template for new patterns
+- learning-extraction.md - Extracting patterns from sessions
+- cross-reference-map.md - Cross-references between docs
+
+**Total:** 100+ files of production-tested knowledge
 
 ---
 
@@ -456,11 +525,13 @@ The full library is organized into 9 domains:
 **Solutions:**
 1. Check `agent_rules.enabled: true` in config.json
 2. Check worker has `role` field set
-3. Verify `.czarina/agent-rules/` symlink exists:
+3. Verify agent-knowledge is synced:
    ```bash
-   ls -la .czarina/agent-rules
+   czarina patterns version
+   ls czarina-core/patterns/agent-knowledge/
    ```
-4. Check logs for rule loading errors
+4. If not synced, run `czarina patterns update`
+5. Check logs for rule loading errors
 
 ### Context Size Too Large
 
@@ -479,13 +550,14 @@ The full library is organized into 9 domains:
 **Solutions:**
 1. Check INDEX.md for complete list:
    ```bash
-   cat .czarina/agent-rules/INDEX.md
+   cat czarina-core/patterns/agent-knowledge/core-rules/INDEX.md
+   cat czarina-core/patterns/agent-knowledge/patterns/INDEX.md
    ```
 2. Search by keyword:
    ```bash
-   grep -r "async context" .czarina/agent-rules/
+   grep -r "async context" czarina-core/patterns/agent-knowledge/
    ```
-3. Browse by domain in `.czarina/agent-rules/`
+3. Browse by domain in `czarina-core/patterns/agent-knowledge/`
 
 ### Project Rules Not Loading
 
@@ -561,11 +633,11 @@ Workers can still reference full rules when needed via file reads.
 The library evolves. Check for updates:
 
 ```bash
-cd ~/Source/agent-rules
-git pull
+czarina patterns update
+czarina patterns version
 ```
 
-Then update symlink if needed (usually automatic).
+This syncs the latest from the agent-knowledge repository.
 
 ### 5. Document When You Override
 
@@ -715,7 +787,7 @@ The library is versioned and updated periodically. Check release notes.
 
 ### Can I contribute to the rules library?
 
-Yes! The rules library accepts contributions. See agent-rules repository for details.
+Yes! The agent-knowledge library accepts contributions. See https://github.com/apathy-ca/agent-knowledge for details, or run `czarina patterns contribute` for the contribution guide.
 
 ---
 
@@ -724,8 +796,9 @@ Yes! The rules library accepts contributions. See agent-rules repository for det
 - [MEMORY_GUIDE.md](MEMORY_GUIDE.md) - Memory system (complements agent rules)
 - [MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md) - Upgrading from v0.6.2
 - [QUICK_START.md](QUICK_START.md) - Getting started with Czarina
-- [agent-rules/INDEX.md](.czarina/agent-rules/INDEX.md) - Complete rules index
-- [agent-rules/USAGE_GUIDE.md](.czarina/agent-rules/USAGE_GUIDE.md) - Rules library usage
+- [agent-knowledge/core-rules/INDEX.md](../czarina-core/patterns/agent-knowledge/core-rules/INDEX.md) - Core rules index
+- [agent-knowledge/patterns/INDEX.md](../czarina-core/patterns/agent-knowledge/patterns/INDEX.md) - Patterns index
+- [agent-knowledge/README.md](../czarina-core/patterns/agent-knowledge/README.md) - Agent knowledge overview
 
 ---
 
@@ -744,6 +817,6 @@ Yes! The rules library accepts contributions. See agent-rules repository for det
 
 ---
 
-**Version:** 0.7.0
-**Last Updated:** 2025-12-28
+**Version:** 0.9.0
+**Last Updated:** 2026-02-01
 **Next:** [MEMORY_GUIDE.md](MEMORY_GUIDE.md)

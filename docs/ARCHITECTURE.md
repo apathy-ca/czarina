@@ -255,9 +255,10 @@ main
 
 ## 📊 Pattern Library
 
-### Error Recovery
-- **Location:** `czarina-core/patterns/ERROR_RECOVERY_PATTERNS.md`
-- **Benefit:** 30-50% faster debugging
+### Agent Knowledge (synced from upstream)
+- **Location:** `czarina-core/patterns/agent-knowledge/`
+- **Contains:** patterns/, core-rules/, templates/
+- **Benefit:** 53+ production-tested rules, 30-50% faster debugging
 - **Auto-updates:** `czarina patterns update`
 
 ### Czarina-Specific

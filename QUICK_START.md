@@ -341,8 +341,11 @@ git merge feat/backend-api
 ### Read the Patterns
 
 ```bash
+# Browse agent-knowledge patterns
+ls ~/Source/GRID/claude-orchestrator/czarina-core/patterns/agent-knowledge/
+
 # Error recovery patterns (30-50% faster debugging)
-cat ~/Source/GRID/claude-orchestrator/czarina-core/patterns/ERROR_RECOVERY_PATTERNS.md
+ls ~/Source/GRID/claude-orchestrator/czarina-core/patterns/agent-knowledge/patterns/error-recovery/
 
 # Multi-agent patterns (coordination strategies)
 cat ~/Source/GRID/claude-orchestrator/czarina-core/patterns/czarina-specific/CZARINA_PATTERNS.md

@@ -902,8 +902,8 @@ def cmd_init(plan_file):
     # Get orchestrator directory for referencing docs/templates
     orchestrator_dir = get_orchestrator_dir()
 
-    # Check for agent-knowledge directory
-    agent_knowledge_dir = orchestrator_dir.parent / "agent-knowledge"
+    # Check for agent-knowledge directory (embedded in czarina-core/patterns/)
+    agent_knowledge_dir = orchestrator_dir / "czarina-core" / "patterns" / "agent-knowledge"
     agent_knowledge_available = agent_knowledge_dir.exists()
 
     # Build conditional sections for agent-knowledge
@@ -978,12 +978,12 @@ This gives each worker **exactly the knowledge they need** without context overf
 """
     else:
         agent_knowledge_section = """### Agent Knowledge Library
-- Agent knowledge library available at: https://github.com/apathy-ca/agent-knowledge
-- Clone with: git clone git@github.com:apathy-ca/agent-knowledge.git ../agent-knowledge"""
+- Agent knowledge library not yet downloaded
+- Run: czarina patterns update"""
 
         agent_rules_config = ""
 
-        planning_guidance_extra = "- **Agent knowledge**: Available at https://github.com/apathy-ca/agent-knowledge (clone to ../agent-knowledge)"
+        planning_guidance_extra = "- **Agent knowledge**: Run 'czarina patterns update' to download"
 
         agent_knowledge_integration = ""
 
@@ -2709,6 +2709,23 @@ def main():
                 sys.exit(1)
 
         cmd_wiggum(task_prompt, retries, timeout, verify_command, agent_command)
+    elif command == "patterns":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina patterns <update|version|pending|contribute>")
+            sys.exit(1)
+        patterns_cmd = sys.argv[2]
+        if patterns_cmd == "update":
+            cmd_patterns_update()
+        elif patterns_cmd == "version":
+            cmd_patterns_version()
+        elif patterns_cmd == "pending":
+            cmd_patterns_pending()
+        elif patterns_cmd == "contribute":
+            cmd_patterns_contribute()
+        else:
+            print(f"❌ Unknown patterns command: {patterns_cmd}")
+            print("   Available: update, version, pending, contribute")
+            sys.exit(1)
     elif command in ["version", "-v", "--version"]:
         print(f"Czarina v{CZARINA_VERSION}")
         print("Multi-Agent Orchestration CLI")
