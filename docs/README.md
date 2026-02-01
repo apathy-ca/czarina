@@ -32,6 +32,7 @@ docs/
 1. **[Daemon System](../czarina-core/docs/DAEMON_SYSTEM.md)** - Autonomous approval system
 2. **[Daemon Limitations](../czarina-core/docs/DAEMON_LIMITATIONS.md)** - Known issues
 3. **[Agent Types](../czarina-core/docs/AGENT_TYPES.md)** - Agent compatibility
+4. **[Wiggum Mode](CONFIGURATION.md#wiggum-section-v090)** - Iterative fault-tolerant AI tasks with retry and verification
 
 ---
 

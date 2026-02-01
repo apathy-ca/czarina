@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+**Wiggum Mode - Iterative Fault-Tolerant AI Workers**
+  - `czarina wiggum` command for autonomous, retry-based AI coding tasks
+  - Disposable workers ("Ralphs") execute in isolated git worktrees
+  - Cumulative "Wisdom" registry briefs each new attempt on past failures
+  - Cycle detection via diff hashing prevents regression loops
+  - Configurable timeout watchdog kills stalled workers
+  - Protected files auto-reverted if modified by Ralph
+  - Verification gate runs user-defined test commands between attempts
+  - Squash/merge/rebase strategies for merging successful changes
+  - Plan generator (`czarina plan`) suggests Wiggum Mode for test-driven tasks
+  - Init system (`czarina init`) generates wiggum config when plan uses it
+  - Example config: `examples/config-with-wiggum.json`
+
 **AI-Powered Orchestration Setup**
   - `czarina init` now launches Claude Code to analyze plans and create orchestration
   - Works with any plan format (not just pre-formatted worker sections)

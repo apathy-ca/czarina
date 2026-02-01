@@ -117,6 +117,7 @@ czarina launch
 - 🎯 **One-Command Launch** - `czarina analyze plan.md --go` - from plan to running in <60 seconds
 - 🌳 **Git Worktrees** - Each worker gets isolated workspace for true parallelism
 - 🔀 **Auto Branches** - Worker branches created and managed automatically
+- 🔄 **Wiggum Mode** - Iterative, fault-tolerant AI tasks with automatic retry and verification
 - 📊 **Battle-Tested** - SARK v2.0: 10 workers, 3-4x speedup
 
 **Latest Updates:** See [CHANGELOG.md](CHANGELOG.md) for version history and recent releases.
@@ -189,6 +190,11 @@ czarina daemon start                # Start auto-approval
 czarina daemon stop                 # Stop daemon
 czarina daemon logs                 # View logs
 
+# Wiggum Mode (Iterative AI Workers)
+czarina wiggum '<task>'             # Run with defaults from config
+czarina wiggum '<task>' --verify-command 'npm test'  # With verification
+czarina wiggum '<task>' --retries 3 --timeout 600    # Custom limits
+
 # Pattern Library
 czarina patterns update             # Get latest patterns
 czarina patterns pending            # List discoveries to share
@@ -210,6 +216,10 @@ czarina patterns pending            # List discoveries to share
 - **[MEMORY_GUIDE.md](MEMORY_GUIDE.md)** - **Memory system usage & best practices**
 - **[AGENT_RULES.md](AGENT_RULES.md)** - **Agent rules integration guide**
 - **[czarina_memory_spec.md](czarina_memory_spec.md)** - Memory architecture specification
+
+### v0.9.0 Features
+- **[Wiggum Mode](czarina-core/wiggum.sh)** - Iterative fault-tolerant AI tasks with retry and verification
+- **[examples/config-with-wiggum.json](examples/config-with-wiggum.json)** - Wiggum Mode configuration example
 
 ### Advanced
 - **[docs/PHASE_MANAGEMENT.md](docs/PHASE_MANAGEMENT.md)** - Phase lifecycle & smart cleanup
@@ -250,6 +260,7 @@ czarina patterns contribute   # Submit upstream
 - ✅ Documentation generation
 - ✅ Test writing and coverage
 - ✅ Multi-language projects
+- ✅ Automated bug fixes with test verification (Wiggum Mode)
 
 **Not ideal for:**
 - ❌ Small, focused tasks (< 1 hour)

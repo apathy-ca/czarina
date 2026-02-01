@@ -26,6 +26,7 @@ Czarina orchestrates teams of AI coding agents like a symphony conductor. Each w
 - ✅ **Live Dashboard** - Real-time progress visualization
 - ✅ **Git Orchestration** - Branch management and PR coordination
 - ✅ **Multiple Deployment** - HTML auto-launch, CLI, or tmux
+- ✅ **Wiggum Mode** - Iterative fault-tolerant AI tasks with disposable workers, retry, and verification gates
 
 ### Coming in v2.1
 - 🔄 Auto PR creation and review

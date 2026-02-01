@@ -178,6 +178,48 @@ Controls the two-level hopper system for enhancement requests.
 - `czar_monitoring.enabled` (optional, default: false): Enable Czar monitoring of hopper
 - `czar_monitoring.check_interval` (optional, default: 900): Check interval in seconds
 
+### Wiggum Section (v0.9.0+)
+
+Controls Wiggum Mode: iterative, fault-tolerant AI coding with disposable workers ("Ralphs").
+
+```json
+{
+  "wiggum": {
+    "agent_command": "claude -p .czarina/mission_brief.md",
+    "sandbox_prefix": ".wiggum_sandboxes/",
+    "default_retries": 5,
+    "timeout_seconds": 300,
+    "protected_files": ["czarina.toml", "go.mod", ".env"],
+    "verify_command": "npm test",
+    "merge_strategy": "squash"
+  }
+}
+```
+
+**Wiggum Properties:**
+- `agent_command` (optional, default: `"claude -p .czarina/mission_brief.md"`): Command to invoke the AI agent inside the worktree
+- `sandbox_prefix` (optional, default: `".wiggum_sandboxes/"`): Directory prefix for temporary worktrees
+- `default_retries` (optional, default: 5): Maximum number of retry attempts before aborting
+- `timeout_seconds` (optional, default: 300): Per-attempt timeout in seconds; kills the worker if exceeded
+- `protected_files` (optional): Files the Czar will automatically revert if the worker modifies them
+- `verify_command` (optional): Command to run for the verification gate (e.g., `npm test`, `go test ./...`)
+- `merge_strategy` (optional, default: `"squash"`): How to merge successful changes back (`merge`, `squash`, or `rebase`)
+
+**Wiggum Lifecycle:**
+1. **Spawn** - Create isolated git worktree (`wiggum/attempt-{n}`)
+2. **Brief** - Generate mission brief with task directives and accumulated wisdom from past failures
+3. **Execute** - Run agent in detached tmux session with timeout watchdog
+4. **Verify** - Cycle detection (diff hashing) + test suite execution
+5. **Resolve** - Merge on success, destroy worktree + append wisdom on failure, retry
+
+**Usage:**
+```bash
+czarina wiggum 'Fix the auth bug' --verify-command 'npm test'
+czarina wiggum 'Add caching' --retries 3 --timeout 600
+```
+
+CLI flags override config values. See `examples/config-with-wiggum.json` for a complete example.
+
 ## Example Configurations
 
 ### Basic Single-Phase Configuration

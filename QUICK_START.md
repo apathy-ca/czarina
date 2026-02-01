@@ -428,6 +428,11 @@ czarina daemon stop                   # Stop daemon
 czarina daemon logs                   # View logs
 czarina daemon status                 # Check if running
 
+# Wiggum Mode (iterative AI worker with retries)
+czarina wiggum '<task>'               # Run with config defaults
+czarina wiggum '<task>' --verify-command 'npm test'  # With test gate
+czarina wiggum '<task>' --retries 3 --timeout 600    # Custom limits
+
 # Pattern library
 czarina patterns update               # Get latest patterns
 czarina patterns version              # Show version
