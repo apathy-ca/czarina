@@ -106,6 +106,73 @@ The Czar uses this to brief each new Ralph on what NOT to do.
 EOF
 fi
 
+# Load phase learnings into wisdom (if available)
+LEARNINGS_DIR="${CZARINA_DIR}/learnings"
+if [ -d "$LEARNINGS_DIR" ]; then
+    # Find most recent phase learnings
+    LATEST_LEARNINGS=$(ls -t "$LEARNINGS_DIR"/phase-*-closeout.json 2>/dev/null | head -1)
+    if [ -n "$LATEST_LEARNINGS" ] && [ -f "$LATEST_LEARNINGS" ]; then
+        # Check if we already loaded this (avoid duplicates)
+        LEARNINGS_MARKER="${CZARINA_DIR}/.wiggum_learnings_loaded"
+        LEARNINGS_HASH=$(md5sum "$LATEST_LEARNINGS" 2>/dev/null | cut -d' ' -f1)
+        LOADED_HASH=""
+        [ -f "$LEARNINGS_MARKER" ] && LOADED_HASH=$(cat "$LEARNINGS_MARKER")
+
+        if [ "$LEARNINGS_HASH" != "$LOADED_HASH" ]; then
+            # Extract key learnings and prepend to wisdom
+            PHASE_LEARNINGS=$(python3 -c "
+import json, sys
+try:
+    with open('$LATEST_LEARNINGS') as f:
+        data = json.load(f)
+    phase = data.get('phase', '?')
+    learnings = data.get('learnings', {})
+
+    output = []
+    output.append('## Phase {} Learnings (from previous work)'.format(phase))
+    output.append('')
+
+    worked = learnings.get('what_worked', [])
+    if worked:
+        output.append('**What worked:**')
+        for item in worked[:3]:
+            output.append('- {}'.format(item.get('description', '')))
+        output.append('')
+
+    didnt = learnings.get('what_didnt_work', [])
+    if didnt:
+        output.append('**What to avoid:**')
+        for item in didnt[:3]:
+            desc = item.get('description', '')
+            cause = item.get('root_cause', '')
+            if cause:
+                output.append('- {} (cause: {})'.format(desc, cause))
+            else:
+                output.append('- {}'.format(desc))
+        output.append('')
+
+    if output:
+        output.append('---')
+        output.append('')
+
+    print('\n'.join(output))
+except:
+    pass
+" 2>/dev/null)
+
+            if [ -n "$PHASE_LEARNINGS" ]; then
+                # Prepend to wisdom file
+                TEMP_WISDOM=$(mktemp)
+                echo "$PHASE_LEARNINGS" > "$TEMP_WISDOM"
+                cat "$WISDOM_FILE" >> "$TEMP_WISDOM"
+                mv "$TEMP_WISDOM" "$WISDOM_FILE"
+                echo "$LEARNINGS_HASH" > "$LEARNINGS_MARKER"
+                log_info "Loaded learnings from phase into wisdom"
+            fi
+        fi
+    fi
+fi
+
 # Initialize history file if it doesn't exist
 if [ ! -f "$HISTORY_FILE" ]; then
     echo '{"attempts": [], "hashes": []}' > "$HISTORY_FILE"
@@ -139,6 +206,87 @@ log_phase() {
 
 timestamp() {
     date '+%Y-%m-%d %H:%M:%S'
+}
+
+# Export Wiggum run results to the learnings system
+_export_wiggum_learnings() {
+    local status="$1"      # "success" or "failed"
+    local attempts="$2"    # number of attempts
+    local task="$3"        # task prompt
+
+    local learnings_dir="${CZARINA_DIR}/learnings"
+    mkdir -p "$learnings_dir"
+
+    local wiggum_learnings_file="${learnings_dir}/wiggum-runs.json"
+
+    # Create or append to wiggum runs file
+    python3 - "$status" "$attempts" "$task" "$WISDOM_FILE" "$wiggum_learnings_file" <<'PYEOF'
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+status = sys.argv[1]
+attempts = int(sys.argv[2])
+task = sys.argv[3][:200]  # Truncate task
+wisdom_file = sys.argv[4]
+output_file = sys.argv[5]
+
+# Read existing runs
+runs = []
+if Path(output_file).exists():
+    try:
+        with open(output_file) as f:
+            data = json.load(f)
+            runs = data.get("runs", [])
+    except:
+        pass
+
+# Read wisdom content (key learnings from failures)
+wisdom_summary = ""
+if Path(wisdom_file).exists():
+    try:
+        with open(wisdom_file) as f:
+            content = f.read()
+            # Extract just the failure count
+            failure_count = content.count("## Attempt #")
+            if failure_count > 0:
+                wisdom_summary = f"{failure_count} failed attempts logged"
+    except:
+        pass
+
+# Add this run
+run = {
+    "timestamp": datetime.utcnow().isoformat() + "Z",
+    "status": status,
+    "attempts": attempts,
+    "task": task,
+    "wisdom_summary": wisdom_summary
+}
+runs.append(run)
+
+# Keep last 50 runs
+runs = runs[-50:]
+
+# Calculate stats
+total_runs = len(runs)
+successful = len([r for r in runs if r["status"] == "success"])
+success_rate = (successful / total_runs * 100) if total_runs > 0 else 0
+
+output = {
+    "last_updated": datetime.utcnow().isoformat() + "Z",
+    "stats": {
+        "total_runs": total_runs,
+        "successful": successful,
+        "failed": total_runs - successful,
+        "success_rate": round(success_rate, 1)
+    },
+    "runs": runs
+}
+
+with open(output_file, 'w') as f:
+    json.dump(output, f, indent=2)
+PYEOF
 }
 
 # Compute a hash of all modified files in the worktree (relative to parent branch)
@@ -508,6 +656,10 @@ if [ "$SUCCESS" = true ]; then
     log_phase "Wiggum Mode Complete - SUCCESS"
     log_success "Task completed on attempt #${ATTEMPT} of ${MAX_RETRIES}"
     log_success "Changes merged to branch: $CURRENT_BRANCH"
+
+    # Export Wiggum wisdom to learnings system
+    _export_wiggum_learnings "success" "$ATTEMPT" "$TASK_PROMPT"
+
     echo ""
     echo -e "${GREEN}  Result: SUCCESS${NC}"
     echo -e "  Attempts: ${ATTEMPT}"
@@ -520,6 +672,10 @@ else
     log_error "All ${MAX_RETRIES} attempts exhausted"
     log_error "Review the wisdom registry for accumulated errors:"
     log_error "  ${WISDOM_FILE}"
+
+    # Export Wiggum wisdom to learnings system (failures are valuable too)
+    _export_wiggum_learnings "failed" "$MAX_RETRIES" "$TASK_PROMPT"
+
     echo ""
     echo -e "${RED}  Result: FAILED${NC}"
     echo -e "  Attempts: ${MAX_RETRIES}"

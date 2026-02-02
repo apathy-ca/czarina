@@ -19,6 +19,12 @@ Usage:
     czarina status              - Show project status
     czarina dashboard           - Live monitoring dashboard
     czarina wiggum <prompt>     - Run Wiggum Mode (iterative AI worker lifecycle)
+    czarina patterns update     - Sync agent-knowledge patterns from GitHub
+    czarina patterns version    - Show current patterns version
+    czarina learnings show      - Show learnings from most recent phase
+    czarina learnings history   - Show learnings across all phases
+    czarina learnings northbound - Show patterns flagged for upstream contribution
+    czarina learnings export    - Export northbound patterns to Hopper inbox
     czarina version             - Show version information
 
 Wiggum Mode Options:
@@ -906,6 +912,79 @@ def cmd_init(plan_file):
     agent_knowledge_dir = orchestrator_dir / "czarina-core" / "patterns" / "agent-knowledge"
     agent_knowledge_available = agent_knowledge_dir.exists()
 
+    # Check for previous phase learnings
+    learnings_dir = czarina_dir / "learnings"
+    previous_phase_learnings = None
+    previous_phase_learnings_section = ""
+
+    if learnings_dir.exists():
+        # Find most recent phase closeout learnings
+        import glob
+        learnings_files = sorted(
+            learnings_dir.glob("phase-*-closeout.json"),
+            key=lambda x: x.stat().st_mtime,
+            reverse=True
+        )
+        if learnings_files:
+            try:
+                import json
+                with open(learnings_files[0]) as f:
+                    previous_phase_learnings = json.load(f)
+                print(f"📚 Found learnings from previous phase: {learnings_files[0].name}")
+            except (json.JSONDecodeError, IOError) as e:
+                print(f"⚠️  Could not load previous learnings: {e}")
+
+    if previous_phase_learnings:
+        # Build a section with key learnings for the AI to incorporate
+        learnings_data = previous_phase_learnings.get("learnings", {})
+        what_worked = learnings_data.get("what_worked", [])
+        what_didnt = learnings_data.get("what_didnt_work", [])
+        patterns = learnings_data.get("patterns_observed", [])
+        prev_phase = previous_phase_learnings.get("phase", "?")
+        prev_version = previous_phase_learnings.get("version", "?")
+
+        previous_phase_learnings_section = f"""## Previous Phase Learnings (Phase {prev_phase}, v{prev_version})
+
+**Incorporate these learnings from the previous phase when setting up workers:**
+
+"""
+        if what_worked:
+            previous_phase_learnings_section += "### What Worked Well\n"
+            for item in what_worked[:5]:  # Top 5
+                desc = item.get("description", "")
+                evidence = item.get("evidence", "")
+                previous_phase_learnings_section += f"- {desc}"
+                if evidence:
+                    previous_phase_learnings_section += f" ({evidence})"
+                previous_phase_learnings_section += "\n"
+            previous_phase_learnings_section += "\n"
+
+        if what_didnt:
+            previous_phase_learnings_section += "### What Didn't Work (Avoid These!)\n"
+            for item in what_didnt[:5]:  # Top 5
+                desc = item.get("description", "")
+                root_cause = item.get("root_cause", "")
+                previous_phase_learnings_section += f"- {desc}"
+                if root_cause:
+                    previous_phase_learnings_section += f" (Root cause: {root_cause})"
+                previous_phase_learnings_section += "\n"
+            previous_phase_learnings_section += "\n"
+
+        if patterns:
+            previous_phase_learnings_section += "### Observed Patterns\n"
+            for item in patterns[:3]:  # Top 3
+                name = item.get("name", "")
+                desc = item.get("description", "")
+                previous_phase_learnings_section += f"- **{name}**: {desc}\n"
+            previous_phase_learnings_section += "\n"
+
+        previous_phase_learnings_section += """**Action**: Consider these learnings when:
+- Assigning worker responsibilities (avoid repeating mistakes)
+- Setting dependencies (balanced workload distribution)
+- Writing first actions (incorporate what worked)
+- Creating knowledge files (include successful patterns)
+"""
+
     # Build conditional sections for agent-knowledge
     if agent_knowledge_available:
         agent_knowledge_section = f"""### Agent Knowledge Library
@@ -1021,6 +1100,7 @@ You have access to comprehensive Czarina documentation and examples:
 
 {agent_knowledge_section}
 
+{previous_phase_learnings_section}
 ### Additional Context
 - `{orchestrator_dir}/docs/MULTI_PHASE_ORCHESTRATION.md` - Managing multi-phase projects
 - `{orchestrator_dir}/docs/CZAR_COORDINATION.md` - How the Czar coordinates workers
@@ -1205,6 +1285,17 @@ Read the docs, study the examples, and create an excellent orchestration setup!"
         print("💡 Tip: Clone agent-knowledge for enhanced worker capabilities:")
         print("   git clone git@github.com:apathy-ca/agent-knowledge.git ../agent-knowledge")
         print("   This gives workers 43K+ lines of production-tested best practices")
+        print()
+
+    # Show previous phase learnings status
+    if previous_phase_learnings:
+        prev_phase = previous_phase_learnings.get("phase", "?")
+        prev_version = previous_phase_learnings.get("version", "?")
+        what_worked_count = len(previous_phase_learnings.get("learnings", {}).get("what_worked", []))
+        what_didnt_count = len(previous_phase_learnings.get("learnings", {}).get("what_didnt_work", []))
+        print(f"📚 Previous phase learnings loaded (Phase {prev_phase}, v{prev_version})")
+        print(f"   {what_worked_count} successes, {what_didnt_count} lessons learned")
+        print("   AI will incorporate these when setting up workers")
         print()
 
     # Launch Claude Code
@@ -1437,8 +1528,9 @@ def cmd_phase_set(phase_number, project_name=None):
         print(f"   Quick fix: sed -i 's/cz{old_phase}\\//cz{phase_number}\\//g' {config_file}")
 
 
-def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
-    """Close current phase with smart worktree cleanup"""
+def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False,
+                    no_learnings=False, update_memory=False):
+    """Close current phase with smart worktree cleanup and learning extraction"""
     czarina_dir, project_root = get_project_context(project_name)
     orchestrator_dir = get_orchestrator_dir()
     phase_close_script = orchestrator_dir / "czarina-core" / "phase-close.sh"
@@ -1446,6 +1538,19 @@ def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
     if not phase_close_script.exists():
         print(f"❌ Phase close script not found: {phase_close_script}")
         sys.exit(1)
+
+    # Get phase and version info before closeout (config will be archived)
+    phase = "1"
+    version = "0.0.0"
+    config_file = czarina_dir / "config.json"
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                config = json.load(f)
+                phase = str(config.get("project", {}).get("phase", "1"))
+                version = config.get("project", {}).get("version", "0.0.0")
+        except (json.JSONDecodeError, IOError):
+            pass
 
     # Build command
     cmd = ["bash", str(phase_close_script), str(czarina_dir)]
@@ -1456,6 +1561,314 @@ def cmd_phase_close(project_name=None, keep_worktrees=False, force_clean=False):
 
     os.chdir(project_root)
     subprocess.run(cmd)
+
+    # Extract learnings (after closeout completes)
+    if not no_learnings:
+        try:
+            # Import the extractor
+            sys.path.insert(0, str(orchestrator_dir / "czarina-core"))
+            from learnings_extractor import LearningsExtractor, print_learnings_summary
+
+            extractor = LearningsExtractor(czarina_dir, project_root)
+            learnings = extractor.extract(phase=phase, version=version, enhanced=False)
+
+            # Write learnings
+            output_path = czarina_dir / "learnings" / f"phase-{phase}-closeout.json"
+            extractor.write_learnings(output_path, learnings)
+
+            # Copy to archive if it exists
+            archive_path = czarina_dir / "phases" / f"phase-{phase}-v{version}" / "learnings.json"
+            if archive_path.parent.exists():
+                import shutil
+                shutil.copy(output_path, archive_path)
+
+            # Optionally update memories.md
+            if update_memory:
+                memories_file = czarina_dir / "memories.md"
+                if memories_file.exists():
+                    extractor.append_to_memory(memories_file, learnings)
+                    print("📝 Learnings appended to memories.md")
+
+            # Show summary
+            print_learnings_summary(learnings)
+
+        except Exception as e:
+            print(f"⚠️  Learning extraction failed (phase closed successfully): {e}")
+
+
+def cmd_learnings_show(project_name=None):
+    """Show learnings for current or most recent phase"""
+    czarina_dir, project_root = get_project_context(project_name)
+    learnings_dir = czarina_dir / "learnings"
+
+    if not learnings_dir.exists():
+        print("📊 No learnings found")
+        print("💡 Run 'czarina phase close' to extract learnings")
+        return
+
+    # Find most recent learnings file
+    learnings_files = sorted(learnings_dir.glob("phase-*-closeout.json"), reverse=True)
+    if not learnings_files:
+        print("📊 No learnings found")
+        return
+
+    latest = learnings_files[0]
+    try:
+        with open(latest) as f:
+            learnings = json.load(f)
+
+        print(f"📊 Learnings: {latest.name}")
+        print("=" * 50)
+        print(f"   Project: {learnings.get('project', 'unknown')}")
+        print(f"   Phase: {learnings.get('phase', '?')} (v{learnings.get('version', '?')})")
+        print(f"   Extracted: {learnings.get('extracted_at', '')[:19]}")
+        print()
+
+        metrics = learnings.get("metrics", {})
+        git = metrics.get("git", {})
+        workers = metrics.get("workers", {})
+
+        print("📈 Metrics:")
+        print(f"   Workers: {workers.get('total', 0)} ({workers.get('with_commits', 0)} active)")
+        print(f"   Commits: {git.get('total_commits', 0)}")
+        print(f"   Files: {git.get('total_files_changed', 0)}")
+        print(f"   Lines: +{git.get('lines_added', 0)}/-{git.get('lines_removed', 0)}")
+
+        learnings_data = learnings.get("learnings", {})
+
+        what_worked = learnings_data.get("what_worked", [])
+        if what_worked:
+            print()
+            print("✅ What Worked:")
+            for item in what_worked:
+                flag = " 📤" if item.get("generalizable") else ""
+                print(f"   - {item['description']}{flag}")
+
+        what_didnt = learnings_data.get("what_didnt_work", [])
+        if what_didnt:
+            print()
+            print("⚠️  What Didn't Work:")
+            for item in what_didnt:
+                print(f"   - {item['description']}")
+                if item.get("root_cause"):
+                    print(f"     Root cause: {item['root_cause']}")
+
+        patterns = learnings_data.get("patterns_observed", [])
+        if patterns:
+            print()
+            print("🔍 Patterns Observed:")
+            for item in patterns:
+                print(f"   - {item.get('name', 'Unknown')}: {item.get('description', '')}")
+
+        northbound = learnings.get("northbound_candidates", [])
+        if northbound:
+            print()
+            print(f"📤 Northbound Candidates: {len(northbound)}")
+            print("   Run 'czarina learnings northbound' to see details")
+
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"❌ Error reading learnings: {e}")
+
+
+def cmd_learnings_history(project_name=None):
+    """Show learnings across all phases"""
+    czarina_dir, project_root = get_project_context(project_name)
+    learnings_dir = czarina_dir / "learnings"
+
+    if not learnings_dir.exists():
+        print("📊 No learnings history found")
+        return
+
+    learnings_files = sorted(learnings_dir.glob("phase-*-closeout.json"))
+    if not learnings_files:
+        print("📊 No learnings history found")
+        return
+
+    print("📊 Learnings History")
+    print("=" * 50)
+
+    for lf in learnings_files:
+        try:
+            with open(lf) as f:
+                learnings = json.load(f)
+
+            phase = learnings.get("phase", "?")
+            version = learnings.get("version", "?")
+            extracted = learnings.get("extracted_at", "")[:10]
+            git = learnings.get("metrics", {}).get("git", {})
+            commits = git.get("total_commits", 0)
+            lines = git.get("lines_added", 0) - git.get("lines_removed", 0)
+
+            worked = len(learnings.get("learnings", {}).get("what_worked", []))
+            didnt = len(learnings.get("learnings", {}).get("what_didnt_work", []))
+            northbound = len(learnings.get("northbound_candidates", []))
+
+            print(f"\n   Phase {phase} (v{version}) - {extracted}")
+            print(f"   {commits} commits, {'+' if lines >= 0 else ''}{lines} net lines")
+            print(f"   ✅ {worked} worked | ⚠️ {didnt} issues | 📤 {northbound} northbound")
+
+        except (json.JSONDecodeError, IOError):
+            print(f"\n   {lf.name} - (error reading)")
+
+
+def cmd_learnings_northbound(project_name=None):
+    """Show patterns flagged for upstream contribution"""
+    czarina_dir, project_root = get_project_context(project_name)
+    northbound_dir = czarina_dir / "learnings" / "northbound"
+
+    if not northbound_dir.exists():
+        print("📤 No northbound patterns found")
+        print("💡 Patterns are flagged during 'czarina phase close'")
+        return
+
+    pattern_files = list(northbound_dir.glob("*.json"))
+    if not pattern_files:
+        print("📤 No northbound patterns found")
+        return
+
+    print("📤 Northbound Patterns (ready for agent-knowledge)")
+    print("=" * 50)
+
+    for pf in sorted(pattern_files):
+        try:
+            with open(pf) as f:
+                pattern = json.load(f)
+
+            pattern_id = pattern.get("pattern_id", "unknown")
+            pattern_type = pattern.get("type", "unknown")
+            category = pattern.get("suggested_category", "uncategorized")
+            description = pattern.get("description", "No description")
+
+            type_icon = "✅" if pattern_type == "what_worked" else "⚠️"
+            print(f"\n   {type_icon} {pattern_id}")
+            print(f"      Category: {category}")
+            print(f"      {description}")
+            if pattern.get("evidence"):
+                print(f"      Evidence: {pattern['evidence']}")
+
+        except (json.JSONDecodeError, IOError):
+            print(f"\n   {pf.name} - (error reading)")
+
+    print()
+    print("💡 Run 'czarina learnings export' to drop to Hopper")
+
+
+def cmd_learnings_export(project_name=None, hopper_path=None):
+    """Export northbound learnings to Hopper inbox for routing"""
+    czarina_dir, project_root = get_project_context(project_name)
+    northbound_dir = czarina_dir / "learnings" / "northbound"
+
+    if not northbound_dir.exists():
+        print("📤 No northbound patterns to export")
+        print("💡 Patterns are flagged during 'czarina phase close'")
+        return
+
+    pattern_files = list(northbound_dir.glob("*.json"))
+    if not pattern_files:
+        print("📤 No northbound patterns to export")
+        return
+
+    # Find Hopper inbox - check common locations
+    if hopper_path:
+        hopper_inbox = Path(hopper_path) / "inbox"
+    else:
+        # Check relative to czarina project
+        possible_paths = [
+            project_root.parent / "hopper" / "inbox",  # ../hopper/inbox
+            Path.home() / "hopper" / "inbox",          # ~/hopper/inbox
+            Path("/opt/hopper/inbox"),                  # /opt/hopper/inbox
+        ]
+        hopper_inbox = None
+        for p in possible_paths:
+            if p.exists():
+                hopper_inbox = p
+                break
+
+    if not hopper_inbox or not hopper_inbox.exists():
+        print("❌ Hopper inbox not found")
+        print()
+        print("Checked locations:")
+        print(f"   - {project_root.parent / 'hopper' / 'inbox'}")
+        print(f"   - {Path.home() / 'hopper' / 'inbox'}")
+        print()
+        print("💡 Specify path: czarina learnings export --hopper-path /path/to/hopper")
+        return
+
+    # Load project info from config
+    config_file = czarina_dir / "config.json"
+    project_info = {"name": project_root.name, "phase": "?", "version": "?"}
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                config = json.load(f)
+            project_info["name"] = config.get("project", {}).get("name", project_root.name)
+            project_info["phase"] = str(config.get("project", {}).get("phase", "?"))
+            project_info["version"] = config.get("project", {}).get("version", "?")
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    # Also try to get phase/version from most recent learnings file
+    learnings_dir = czarina_dir / "learnings"
+    learnings_files = sorted(learnings_dir.glob("phase-*-closeout.json"), reverse=True)
+    if learnings_files:
+        try:
+            with open(learnings_files[0]) as f:
+                learnings = json.load(f)
+            project_info["phase"] = learnings.get("phase", project_info["phase"])
+            project_info["version"] = learnings.get("version", project_info["version"])
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    print(f"📤 Exporting to Hopper: {hopper_inbox}")
+    print("=" * 50)
+
+    exported_count = 0
+    from datetime import datetime
+
+    for pf in sorted(pattern_files):
+        try:
+            with open(pf) as f:
+                pattern = json.load(f)
+
+            pattern_id = pattern.get("pattern_id", "unknown")
+            pattern_type = pattern.get("type", "unknown")
+            description = pattern.get("description", "No description")
+
+            # Build Hopper task format
+            hopper_task = {
+                "source": "czarina",
+                "type": "learning",
+                "project": project_info["name"],
+                "phase": project_info["phase"],
+                "version": project_info["version"],
+                "title": f"Pattern: {description[:80]}",
+                "description": description,
+                "priority": "medium",
+                "tags": ["learning", "northbound", pattern.get("suggested_category", "orchestration")],
+                "context": pattern,
+                "suggested_destination": "agent-knowledge",
+                "created_at": datetime.utcnow().isoformat() + "Z"
+            }
+
+            # Write to Hopper inbox
+            safe_project = project_info["name"].replace("/", "-").replace(" ", "-")
+            filename = f"czarina-{safe_project}-phase-{project_info['phase']}-{pattern_id}.json"
+            output_path = hopper_inbox / filename
+
+            with open(output_path, 'w') as f:
+                json.dump(hopper_task, f, indent=2)
+
+            type_icon = "✅" if pattern_type == "what_worked" else "⚠️"
+            print(f"\n   {type_icon} {pattern_id}")
+            print(f"      → {filename}")
+            exported_count += 1
+
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"\n   ❌ {pf.name} - error: {e}")
+
+    print()
+    print(f"📤 Exported {exported_count} pattern(s) to Hopper inbox")
+    print("💡 Hopper will route these to appropriate destinations")
 
 
 def cmd_phase_list(project_name=None):
@@ -2659,8 +3072,29 @@ def main():
             project_name = sys.argv[4] if len(sys.argv) > 4 else None
             cmd_phase_set(phase_number, project_name)
         elif phase_cmd == "close":
-            project_name = sys.argv[3] if len(sys.argv) > 3 else None
-            cmd_phase_close(project_name)
+            # Parse flags for phase close
+            project_name = None
+            keep_worktrees = False
+            force_clean = False
+            no_learnings = False
+            update_memory = False
+
+            i = 3
+            while i < len(sys.argv):
+                arg = sys.argv[i]
+                if arg == "--keep-worktrees":
+                    keep_worktrees = True
+                elif arg == "--force-clean":
+                    force_clean = True
+                elif arg == "--no-learnings":
+                    no_learnings = True
+                elif arg == "--update-memory":
+                    update_memory = True
+                elif not arg.startswith("-"):
+                    project_name = arg
+                i += 1
+
+            cmd_phase_close(project_name, keep_worktrees, force_clean, no_learnings, update_memory)
         elif phase_cmd == "list":
             project_name = sys.argv[3] if len(sys.argv) > 3 else None
             cmd_phase_list(project_name)
@@ -2725,6 +3159,30 @@ def main():
         else:
             print(f"❌ Unknown patterns command: {patterns_cmd}")
             print("   Available: update, version, pending, contribute")
+            sys.exit(1)
+    elif command == "learnings":
+        if len(sys.argv) < 3:
+            print("❌ Usage: czarina learnings <show|history|northbound>")
+            sys.exit(1)
+        learnings_cmd = sys.argv[2]
+        project_name = sys.argv[3] if len(sys.argv) > 3 else None
+        if learnings_cmd == "show":
+            cmd_learnings_show(project_name)
+        elif learnings_cmd == "history":
+            cmd_learnings_history(project_name)
+        elif learnings_cmd == "northbound":
+            cmd_learnings_northbound(project_name)
+        elif learnings_cmd == "export":
+            # Parse optional --hopper-path flag
+            hopper_path = None
+            for i, arg in enumerate(sys.argv[3:], start=3):
+                if arg == "--hopper-path" and i + 1 < len(sys.argv):
+                    hopper_path = sys.argv[i + 1]
+                    break
+            cmd_learnings_export(project_name, hopper_path)
+        else:
+            print(f"❌ Unknown learnings command: {learnings_cmd}")
+            print("   Available: show, history, northbound, export")
             sys.exit(1)
     elif command in ["version", "-v", "--version"]:
         print(f"Czarina v{CZARINA_VERSION}")

@@ -54,6 +54,15 @@ czarina phase close --keep-worktrees
 czarina phase close --force-clean
 ```
 
+**Additional options:**
+```bash
+# Skip learning extraction
+czarina phase close --no-learnings
+
+# Also append learnings to memories.md
+czarina phase close --update-memory
+```
+
 **Smart cleanup:**
 - Clean worktrees (no changes) → Removed
 - Dirty worktrees (uncommitted) → Kept + warning
@@ -63,6 +72,29 @@ czarina phase close --force-clean
   - `config.json` - Phase configuration
   - `logs/` - Worker logs
   - `PHASE_SUMMARY.md` - Summary
+  - `learnings.json` - Extracted learnings
+
+### Learning Extraction (v0.9.1+)
+
+Phase close automatically extracts learnings:
+- Git statistics per worker (commits, files, lines)
+- Pattern detection (what worked, what didn't)
+- Northbound flagging (patterns for agent-knowledge)
+
+```bash
+# View extracted learnings
+czarina learnings show
+
+# View history across phases
+czarina learnings history
+
+# See patterns ready for upstream contribution
+czarina learnings northbound
+```
+
+**Learnings stored at:**
+- `.czarina/learnings/phase-N-closeout.json` - Per-phase learnings
+- `.czarina/learnings/northbound/` - Patterns flagged for contribution
 
 ### 4. Phase History
 
