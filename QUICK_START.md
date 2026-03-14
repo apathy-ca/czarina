@@ -171,7 +171,7 @@ in practice:
 Their `WORKER_IDENTITY.md` contains their Hopper task ID. The first thing they do:
 
 ```bash
-hopper --local task get task-abc12345 --with-lessons
+hopper task get task-abc12345 --with-lessons
 ```
 
 This gives them:
@@ -185,10 +185,10 @@ No orchestrator intervention needed. The worker runs:
 
 ```bash
 # Find their task
-hopper --local task list --tag worker-backend --status in_progress
+hopper task list --tag worker-backend --status in_progress
 
 # Get their full brief
-hopper --local task get task-abc12345 --with-lessons
+hopper task get task-abc12345 --with-lessons
 ```
 
 Their entire brief is in Hopper and survives indefinitely.
@@ -198,7 +198,7 @@ Their entire brief is in Hopper and survives indefinitely.
 They file any lessons before marking complete:
 
 ```bash
-hopper --local lesson add \
+hopper lesson add \
   --task task-abc12345 \
   --title "SQLAlchemy async sessions must not be shared between requests" \
   --domain python \
@@ -206,7 +206,7 @@ hopper --local lesson add \
   --non-interactive \
   --body "..."
 
-hopper --local task status task-abc12345 completed --force
+hopper task status task-abc12345 completed --force
 ```
 
 Those lessons are automatically injected into the next phase's worker briefs.
@@ -215,13 +215,13 @@ Those lessons are automatically injected into the next phase's worker briefs.
 
 ```bash
 # All tasks for this project
-hopper --local task list --tag my-app
+hopper task list --tag my-app
 
 # Just worker tasks
-hopper --local task list --tag my-app --tag worker-backend
+hopper task list --tag my-app --tag worker-backend
 
 # With lessons filed
-hopper --local lesson list --project my-app
+hopper lesson list --project my-app
 ```
 
 ---
@@ -361,8 +361,8 @@ Run `czarina validate` and read each error. Common issues:
 
 The worker recovers themselves:
 ```bash
-hopper --local task list --tag worker-<id> --status in_progress
-hopper --local task get <task-id> --with-lessons
+hopper task list --tag worker-<id> --status in_progress
+hopper task get <task-id> --with-lessons
 ```
 
 No restart needed. The full brief is in Hopper.

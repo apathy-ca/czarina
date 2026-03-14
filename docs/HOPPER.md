@@ -35,7 +35,7 @@ pip install hopper-cli
 
 # Verify
 hopper --version
-hopper --local task list    # Should show empty list, no errors
+hopper task list    # Should show empty list, no errors
 ```
 
 Czarina will refuse to launch if hopper is not installed. `czarina validate`
@@ -49,7 +49,7 @@ Czarina uses Hopper in **local mode** only. No server required. Tasks are stored
 as markdown files at `~/.hopper/` (global) or `.hopper/` (project-embedded,
 auto-detected when you're in a project directory).
 
-The `--local` flag is always passed by Czarina's integration scripts. You never
+Hopper defaults to local mode. Czarina's integration scripts use it directly. You never
 need to start a Hopper server for Czarina to work.
 
 ---
@@ -94,7 +94,7 @@ contains:
 The first thing every worker does:
 
 ```bash
-hopper --local task get task-abc12345 --with-lessons
+hopper task get task-abc12345 --with-lessons
 ```
 
 This returns their complete `.czarina/workers/<id>.md` content, plus any
@@ -108,13 +108,13 @@ If a worker loses their session (context reset, crash, tmux pane death):
 
 ```bash
 # Step 1: Find the task
-hopper --local task list --tag worker-backend --status in_progress
+hopper task list --tag worker-backend --status in_progress
 
 # Step 2: Get the full brief
-hopper --local task get task-abc12345 --with-lessons
+hopper task get task-abc12345 --with-lessons
 
 # Step 3: Re-mark in progress
-hopper --local task status task-abc12345 in_progress --force
+hopper task status task-abc12345 in_progress --force
 ```
 
 No orchestrator needed. No re-launch needed. The brief survives indefinitely.
@@ -126,7 +126,7 @@ No orchestrator needed. No re-launch needed. The brief survives indefinitely.
 To queue a new task for a running worker without re-launching:
 
 ```bash
-hopper --local task add "[backend] Add rate limiting to the auth endpoint" \
+hopper task add "[backend] Add rate limiting to the auth endpoint" \
   --description "See RFC in docs/auth-rfc.md for the spec" \
   --tag czarina \
   --tag my-project \
@@ -137,7 +137,7 @@ hopper --local task add "[backend] Add rate limiting to the auth endpoint" \
 
 Workers check for queued tasks between their existing tasks by running:
 ```bash
-hopper --local task list --tag worker-backend --status open
+hopper task list --tag worker-backend --status open
 ```
 Their brief includes this instruction explicitly.
 
@@ -151,7 +151,7 @@ a trap to avoid, a better approach than the brief specified.
 **Filing a lesson (copy-pasteable from `WORKER_IDENTITY.md`, pre-filled):**
 
 ```bash
-hopper --local lesson add \
+hopper lesson add \
   --task task-abc12345 \
   --title "SQLAlchemy async sessions must not be shared between requests" \
   --domain python \
@@ -198,11 +198,11 @@ the worker's task content. Workers see them before Task 1.
 Query directly at any time:
 
 ```bash
-hopper --local task list --tag my-project               # All project tasks
-hopper --local task list --tag worker-backend           # Specific worker
-hopper --local task get task-abc12345                   # Full task + brief
-hopper --local task get task-abc12345 --with-lessons    # Brief + lessons
-hopper --local lesson list --project my-project         # Lessons filed
+hopper task list --tag my-project               # All project tasks
+hopper task list --tag worker-backend           # Specific worker
+hopper task get task-abc12345                   # Full task + brief
+hopper task get task-abc12345 --with-lessons    # Brief + lessons
+hopper lesson list --project my-project         # Lessons filed
 ```
 
 ---
@@ -219,7 +219,7 @@ The closeout report includes a lesson summary:
 
 ```
 📚 Lessons filed: 5 total (2 high confidence, 2 medium, 1 low)
-   View: hopper --local lesson list --project my-project
+   View: hopper lesson list --project my-project
 ```
 
 ---
@@ -245,16 +245,16 @@ Lessons persist across phase closeouts:
 
 ```bash
 # All lessons for a project (all phases)
-hopper --local lesson list --project my-project
+hopper lesson list --project my-project
 
 # High-confidence lessons by domain
-hopper --local lesson list --project my-project --domain python --confidence high
+hopper lesson list --project my-project --domain python --confidence high
 
 # Full lesson content
-hopper --local lesson get lesson-abc12345
+hopper lesson get lesson-abc12345
 
 # All lessons globally (all projects)
-hopper --local lesson list
+hopper lesson list
 ```
 
 ---
@@ -289,20 +289,20 @@ pip install hopper-cli
 ```bash
 which hopper
 hopper --version
-hopper --local task list
+hopper task list
 ```
 
 **Worker can't find their task**
 ```bash
 cat .czarina/hopper-tasks.json
-hopper --local task list --tag worker-<id>
+hopper task list --tag worker-<id>
 ```
 
 **Lesson not injected into next phase brief**
 
 Only `confidence: high` lessons are injected automatically:
 ```bash
-hopper --local lesson list --project my-project
+hopper lesson list --project my-project
 ```
 
 **Tasks not appearing in project context**

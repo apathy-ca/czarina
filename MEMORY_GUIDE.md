@@ -11,7 +11,7 @@
 >
 > **For persistent knowledge and lesson accumulation across sessions and phases,
 > use the Hopper lessons system.** See [docs/HOPPER.md](docs/HOPPER.md).
-> Workers file lessons via `hopper --local lesson add` and they are automatically
+> Workers file lessons via `hopper lesson add` and they are automatically
 > injected into subsequent workers' briefs.
 
 ## Overview

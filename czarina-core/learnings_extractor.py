@@ -60,7 +60,7 @@ class LearningsExtractor:
         self.northbound_dir.mkdir(parents=True, exist_ok=True)
 
         # Load config and worker data
-        config = self._load_config()
+        config = self._load_config(phase, version)
         workers = config.get("workers", [])
         project_name = config.get("project", {}).get("name", self.project_root.name)
 
@@ -99,8 +99,8 @@ class LearningsExtractor:
 
         return output
 
-    def _load_config(self) -> Dict[str, Any]:
-        """Load config.json if it exists."""
+    def _load_config(self, phase: str = None, version: str = None) -> Dict[str, Any]:
+        """Load config.json, falling back to archived phase config if needed."""
         config_file = self.czarina_dir / "config.json"
         if config_file.exists():
             try:
@@ -108,6 +108,17 @@ class LearningsExtractor:
                     return json.load(f)
             except json.JSONDecodeError:
                 pass
+
+        # Fall back to archived config (config is moved there during phase close)
+        if phase and version:
+            archived_config = self.czarina_dir / "phases" / f"phase-{phase}-v{version}" / "config.json"
+            if archived_config.exists():
+                try:
+                    with open(archived_config) as f:
+                        return json.load(f)
+                except json.JSONDecodeError:
+                    pass
+
         return {}
 
     def _extract_git_stats(self, workers: List[Dict]) -> Dict[str, Any]:
@@ -295,7 +306,7 @@ class LearningsExtractor:
                     })
 
         # Pattern: High productivity
-        if total_commits >= len(workers) * 5:
+        if workers and total_commits >= len(workers) * 5:
             learnings["what_worked"].append({
                 "id": "ww-high-productivity",
                 "description": "High commit frequency indicates good progress",

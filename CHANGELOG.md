@@ -15,18 +15,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Each worker's full `.czarina/workers/<id>.md` brief stored as Hopper task body
   - `WORKER_IDENTITY.md` rewritten: hopper-first with task ID, recovery commands,
     lesson-filing template pre-filled with the worker's task ID
-  - All agent launch prompts updated to read from Hopper (`hopper --local task get`)
+  - All agent launch prompts updated to read from Hopper (`hopper task get`)
   - Workers can recover from session loss with two commands, no orchestrator needed
   - Lesson-filing instructions built into every task body and identity file
 
 **Lesson Propagation System**
-  - Workers file lessons with `hopper --local lesson add`
+  - Workers file lessons with `hopper lesson add`
   - Lessons tagged by domain, confidence, and project
   - High-confidence lessons automatically injected into subsequent worker briefs
   - Lessons persist across phase boundaries and are queryable at any time
 
 **Hopper Task Queue for Mid-Run Work**
-  - Add tasks to running workers via `hopper --local task add --tag worker-<id>`
+  - Add tasks to running workers via `hopper task add --tag worker-<id>`
   - No re-launch required; workers poll for new queued tasks between existing tasks
   - `czarina status` now includes Hopper task summary with per-worker status rows
 

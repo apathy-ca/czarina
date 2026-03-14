@@ -190,19 +190,19 @@ When `czarina launch` runs:
 When a worker starts:
 ```bash
 # They run this to get their full brief:
-hopper --local task get <task-id> --with-lessons
+hopper task get <task-id> --with-lessons
 ```
 
 If a worker loses their session:
 ```bash
 # Recovery — no orchestrator needed:
-hopper --local task list --tag worker-<id> --status in_progress
-hopper --local task get <task-id> --with-lessons
+hopper task list --tag worker-<id> --status in_progress
+hopper task get <task-id> --with-lessons
 ```
 
 When a worker completes a task, they file lessons:
 ```bash
-hopper --local lesson add --task <id> --domain python --confidence high ...
+hopper lesson add --task <id> --domain python --confidence high ...
 ```
 
 Those lessons are automatically injected into the next phase's worker briefs.

@@ -34,7 +34,7 @@ goal is getting knowledge out of workers and into a durable, queryable store.
 Worker completes a task
       │
       ▼
-Worker files a lesson           ← explicit action: hopper --local lesson add ...
+Worker files a lesson           ← explicit action: hopper lesson add ...
       │                            stored at: ~/.hopper/lessons/
       │
       ▼
@@ -131,15 +131,15 @@ domain, or confidence is done at query time via the index.
 New command group. All work in `--local` mode.
 
 ```
-hopper --local lesson add     File a new lesson
-hopper --local lesson list    List lessons (filterable)
-hopper --local lesson get     Get full lesson content
+hopper lesson add     File a new lesson
+hopper lesson list    List lessons (filterable)
+hopper lesson get     Get full lesson content
 ```
 
-**`hopper --local lesson add`**
+**`hopper lesson add`**
 
 ```bash
-hopper --local lesson add \
+hopper lesson add \
   --task <task-id> \
   --title "SQLAlchemy async sessions must not be shared across tasks" \
   --domain python \
@@ -156,20 +156,20 @@ Outputs the lesson ID on stdout for scripting:
 ✓ Filed lesson: lesson-a3f8c2d1
 ```
 
-**`hopper --local lesson list`**
+**`hopper lesson list`**
 
 ```bash
-hopper --local lesson list                          # all lessons
-hopper --local lesson list --project <slug>         # for a project
-hopper --local lesson list --domain python          # by domain
-hopper --local lesson list --confidence high        # by confidence
+hopper lesson list                          # all lessons
+hopper lesson list --project <slug>         # for a project
+hopper lesson list --domain python          # by domain
+hopper lesson list --confidence high        # by confidence
 hopper --json --local lesson list --project <slug>  # machine-readable
 ```
 
-**`hopper --local lesson get`**
+**`hopper lesson get`**
 
 ```bash
-hopper --local lesson get lesson-a3f8c2d1
+hopper lesson get lesson-a3f8c2d1
 ```
 
 Prints full lesson content (frontmatter + body) to stdout.
@@ -185,7 +185,7 @@ Prints full lesson content (frontmatter + body) to stdout.
 #### 1.3 — `--with-lessons` on `hopper task get`
 
 ```bash
-hopper --local task get <task-id> --with-lessons
+hopper task get <task-id> --with-lessons
 ```
 
 When this flag is present, hopper appends a `## Relevant Lessons` section to the task
@@ -217,7 +217,7 @@ If you discovered something that a future worker should know, file it before mar
 this task complete. When in doubt, file it — a filed lesson that isn't useful costs
 nothing; a lost lesson costs a future worker hours.
 
-    hopper --local lesson add \
+    hopper lesson add \
       --task TASK_ID_HERE \
       --title "One line: what was learned" \
       --domain python \
@@ -240,7 +240,7 @@ EOF
 
 Then mark complete:
 
-    hopper --local task status TASK_ID_HERE completed --force
+    hopper task status TASK_ID_HERE completed --force
 ```
 
 The task ID is substituted at task-creation time, not filled in by the worker.
@@ -313,7 +313,7 @@ Output in the closeout summary:
 
 ```
 📚 Lessons filed: 7 total (3 high confidence, 3 medium, 1 low)
-   View: hopper --local lesson list --project my-project
+   View: hopper lesson list --project my-project
 ```
 
 No automatic promotion. No routing decisions. Just a count and the command to view.
@@ -399,5 +399,5 @@ if the role mapping is imprecise, because both use `python` as the domain.
 - [ ] A new worker in the next phase sees relevant high-confidence lessons at the top
       of their task brief before Task 1, with zero orchestrator action
 - [ ] `czarina closeout` reports how many lessons were filed during the phase
-- [ ] `hopper --local lesson list --project <slug>` returns all filed lessons in JSON
-      with full content accessible via `hopper --local lesson get <id>`
+- [ ] `hopper lesson list --project <slug>` returns all filed lessons in JSON
+      with full content accessible via `hopper lesson get <id>`

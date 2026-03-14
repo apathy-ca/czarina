@@ -61,8 +61,8 @@ were removed in v1.0.0. Every function in `hopper-integration.sh` calls
 
 **Worker briefs live in Hopper.** When `launch-project-v2.sh` runs, it calls
 `hopper_register_orchestration` which reads each `.czarina/workers/<id>.md` file
-and stores its full content as a Hopper task body via `hopper --local task add
---brief-file`. Workers retrieve their brief with `hopper --local task get`.
+and stores its full content as a Hopper task body via `hopper task add
+--brief-file`. Workers retrieve their brief with `hopper task get`.
 
 **WORKER_IDENTITY.md is an orientation card, not the brief.** It contains the
 worker's Hopper task ID and the exact command to retrieve their brief. This

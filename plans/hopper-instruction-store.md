@@ -101,13 +101,13 @@ Workers follow: one hopper command → full brief, task list, context, everythin
 
 Recovery after any session loss:
 ```bash
-hopper --local task list --tag worker-<id> --status in_progress
-hopper --local task get <task-id>
+hopper task list --tag worker-<id> --status in_progress
+hopper task get <task-id>
 ```
 
 Adding work mid-run:
 ```bash
-hopper --local task add "[worker-id] New task: ..." \
+hopper task add "[worker-id] New task: ..." \
   --description "<full instructions>" \
   --tag czarina --tag <project-slug> --tag worker-<id> \
   --priority high
@@ -145,8 +145,8 @@ hopper_create_worker_task_with_brief(
 ```
 
 **Implementation approach:**
-- Create the task with `hopper --local task add` using a short title
-- Then use `hopper --local task update <id> --description "$(cat $worker_brief_file)"`
+- Create the task with `hopper task add` using a short title
+- Then use `hopper task update <id> --description "$(cat $worker_brief_file)"`
   to write the full content into the task body
 - Alternatively, write the `.md` file directly to `~/.hopper/tasks/` with correct
   YAML frontmatter (faster, no round-trip, but couples to hopper internals)
@@ -196,7 +196,7 @@ at ../workers/<worker-id>.md and begin Task 1"
 Update to make hopper the primary instruction source when a task ID is available:
 ```
 "Your task brief is in hopper. Run:
-  hopper --local task get <task-id>
+  hopper task get <task-id>
 to read your full instructions, then begin Task 1.
 
 If hopper is unavailable, your instructions are at:
@@ -235,15 +235,15 @@ Add a `## If You Lose Context` section to the generated `WORKER_IDENTITY.md`:
 
 Your full task brief is always available in hopper. Run:
 
-    hopper --local task list --tag worker-<id> --status in_progress
+    hopper task list --tag worker-<id> --status in_progress
 
 Then get your brief:
 
-    hopper --local task get <task-id>
+    hopper task get <task-id>
 
 Mark yourself in progress again:
 
-    hopper --local task status <task-id> in_progress --force
+    hopper task status <task-id> in_progress --force
 
 Your instructions, task list, and success criteria are all in the task body.
 ```
@@ -285,7 +285,7 @@ file edits.
 
 #### 3.1 — `czarina task add` command (new)
 
-Wrapper around `hopper --local task add` with czarina context pre-filled:
+Wrapper around `hopper task add` with czarina context pre-filled:
 
 ```bash
 czarina task add <worker-id> "Task title" --description "..." [--priority high]
@@ -314,7 +314,7 @@ standard footer injected by czarina:
 
 Check for new tasks assigned to you periodically:
 
-    hopper --local task list --tag worker-<id> --status open
+    hopper task list --tag worker-<id> --status open
 
 Mark each task in_progress when you start it, completed when done.
 Your orchestrator may add tasks here mid-run without re-launching you.
@@ -378,7 +378,7 @@ their actual state. Update to:
 
 **Risk: hopper task body size limits**
 Mitigation: Test with a real worker `.md` file (largest known: 321 lines ~8KB). The
-`hopper --local task update --description` path passes content via shell argument,
+`hopper task update --description` path passes content via shell argument,
 which has an OS limit (~2MB on Linux, well above our needs). No issue expected, but
 verify empirically in Phase 1.
 

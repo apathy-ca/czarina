@@ -119,8 +119,8 @@ Show me the current status and what I should focus on first.
 czarina status
 
 # 2. Check Hopper task details directly
-hopper --local task list --tag awesome-app
-hopper --local lesson list --project awesome-app
+hopper task list --tag awesome-app
+hopper lesson list --project awesome-app
 
 # 3. Check worker progress
 tmux attach -t czarina-awesome-app
@@ -202,16 +202,16 @@ tmux capture-pane -t czarina-awesome-app:0.1 -p
 czarina status
 
 # All tasks with current status
-hopper --local task list --tag awesome-app
+hopper task list --tag awesome-app
 
 # Worker-specific
-hopper --local task list --tag worker-backend
+hopper task list --tag worker-backend
 
 # Lessons filed so far
-hopper --local lesson list --project awesome-app
+hopper lesson list --project awesome-app
 
 # Block a worker task if stuck
-hopper --local task status task-abc12345 blocked --force
+hopper task status task-abc12345 blocked --force
 ```
 
 ### Check Git Progress
@@ -279,11 +279,11 @@ gh pr view 123
 The worker recovers themselves — no Czar action needed unless the tmux window is gone:
 ```bash
 # Worker runs:
-hopper --local task list --tag worker-<id> --status in_progress
-hopper --local task get <task-id> --with-lessons
+hopper task list --tag worker-<id> --status in_progress
+hopper task get <task-id> --with-lessons
 
 # If you need to add a task mid-run:
-hopper --local task add "[worker-id] New instruction: ..." \
+hopper task add "[worker-id] New instruction: ..." \
   --tag czarina --tag awesome-app --tag worker-<id> --non-interactive
 ```
 
@@ -414,8 +414,8 @@ hopper --local task add "[worker-id] New instruction: ..." \
 ### DO ✅
 
 - **Check status regularly** (`czarina status` every 30-60 min)
-- **Monitor Hopper task state** (`hopper --local task list --tag <project>`)
-- **Review learnings as they're filed** (`hopper --local lesson list`)
+- **Monitor Hopper task state** (`hopper task list --tag <project>`)
+- **Review learnings as they're filed** (`hopper lesson list`)
 - **Coordinate workers** (avoid file conflicts between workers)
 - **Review PRs promptly** (keep flow moving)
 - **Maintain session notes** (for handoffs and learnings)
@@ -446,11 +446,11 @@ czarina status
 echo ""
 echo "=== Hopper Tasks ==="
 PROJECT_SLUG=$(jq -r '.project.slug' .czarina/config.json)
-hopper --local task list --tag "$PROJECT_SLUG"
+hopper task list --tag "$PROJECT_SLUG"
 
 echo ""
 echo "=== Lessons Filed ==="
-hopper --local lesson list --project "$PROJECT_SLUG"
+hopper lesson list --project "$PROJECT_SLUG"
 
 echo ""
 echo "=== Git PRs ==="
@@ -510,7 +510,7 @@ done
 1. **Use tmux zoom** - `Ctrl+b then z` to fullscreen a worker window
 2. **Keep `czarina status` running** - In a separate terminal with `watch -n 60 czarina status`
 3. **Batch PR reviews** - Review 2-3 PRs together at natural break points
-4. **Review lessons before closeout** - `hopper --local lesson list --project <slug>`
+4. **Review lessons before closeout** - `hopper lesson list --project <slug>`
 5. **Add work via Hopper** - Never edit worker .md files mid-run; add Hopper tasks
 6. **Trust the process** - Workers are autonomous; you're the safety net and decision-maker
 
