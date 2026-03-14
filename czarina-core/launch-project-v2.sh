@@ -41,6 +41,11 @@ if [ -f "${SCRIPT_DIR}/validate-config.sh" ]; then
     }
 fi
 
+# Register orchestration with hopper (required — validate-config.sh already confirmed hopper exists)
+source "${SCRIPT_DIR}/hopper-integration.sh"
+hopper_register_orchestration "$CZARINA_DIR" "$CONFIG_FILE"
+echo ""
+
 # Check for required tools
 if ! command -v jq &> /dev/null; then
     echo -e "${RED}❌ jq is required but not installed${NC}"

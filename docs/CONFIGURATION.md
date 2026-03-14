@@ -2,6 +2,20 @@
 
 This document describes the configuration options available in `.czarina/config.json`.
 
+## Required Dependencies
+
+Before configuring a project, ensure hopper is installed:
+
+```bash
+pip install hopper-cli
+hopper --version
+```
+
+`czarina validate` checks for hopper before every launch. The full hopper
+integration is documented in [docs/HOPPER.md](HOPPER.md).
+
+---
+
 ## Configuration Schema
 
 ### Project Section

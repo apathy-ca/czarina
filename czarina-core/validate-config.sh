@@ -134,6 +134,15 @@ for agent in $AGENTS; do
                 echo "   ✅ $agent"
             fi
             ;;
+        opencode)
+            if ! command -v opencode &> /dev/null; then
+                echo "❌ Agent 'opencode' not found in PATH"
+                echo "   Install: https://opencode.ai/docs"
+                ((ERRORS++))
+            else
+                echo "   ✅ opencode"
+            fi
+            ;;
         claude|claude-code)
             if ! command -v claude &> /dev/null; then
                 echo "❌ Agent 'claude' not found in PATH"
@@ -164,6 +173,17 @@ for agent in $AGENTS; do
             ;;
     esac
 done
+
+# Check required integrations
+echo ""
+echo "Required integrations:"
+if command -v hopper &> /dev/null; then
+    echo "   ✅ hopper"
+else
+    echo "❌ hopper is required but not installed"
+    echo "   Install: pip install hopper-cli"
+    ((ERRORS++))
+fi
 
 if [ $ERRORS -gt 0 ]; then
     echo ""

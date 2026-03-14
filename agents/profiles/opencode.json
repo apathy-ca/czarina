@@ -1,0 +1,64 @@
+{
+  "id": "opencode",
+  "name": "OpenCode",
+  "type": "cli",
+  "vendor": "anomalyco",
+  "website": "https://opencode.ai",
+  "discovery": {
+    "pattern": "file path argument",
+    "instruction": "In OpenCode, reference the worker file by passing it as context or mentioning it in your prompt",
+    "supports_context_files": true
+  },
+  "capabilities": {
+    "file_reading": "native",
+    "file_writing": "native",
+    "git_support": "native",
+    "pr_creation": "native",
+    "terminal_access": true,
+    "multi_file_edit": true,
+    "search": "native"
+  },
+  "launch": {
+    "command": "opencode",
+    "args": [],
+    "requires_install": true,
+    "install_url": "https://opencode.ai/docs"
+  },
+  "documentation": {
+    "getting_started": "OpenCode is the primary agent for Czarina. Run 'opencode' to start the TUI, or 'opencode run <message>' for non-interactive use. Reference worker files by mentioning them in your prompt.",
+    "tips": [
+      "Use 'opencode run <message>' for scripted/non-interactive launches",
+      "OpenCode has native git integration - follow the git workflow in worker prompts",
+      "OpenCode can create PRs directly using the gh CLI tool",
+      "Use 'opencode serve' for headless server mode",
+      "Configuration lives in ~/.config/opencode/ (AGENTS.md for rules)"
+    ],
+    "limitations": [
+      "Requires CLI installation via installer script",
+      "Works best with well-structured markdown prompts"
+    ],
+    "examples": [
+      {
+        "title": "Start a worker task (interactive TUI)",
+        "description": "Begin work on an engineer task interactively",
+        "command": "opencode"
+      },
+      {
+        "title": "Start a worker task (non-interactive)",
+        "description": "Begin work with a specific instruction",
+        "command": "opencode run 'Read WORKER_IDENTITY.md and begin Task 1'"
+      }
+    ]
+  },
+  "config": {
+    "prompt_style": "markdown",
+    "max_context_files": 20,
+    "prefers_single_file_prompts": false
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-03-14",
+    "tested_with": "0.1.0",
+    "compatibility": ">=0.1.0"
+  }
+}

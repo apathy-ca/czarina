@@ -8,6 +8,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/context-builder.sh"
 
+# Source hopper integration (required)
+source "$SCRIPT_DIR/hopper-integration.sh"
+
 launch_worker_agent() {
   local worker_id="$1"
   local window_number="$2"  # Just for display/logging, not used for tmux targeting
@@ -48,10 +51,19 @@ launch_worker_agent() {
     fi
   fi
 
+  # Mark hopper task as in_progress when worker starts (non-fatal)
+  if declare -f hopper_worker_start &>/dev/null && [[ "$worker_id" != "czar" ]]; then
+    local czarina_dir="$project_root/.czarina"
+    hopper_worker_start "$czarina_dir" "$worker_id" || true
+  fi
+
   # Launch appropriate agent
   case "$agent_type" in
     aider)
       launch_aider "$worker_id" "$session"
+      ;;
+    opencode)
+      launch_opencode "$worker_id" "$session"
       ;;
     claude|claude-code)
       launch_claude "$worker_id" "$session"
@@ -82,7 +94,7 @@ launch_worker_agent() {
       ;;
     *)
       echo "❌ Unknown agent type: $agent_type"
-      echo "   Supported: claude, claude-desktop, aider, kilocode, cursor, windsurf, copilot, chatgpt, codeium"
+      echo "   Supported: opencode, claude, claude-desktop, aider, kilocode, cursor, windsurf, copilot, chatgpt, codeium"
       return 1
       ;;
   esac
@@ -101,6 +113,17 @@ create_worker_identity() {
     worker_deps="None"
   fi
 
+  # Look up hopper task ID for this worker (required)
+  local czarina_dir
+  czarina_dir="$(git rev-parse --show-toplevel 2>/dev/null)/.czarina"
+  export CZARINA_DIR="$czarina_dir"
+  local hopper_task_id
+  hopper_task_id=$(hopper_get_worker_task "$worker_id" 2>/dev/null || true)
+
+  if [[ -z "$hopper_task_id" ]]; then
+    echo "  ⚠️  No hopper task ID found for $worker_id — WORKER_IDENTITY.md will use file fallback"
+  fi
+
   cat > "$worktree_path/WORKER_IDENTITY.md" << EOF
 # Worker Identity: $worker_id
 
@@ -109,61 +132,92 @@ You are the **$worker_id** worker in this czarina orchestration.
 ## Your Role
 $worker_desc
 
-## Your Instructions
-Full task list: \$(pwd)/../workers/$worker_id.md
-
-Read it now:
-\`\`\`bash
-cat ../workers/$worker_id.md | less
-\`\`\`
-
-Or use this one-liner to start:
-\`\`\`bash
-cat ../workers/$worker_id.md
-\`\`\`
-
 ## Quick Reference
 - **Branch:** $worker_branch
 - **Location:** $worktree_path
 - **Dependencies:** $worker_deps
 
-## Logging
+## Your Instructions
 
-You have structured logging available. Use these commands:
+Your full brief is stored in hopper. Run this command to read it:
 
 \`\`\`bash
-# Source logging functions (if not already available)
-source \$(git rev-parse --show-toplevel)/czarina-core/logging.sh
+hopper --local task get $hopper_task_id --with-lessons
+\`\`\`
 
-# Log your progress
+Your brief contains your complete task list, deliverables, success criteria,
+and any relevant lessons from previous workers on this project.
+
+**Fallback** (if hopper is unavailable):
+\`\`\`bash
+cat ../workers/$worker_id.md
+\`\`\`
+
+## If You Lose Context
+
+Your brief is always in hopper — it survives session crashes and context resets.
+To recover after any interruption:
+
+\`\`\`bash
+# Find your task
+hopper --local task list --tag worker-$worker_id --status in_progress
+
+# Read your full brief
+hopper --local task get $hopper_task_id --with-lessons
+
+# Mark yourself back in progress
+hopper --local task status $hopper_task_id in_progress --force
+\`\`\`
+
+## On Task Completion
+
+Before marking complete, file any lessons learned — patterns discovered, traps
+avoided, better approaches found. Future workers will see them automatically.
+
+\`\`\`bash
+hopper --local lesson add \\
+  --task $hopper_task_id \\
+  --title "One line: what was learned" \\
+  --domain python \\
+  --confidence high \\
+  --non-interactive \\
+  --body "\$(cat << 'LESSON'
+## What Happened
+...
+
+## What Was Learned
+...
+
+## Why It Matters
+...
+
+## Applies To
+...
+LESSON
+)"
+\`\`\`
+
+Then mark complete:
+
+\`\`\`bash
+hopper --local task status $hopper_task_id completed --force
+\`\`\`
+
+## Logging
+
+\`\`\`bash
+source \$(git rev-parse --show-toplevel)/czarina-core/logging.sh
 czarina_log_task_start "Task 1.1: Description"
 czarina_log_checkpoint "feature_implemented"
 czarina_log_task_complete "Task 1.1: Description"
-
-# When all tasks done
 czarina_log_worker_complete
 \`\`\`
 
-**Your logs:**
-- Worker log: \${CZARINA_WORKER_LOG}
-- Event stream: \${CZARINA_EVENTS_LOG}
+**Your logs:** \${CZARINA_WORKER_LOG} | \${CZARINA_EVENTS_LOG}
 
-**Log important milestones:**
-- Task starts
-- Checkpoints (after commits)
-- Task completions
-- Worker completion
+---
 
-This helps the Czar monitor your progress!
-
-## Your Mission
-1. Read your full instructions at ../workers/$worker_id.md
-2. Understand your deliverables and success metrics
-3. Begin with Task 1
-4. Follow commit checkpoints in the instructions
-5. Log your progress (when logging system is ready)
-
-Let's build this! 🚀
+Let's build this!
 EOF
 
   echo "  ✅ Created WORKER_IDENTITY.md for $worker_id"
@@ -269,25 +323,29 @@ EOF
   echo "  ✅ Created CZAR_IDENTITY.md"
 }
 
+launch_opencode() {
+  local worker_id="$1"
+  local session="$2"
+
+  if [ "$worker_id" == "czar" ]; then
+    local instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+  else
+    local instructions_prompt="Read WORKER_IDENTITY.md — it contains your hopper task ID and the command to retrieve your full brief. Run that command now to get your complete instructions, then begin Task 1."
+  fi
+
+  tmux send-keys -t "$session:$worker_id" "opencode run '$instructions_prompt'" C-m
+  echo "  ✅ Launched OpenCode for $worker_id"
+}
+
 launch_claude() {
   local worker_id="$1"
   local session="$2"
 
-  # Czar runs from project root, workers from worktrees
+  local work_path
   if [ "$worker_id" == "czar" ]; then
-    local work_path="."
-    local identity_file=".czarina/CZAR_IDENTITY.md"
-    local instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+    work_path="."
   else
-    local work_path=".czarina/worktrees/$worker_id"
-    local identity_file="WORKER_IDENTITY.md"
-
-    # Check if enhanced context is available
-    if [ -f "$work_path/.czarina-context.md" ]; then
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read .czarina-context.md for enhanced context (agent rules + project memory), then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    else
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    fi
+    work_path=".czarina/worktrees/$worker_id"
   fi
 
   # Configure Claude settings for auto-approval
@@ -316,8 +374,14 @@ EOF
   echo "  ✅ Created Claude settings for $worker_id"
 
   # Launch Claude with context-specific prompt (use worker_id as window name)
-  tmux send-keys -t "$session:$worker_id" "claude --permission-mode bypassPermissions '$instructions_prompt'" C-m
+  local instructions_prompt
+  if [ "$worker_id" == "czar" ]; then
+    instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+  else
+    instructions_prompt="Read WORKER_IDENTITY.md — it contains your hopper task ID and the command to retrieve your full brief. Run that command now to get your complete instructions, then begin Task 1."
+  fi
 
+  tmux send-keys -t "$session:$worker_id" "claude --permission-mode bypassPermissions '$instructions_prompt'" C-m
   echo "  ✅ Launched Claude for $worker_id"
 }
 
@@ -325,31 +389,18 @@ launch_kilocode() {
   local worker_id="$1"
   local session="$2"
 
-  # Czar runs from project root, workers from worktrees
+  local work_path
+  local instructions_prompt
   if [ "$worker_id" == "czar" ]; then
-    local work_path="."
-    local identity_file=".czarina/CZAR_IDENTITY.md"
-    local instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+    work_path="."
+    instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
   else
-    local work_path=".czarina/worktrees/$worker_id"
-    local identity_file="WORKER_IDENTITY.md"
-
-    # Check if enhanced context is available
-    if [ -f "$work_path/.czarina-context.md" ]; then
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read .czarina-context.md for enhanced context (agent rules + project memory), then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    else
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    fi
+    work_path=".czarina/worktrees/$worker_id"
+    instructions_prompt="Read WORKER_IDENTITY.md — it contains your hopper task ID and the command to retrieve your full brief. Run that command now to get your complete instructions, then begin Task 1."
   fi
 
   echo "  ✅ Kilocode will use auto-approve mode (--yolo)"
-
-  # Launch Kilocode with autonomous mode and auto-approve
-  # --auto: Run in autonomous mode (non-interactive)
-  # --yolo: Auto-approve all tool permissions
-  # --workspace: Set working directory (use worker_id as window name)
   tmux send-keys -t "$session:$worker_id" "kilocode --auto --yolo --workspace '$work_path' '$instructions_prompt'" C-m
-
   echo "  ✅ Launched Kilocode for $worker_id"
 }
 
@@ -359,21 +410,11 @@ launch_aider() {
 
   local worktree_path=".czarina/worktrees/$worker_id"
 
-  # Create aider startup commands
-  if [ -f "$worktree_path/.czarina-context.md" ]; then
-    # Include enhanced context if available
-    cat > "$worktree_path/.aider-init" << EOF
-/add ../workers/$worker_id.md
-/add .czarina-context.md
-/ask You are the $worker_id worker. First read .czarina-context.md for enhanced context (agent rules + project memory), then read your instructions in ../workers/$worker_id.md and begin with Task 1.
+  # Create aider startup commands — hopper-first
+  cat > "$worktree_path/.aider-init" << EOF
+/add WORKER_IDENTITY.md
+/ask Read WORKER_IDENTITY.md — it contains your hopper task ID and the command to retrieve your full brief. Run that command to get your complete instructions, then begin Task 1.
 EOF
-  else
-    # Standard initialization
-    cat > "$worktree_path/.aider-init" << EOF
-/add ../workers/$worker_id.md
-/ask You are the $worker_id worker. Read your instructions in the file I just added and begin with Task 1.
-EOF
-  fi
 
   echo "  ✅ Created aider init file for $worker_id"
 
@@ -395,20 +436,13 @@ launch_shelley() {
   local worker_branch=$(jq -r ".workers[] | select(.id == \"$worker_id\") | .branch" "$config_path")
 
   # Czar runs from project root, workers from worktrees
+  local work_path instructions_prompt
   if [ "$worker_id" == "czar" ]; then
-    local work_path="$project_root"
-    local identity_file=".czarina/CZAR_IDENTITY.md"
-    local instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
+    work_path="$project_root"
+    instructions_prompt="Read .czarina/CZAR_IDENTITY.md to understand your role as Czar, then monitor worker progress and coordinate integration."
   else
-    local work_path="$project_root/.czarina/worktrees/$worker_id"
-    local identity_file="WORKER_IDENTITY.md"
-
-    # Check if enhanced context is available
-    if [ -f "$work_path/.czarina-context.md" ]; then
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read .czarina-context.md for enhanced context (agent rules + project memory), then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    else
-      local instructions_prompt="Read WORKER_IDENTITY.md to learn who you are, then read your full instructions at ../workers/$worker_id.md and begin Task 1"
-    fi
+    work_path="$project_root/.czarina/worktrees/$worker_id"
+    instructions_prompt="Read WORKER_IDENTITY.md — it contains your hopper task ID and the command to retrieve your full brief. Run that command to get your complete instructions, then begin Task 1."
   fi
 
   # Get hostname for Shelley URL
@@ -472,12 +506,9 @@ launch_claude_desktop() {
   echo "   2. Navigate to: $work_path"
   echo "   3. Send this prompt:"
   echo ""
-  if [ -f "$work_path/.czarina-context.md" ]; then
-    echo "      Read WORKER_IDENTITY.md, then .czarina-context.md for enhanced context,"
-    echo "      then ../workers/$worker_id.md and begin Task 1"
-  else
-    echo "      Read WORKER_IDENTITY.md, then ../workers/$worker_id.md and begin Task 1"
-  fi
+  echo "      Read WORKER_IDENTITY.md — it contains your hopper task ID and the"
+  echo "      command to retrieve your full brief. Run that command to get your"
+  echo "      complete instructions, then begin Task 1."
   echo ""
 }
 
@@ -492,18 +523,12 @@ launch_cursor_guide() {
   echo "📋 Instructions for $worker_id:"
   echo "   1. Open Cursor IDE"
   echo "   2. Open workspace: $work_path"
-  echo "   3. Open Cursor Chat and reference files with @:"
+  echo "   3. Open Cursor Chat and send:"
   echo ""
-  if [ -f "$work_path/.czarina-context.md" ]; then
-    echo "      @WORKER_IDENTITY.md @.czarina-context.md @../workers/$worker_id.md"
-    echo ""
-    echo "      First read the context file for agent rules and memory,"
-    echo "      then follow the worker instructions and begin Task 1."
-  else
-    echo "      @WORKER_IDENTITY.md @../workers/$worker_id.md"
-    echo ""
-    echo "      Follow the worker instructions exactly and begin Task 1."
-  fi
+  echo "      @WORKER_IDENTITY.md"
+  echo ""
+  echo "      Read WORKER_IDENTITY.md — it contains your hopper task ID and the"
+  echo "      command to retrieve your full brief. Run that command, then begin Task 1."
   echo ""
 }
 
@@ -520,15 +545,10 @@ launch_windsurf_guide() {
   echo "   2. Open workspace: $work_path"
   echo "   3. Use @ to reference files in chat:"
   echo ""
-  if [ -f "$work_path/.czarina-context.md" ]; then
-    echo "      @WORKER_IDENTITY.md @.czarina-context.md @../workers/$worker_id.md"
-    echo ""
-    echo "      I am this worker. First read the enhanced context, then begin tasks."
-  else
-    echo "      @WORKER_IDENTITY.md @../workers/$worker_id.md"
-    echo ""
-    echo "      I am this worker. Follow the prompt and begin tasks."
-  fi
+  echo "      @WORKER_IDENTITY.md"
+  echo ""
+  echo "      Read WORKER_IDENTITY.md — it contains your hopper task ID and the"
+  echo "      command to retrieve your full brief. Run that command, then begin Task 1."
   echo ""
 }
 

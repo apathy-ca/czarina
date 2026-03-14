@@ -1,621 +1,396 @@
 # Czarina Quick Start Guide
 
-**Get started with multi-agent orchestration in 5 minutes!**
+**Get multi-agent orchestration running in under 10 minutes.**
 
 ---
 
-## 💻 Platform Requirements
+## Requirements
 
-**Supported Platforms:**
-- Linux (Ubuntu, Debian, Fedora, etc.)
-- macOS
-- Windows via WSL (Windows Subsystem for Linux)
+### Platform
+- Linux, macOS, or Windows via WSL
+- Native Windows is not supported (requires bash, tmux, git worktrees)
 
-**Required Dependencies:**
-- bash shell
-- tmux
-- git
-- Python 3.8+
-- jq
-
-**Windows Users:** Czarina requires Unix tooling and cannot run natively on Windows. Install and use WSL.
-
----
-
-## 🚀 Installation (One-Time Setup)
+### Dependencies
 
 ```bash
-# 1. Clone Czarina (if you haven't already)
-git clone https://github.com/apathy-ca/czarina.git ~/Source/GRID/claude-orchestrator
-cd ~/Source/GRID/claude-orchestrator
+# Required system packages
+sudo apt install tmux git jq        # Ubuntu/Debian
+brew install tmux git jq            # macOS
 
-# 2. Create symlink for easy access from anywhere
-ln -s ~/Source/GRID/claude-orchestrator/czarina ~/.local/bin/czarina
+# Required: Python 3.11+
+python3 --version
 
-# 3. Ensure ~/.local/bin is in your PATH
+# Required: Hopper (task queue and persistent instruction store)
+pip install hopper-cli
+
+# Required: At least one AI agent
+pip install aider-chat              # Aider (highest autonomy, recommended for automation)
+# OR: Install OpenCode, Claude CLI, Cursor, Kilocode, Windsurf, etc.
+```
+
+**Hopper is required.** Czarina will not launch without it — it is the persistent
+instruction store that keeps workers on task across session crashes and context resets.
+
+---
+
+## Installation
+
+```bash
+# Clone czarina
+git clone https://github.com/apathy-ca/czarina.git ~/czarina
+
+# Add to PATH
+ln -s ~/czarina/czarina ~/.local/bin/czarina
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 
-# 4. Update pattern library
-czarina patterns update
+# Verify
+czarina version
+hopper --version
 ```
-
-**That's it! Czarina is now installed and ready to use from anywhere!**
 
 ---
 
-## ⚡ Start Your First Project (5 Minutes)
+## Your First Orchestration
 
-### Step 1: Go to Your Project
+### Step 1 — Write a plan
 
-```bash
-cd ~/my-projects/awesome-app
-# Or create a new one:
-# mkdir ~/my-projects/awesome-app && cd ~/my-projects/awesome-app
-# git init
+Create a markdown plan for your project. It can be anything from a paragraph to a
+detailed specification. The more detailed it is, the better `czarina plan` performs.
+
+```markdown
+# My App — Implementation Plan
+
+## Goal
+Build a REST API for a task management app.
+
+## Features
+- Task CRUD (create, list, update, delete)
+- User authentication (JWT)
+- PostgreSQL storage
+- Full test coverage
+
+## Approach
+- FastAPI backend
+- SQLAlchemy + Alembic for database
+- pytest for tests
+- Separate workers for backend, auth, and QA
 ```
 
-### Step 2: Initialize Czarina
+Save it as `docs/plan.md` in your project directory.
+
+### Step 2 — Go to your project
 
 ```bash
-# Basic initialization
-czarina init
-
-# Or with v0.7.0 features (recommended!)
-czarina init --with-memory --with-rules
+cd ~/my-projects/my-app
+git init   # if not already a git repo
 ```
 
-**This creates `.czarina/` directory with:**
-- `config.json` - Worker configuration
-- `workers/` - Worker role definitions
-- `memories.md` - Persistent memory (v0.7.0+, if --with-memory)
-- `status/` - Runtime logs (gitignored)
-- `README.md` - Quick reference
-- `.worker-init` - Auto-discovery script
-
-**v0.7.0 Features (Optional):**
-- `--with-memory` - Enable persistent learning across sessions
-- `--with-rules` - Enable 43K+ lines of best practices
-- Both features are opt-in and backward compatible
-
-See [MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md) for details.
-
-### Step 3: Configure Workers
+### Step 3 — Generate worker structure
 
 ```bash
-# Edit configuration
-nano .czarina/config.json
+czarina plan docs/plan.md
 ```
 
-**Example config:**
+This uses AI to analyze your plan and suggest a worker breakdown — who does what,
+which agent is best for each role, and what the branches should be called.
+
+### Step 4 — Initialize the orchestration
+
+```bash
+czarina init docs/plan.md
+```
+
+This launches OpenCode (or your configured agent) with your plan. The AI will:
+- Read your plan in full
+- Create `.czarina/config.json` with worker definitions
+- Create `.czarina/workers/<id>.md` — a detailed brief for each worker
+- Create `.czarina/workers/<id>-knowledge.md` — relevant agent rules per worker
+
+Review the generated files and edit them if needed.
+
+### Step 5 — Validate
+
+```bash
+czarina validate
+```
+
+Checks that hopper is installed, all agents are available, config is valid, and
+worker brief files exist. Fix any errors before launching.
+
+### Step 6 — Launch
+
+```bash
+czarina launch
+```
+
+This will:
+1. Register the orchestration in Hopper (one project task + one task per worker)
+2. Store each worker's full brief in their Hopper task
+3. Create git worktrees for each worker
+4. Open a tmux session with each worker in their own window
+5. Start each agent with: "Read WORKER_IDENTITY.md — it has your Hopper task ID
+   and the command to get your full brief. Begin Task 1."
+
+### Step 7 — Attach and monitor
+
+```bash
+# Attach to the tmux session
+tmux attach -t czarina-my-app
+
+# Navigate between workers:
+# Ctrl+b then number (0=czar, 1=first worker, 2=second worker, ...)
+# Ctrl+b then d to detach
+
+# Or from another terminal:
+czarina status
+```
+
+### Step 8 — Review and merge
+
+```bash
+# Check PRs created by workers
+gh pr list
+
+# Review a PR
+gh pr diff 1
+
+# Merge when satisfied
+gh pr merge 1
+```
+
+---
+
+## The Hopper Connection
+
+Czarina uses Hopper as the persistent instruction store. Here is what this means
+in practice:
+
+### When a worker starts
+
+Their `WORKER_IDENTITY.md` contains their Hopper task ID. The first thing they do:
+
+```bash
+hopper --local task get task-abc12345 --with-lessons
+```
+
+This gives them:
+- Their complete task brief (full `.czarina/workers/<id>.md` content)
+- Any high-confidence lessons from previous workers on this project
+- Recovery instructions if they lose context
+
+### When a worker loses their session
+
+No orchestrator intervention needed. The worker runs:
+
+```bash
+# Find their task
+hopper --local task list --tag worker-backend --status in_progress
+
+# Get their full brief
+hopper --local task get task-abc12345 --with-lessons
+```
+
+Their entire brief is in Hopper and survives indefinitely.
+
+### When a worker finishes a task
+
+They file any lessons before marking complete:
+
+```bash
+hopper --local lesson add \
+  --task task-abc12345 \
+  --title "SQLAlchemy async sessions must not be shared between requests" \
+  --domain python \
+  --confidence high \
+  --non-interactive \
+  --body "..."
+
+hopper --local task status task-abc12345 completed --force
+```
+
+Those lessons are automatically injected into the next phase's worker briefs.
+
+### Check task state at any time
+
+```bash
+# All tasks for this project
+hopper --local task list --tag my-app
+
+# Just worker tasks
+hopper --local task list --tag my-app --tag worker-backend
+
+# With lessons filed
+hopper --local lesson list --project my-app
+```
+
+---
+
+## Multi-Phase Projects
+
+For projects that run in sequential phases:
+
+```bash
+# Phase 1
+czarina init docs/phase-1-plan.md
+czarina launch
+# ... workers complete their work ...
+czarina closeout
+
+# Phase 2 — lessons from phase 1 automatically injected into phase 2 worker briefs
+czarina init docs/phase-2-plan.md
+czarina launch
+```
+
+**What carries forward automatically:**
+- High-confidence lessons filed by phase 1 workers appear in phase 2 briefs
+- Phase 1 closeout report documents what was learned
+
+**What requires a new init:**
+- Worker configuration (new workers for new roles)
+- Worker brief content (new tasks for the new phase)
+
+View phase history:
+```bash
+czarina phase list
+cat .czarina/phases/phase-1-v1.0.0/PHASE_SUMMARY.md
+```
+
+---
+
+## Common Commands
+
+```bash
+# Planning
+czarina plan <file>              # AI analysis of a plan file
+czarina init <file>              # AI-assisted orchestration setup
+
+# Orchestration
+czarina validate                 # Pre-launch check (agents, hopper, config)
+czarina launch                   # Start workers
+czarina status                   # Project + Hopper task state
+czarina closeout                 # Stop and archive
+
+# Phase management
+czarina phase list               # Show completed phases
+czarina phase close              # Close current phase
+
+# Learnings
+czarina learnings show           # Current phase learnings
+czarina learnings history        # All phases
+
+# Wiggum Mode (iterative retry with verification)
+czarina wiggum '<task>'                               # Run with config defaults
+czarina wiggum '<task>' --verify-command 'make test'  # With test gate
+czarina wiggum '<task>' --retries 5 --timeout 900     # Custom limits
+
+# Pattern library
+czarina patterns update          # Sync latest from agent-knowledge
+czarina patterns version         # Show version
+```
+
+---
+
+## Configuration Reference
+
+The `.czarina/config.json` file controls the orchestration:
+
 ```json
 {
   "project": {
-    "name": "Awesome App",
-    "slug": "awesome-app",
-    "repository": "/home/you/my-projects/awesome-app",
-    "orchestration_dir": ".czarina"
-  },
-  "memory": {
-    "enabled": true
-  },
-  "agent_rules": {
-    "enabled": true
+    "name": "My App",
+    "slug": "my-app",
+    "repository": "/home/you/my-projects/my-app",
+    "version": "1.0.0",
+    "phase": "1"
   },
   "workers": [
     {
       "id": "backend",
       "role": "code",
-      "agent": "aider",
-      "branch": "feat/backend-api",
-      "description": "Backend API Developer"
+      "agent": "opencode",
+      "branch": "cz1/feat/backend",
+      "description": "Build the REST API layer",
+      "dependencies": []
     },
     {
-      "id": "frontend",
-      "role": "code",
-      "agent": "aider",
-      "branch": "feat/frontend-ui",
-      "description": "Frontend UI Developer"
-    },
-    {
-      "id": "tests",
+      "id": "qa",
       "role": "qa",
-      "agent": "aider",
-      "branch": "feat/test-coverage",
-      "description": "Test Engineer"
-    }
-  ],
-  "daemon": {
-    "enabled": true,
-    "auto_approve": ["read", "write", "commit"]
-  }
-}
-```
-
-**v0.7.0 additions:**
-- `memory.enabled` - Workers remember past sessions
-- `agent_rules.enabled` - Workers get best practices
-- `role` field - Determines which rules auto-load (code, qa, documentation, etc.)
-
-### Step 4: Define Worker Roles
-
-```bash
-# Edit worker prompts (already created as templates)
-nano .czarina/workers/backend.md
-nano .czarina/workers/frontend.md
-nano .czarina/workers/tests.md
-```
-
-**Example worker prompt:**
-```markdown
-# Backend API Developer
-
-## Role
-Build the REST API backend for Awesome App
-
-## Responsibilities
-- Design and implement REST endpoints
-- Database schema and migrations
-- Authentication and authorization
-- API documentation
-
-## Files
-- src/api/
-- src/models/
-- src/auth/
-- tests/api/
-
-## Tech Stack
-- Node.js + Express
-- PostgreSQL
-- JWT auth
-
-## Git Workflow
-Branch: feat/backend-api
-
-When complete:
-1. Commit changes
-2. Push to branch
-3. Create PR to main
-```
-
-### Step 5: Commit Orchestration
-
-```bash
-git add .czarina/
-git commit -m "Add Czarina orchestration setup"
-```
-
-### Step 6: Launch! 🚀
-
-```bash
-# From your project directory
-czarina launch
-
-# Or from anywhere
-czarina launch awesome-app
-```
-
-**Czarina will:**
-- Create tmux session with all workers
-- Each worker in separate pane
-- Git branches auto-created
-- Workers ready to receive tasks
-
-### Step 7: Assign the Czar Role 🎭
-
-**The Czar** is the orchestration coordinator (can be AI agent or human).
-
-**If using an AI agent (Claude Code, Cursor, etc.):**
-```
-I am the Czar for this Czarina orchestration.
-
-Project: Awesome App
-My responsibilities:
-1. Monitor all workers
-2. Manage the daemon
-3. Track token budgets
-4. Coordinate version progression
-5. Provide status updates
-
-Show me the current status.
-```
-
-**If you're human:**
-- Monitor via `czarina status`
-- Check workers via `tmux attach -t czarina-awesome-app`
-- Manage daemon with `czarina daemon` commands
-
-**See [docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md) for complete guide.**
-
-### Step 8: Enable Daemon (Recommended)
-
-```bash
-czarina daemon start
-```
-
-**The daemon provides:**
-- Auto-approval of file operations (95-98% autonomy with Aider)
-- Stuck worker detection
-- Alert system
-- Status monitoring
-
-**As Czar, you monitor the daemon and workers, stepping in only when needed.**
-
----
-
-## 📊 Monitor Your Workers
-
-### Check Status
-
-```bash
-# From project directory
-czarina status
-
-# Or from anywhere
-czarina status awesome-app
-```
-
-### View Dashboard
-
-```bash
-# Attach to tmux session
-tmux attach -t czarina-awesome-app
-
-# Tmux navigation:
-# - Ctrl+b then arrow keys: Switch panes
-# - Ctrl+b then z: Toggle fullscreen
-# - Ctrl+b then d: Detach
-```
-
-### Check Daemon
-
-```bash
-czarina daemon status
-czarina daemon logs    # Live log tail
-```
-
----
-
-## 🎯 Give Workers Tasks
-
-### Method 1: Direct in tmux
-
-```bash
-# Attach to session
-tmux attach -t czarina-awesome-app
-
-# Navigate to worker pane (Ctrl+b then arrows)
-# Type your task directly to the worker
-
-# Example:
-"Create a new REST endpoint for user registration at POST /api/users/register"
-```
-
-### Method 2: Update worker prompts
-
-```bash
-# Edit the worker's prompt file
-nano .czarina/workers/backend.md
-
-# Add task to the file
-# Worker will see it on next initialization
-```
-
----
-
-## 🔄 Review and Merge Work
-
-### Check PRs
-
-```bash
-# Workers create PRs when done
-gh pr list
-
-# Review specific PR
-gh pr view 123
-gh pr diff 123
-
-# Merge when ready
-gh pr merge 123
-```
-
-### Manual Git Review
-
-```bash
-# Check worker branches
-git branch -a
-
-# View changes
-git diff main..feat/backend-api
-
-# Merge locally
-git checkout main
-git merge feat/backend-api
-```
-
----
-
-## 🎓 Next Steps
-
-### Read the Patterns
-
-```bash
-# Browse agent-knowledge patterns
-ls ~/Source/GRID/claude-orchestrator/czarina-core/patterns/agent-knowledge/
-
-# Error recovery patterns (30-50% faster debugging)
-ls ~/Source/GRID/claude-orchestrator/czarina-core/patterns/agent-knowledge/patterns/error-recovery/
-
-# Multi-agent patterns (coordination strategies)
-cat ~/Source/GRID/claude-orchestrator/czarina-core/patterns/czarina-specific/CZARINA_PATTERNS.md
-```
-
-### Scale Up
-
-Start with 2-3 workers, then scale to 5-10 as you gain confidence:
-
-```json
-{
-  "workers": [
-    {"id": "architect", "agent": "claude-code", "description": "System Architect"},
-    {"id": "backend-1", "agent": "aider", "description": "Backend Core"},
-    {"id": "backend-2", "agent": "aider", "description": "Backend APIs"},
-    {"id": "frontend-1", "agent": "aider", "description": "Frontend Components"},
-    {"id": "frontend-2", "agent": "aider", "description": "Frontend State"},
-    {"id": "tests-unit", "agent": "aider", "description": "Unit Tests"},
-    {"id": "tests-integration", "agent": "aider", "description": "Integration Tests"},
-    {"id": "docs", "agent": "claude-code", "description": "Documentation"},
-    {"id": "devops", "agent": "aider", "description": "DevOps & CI/CD"},
-    {"id": "integration", "agent": "windsurf", "description": "Integration Lead"}
-  ]
-}
-```
-
-**Proven:** SARK v2.0 ran 10 workers successfully with 90% autonomy!
-
----
-
-## 💡 Tips & Tricks
-
-### Use Aider for Maximum Autonomy
-- **Aider:** 95-98% autonomy with daemon
-- **Claude Code:** 70-80% autonomy (better UI, requires more intervention)
-
-### Clear Role Boundaries
-- Assign specific files/directories to each worker
-- Avoid overlap in responsibilities
-- Use modular architecture
-
-### Monitor Initially
-- First session: watch closely
-- Check daemon logs: `czarina daemon logs`
-- Review PRs carefully
-- Learn the patterns
-
-### Document Discoveries
-```bash
-# Found a useful pattern?
-cp ~/Source/GRID/claude-orchestrator/czarina-inbox/templates/FIX_DONE.md \
-   ~/Source/GRID/claude-orchestrator/czarina-inbox/patterns/$(date +%Y-%m-%d)-my-pattern.md
-
-# Check what's ready to contribute
-czarina patterns pending
-```
-
----
-
-## 🔧 Common Commands
-
-```bash
-# Project management
-czarina init                          # Initialize in current directory
-czarina init --with-memory            # Initialize with memory system
-czarina init --with-rules             # Initialize with agent rules
-czarina init --with-memory --with-rules  # Initialize with both
-czarina list                          # List all projects
-czarina launch                        # Launch workers (from project dir)
-czarina launch <project>              # Launch from anywhere
-czarina status                        # Show status
-
-# Memory system (v0.7.0+)
-czarina memory init                   # Initialize memory
-czarina memory query "<search>"       # Search past sessions
-czarina memory extract                # Capture session learnings
-czarina memory rebuild                # Rebuild search index
-czarina memory status                 # Show memory status
-
-# Daemon management
-czarina daemon start                  # Start auto-approval
-czarina daemon stop                   # Stop daemon
-czarina daemon logs                   # View logs
-czarina daemon status                 # Check if running
-
-# Wiggum Mode (iterative AI worker with retries)
-czarina wiggum '<task>'               # Run with config defaults
-czarina wiggum '<task>' --verify-command 'npm test'  # With test gate
-czarina wiggum '<task>' --retries 3 --timeout 600    # Custom limits
-
-# Pattern library
-czarina patterns update               # Get latest patterns
-czarina patterns version              # Show version
-czarina patterns pending              # List discoveries
-czarina patterns contribute           # Contribution guide
-```
-
----
-
-## 🆘 Troubleshooting
-
-### "Workers won't start"
-```bash
-# Check agent installed
-which aider
-which claude
-
-# Check config syntax
-cat .czarina/config.json | jq .
-
-# Check worker prompts exist
-ls -la .czarina/workers/
-```
-
-### "Daemon not approving"
-```bash
-# Check daemon running
-czarina daemon status
-
-# Check logs
-czarina daemon logs
-
-# Restart daemon
-czarina daemon stop
-czarina daemon start
-```
-
-### "Can't find project"
-```bash
-# From project directory
-cd ~/my-projects/awesome-app
-czarina status    # Auto-detects .czarina/
-
-# Or use project name
-czarina status awesome-app
-
-# List all projects
-czarina list
-```
-
----
-
-## 🔄 Multi-Phase Orchestration (v0.7.2+)
-
-Run sequential development phases on the same codebase with **automatic phase transitions**!
-
-### Quick Multi-Phase Example
-
-```bash
-# Phase 1: Core Features (v1.0.0)
-cd ~/my-project
-czarina analyze docs/phase-1-plan.md --interactive --init
-czarina launch --go
-
-# ✅ Autonomous daemon detects when all workers complete
-# ✅ Phase 1 automatically archived to .czarina/phases/phase-1-v1.0.0/
-# ✅ Ready for Phase 2!
-
-# Phase 2: Security & Performance (v1.1.0)
-czarina analyze docs/phase-2-plan.md --interactive --init
-czarina launch --go
-
-# ✅ Repeat for as many phases as needed
-# ✅ Complete audit trail preserved
-```
-
-### What Happens Automatically
-
-**Phase Completion Detection:**
-- Monitors worker log markers (`czarina_log_worker_complete`)
-- Checks git branch merge status
-- Validates worker status files
-- Multiple detection modes: `any`, `strict`, `all`
-
-**Phase Archival:**
-- Complete config snapshot
-- All worker logs and prompts
-- Phase summary auto-generated
-- Saved to `.czarina/phases/phase-N-vX.Y.Z/`
-
-**Phase History:**
-```bash
-# View all completed phases
-czarina phase list
-
-# Review past phase
-cat .czarina/phases/phase-1-v1.0.0/PHASE_SUMMARY.md
-```
-
-### Configuration
-
-Add to `.czarina/config.json`:
-
-```json
-{
-  "project": {
-    "phase": 1,
-    "omnibus_branch": "cz1/release/v1.0.0"
-  },
-  "phase_completion_mode": "any",
-  "workers": [
-    {
-      "id": "api",
-      "phase": 1,
-      "branch": "cz1/feat/api"
+      "agent": "opencode",
+      "branch": "cz1/feat/qa",
+      "description": "Write integration tests",
+      "dependencies": ["backend"]
     }
   ]
 }
 ```
 
-**Branch Naming Convention:**
-- Phase 1: `cz1/feat/*`, `cz1/release/*`
-- Phase 2: `cz2/feat/*`, `cz2/release/*`
-- Phases are isolated - no branch conflicts
+**Worker roles:** `code`, `architect`, `qa`, `documentation`, `integration`
 
-**Complete Guide:** [docs/MULTI_PHASE_ORCHESTRATION.md](docs/MULTI_PHASE_ORCHESTRATION.md)
+**Supported agents:** `opencode`, `claude`, `aider`, `kilocode`, `cursor`,
+`windsurf`, `copilot`, `shelley`
 
----
+**Branch convention:**
+- Phase 1 workers: `cz1/feat/<id>`
+- Phase 2 workers: `cz2/feat/<id>`
+- Release branch: `cz1/release/v1.0.0`
 
-## 📚 Learn More
-
-### v0.7.2 Features
-- **[docs/MULTI_PHASE_ORCHESTRATION.md](docs/MULTI_PHASE_ORCHESTRATION.md)** - Multi-phase orchestration guide
-- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** - Phase completion configuration
-
-### v0.7.0 Features
-- **[MEMORY_GUIDE.md](MEMORY_GUIDE.md)** - Memory system usage and best practices
-- **[AGENT_RULES.md](AGENT_RULES.md)** - Agent rules integration guide
-- **[MIGRATION_v0.7.0.md](MIGRATION_v0.7.0.md)** - Migration from v0.6.2
-
-### Core Documentation
-- **[Production Readiness](PRODUCTION_READINESS.md)** - Complete production checklist
-- **[Pattern Library](czarina-core/patterns/)** - Error recovery and multi-agent patterns
-- **[Documentation Hub](docs/)** - Comprehensive guides
-- **[.cursorrules](.cursorrules)** - Development standards
+See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full reference.
 
 ---
 
-## 🎯 Summary
+## Troubleshooting
 
-**Installation:**
+### "hopper not found"
+
 ```bash
-ln -s ~/Source/GRID/claude-orchestrator/czarina ~/.local/bin/czarina
-czarina patterns update
+pip install hopper-cli
+hopper --version
 ```
 
-**New Project (v0.7.0):**
+Hopper is required. Czarina will not launch without it.
+
+### "czarina validate fails"
+
+Run `czarina validate` and read each error. Common issues:
+- Missing agent binary (install the agent)
+- Missing worker brief file (run `czarina init` or create manually)
+- Config JSON syntax error (`jq . .czarina/config.json` to check)
+
+### "Worker lost context mid-task"
+
+The worker recovers themselves:
 ```bash
-cd ~/my-project
-czarina init --with-memory --with-rules  # Enable v0.7.0 features
-nano .czarina/config.json
-czarina launch
-czarina daemon start
+hopper --local task list --tag worker-<id> --status in_progress
+hopper --local task get <task-id> --with-lessons
 ```
 
-**Or without v0.7.0 features (v0.6.2 behavior):**
+No restart needed. The full brief is in Hopper.
+
+### "tmux session already exists"
+
 ```bash
-cd ~/my-project
-czarina init
-nano .czarina/config.json
-czarina launch
-czarina daemon start
+czarina closeout          # Clean shutdown
+# or forcibly:
+tmux kill-session -t czarina-my-app
 ```
 
-**That's it!** You're now orchestrating multiple AI agents in parallel! 🚀
+### "Worker is stuck"
 
-**Expected Results:**
-- 2-3 workers: 2x speedup
-- 5-10 workers: 3-4x speedup (proven in SARK v2.0)
-- 90% autonomy with daemon
-- Clean PRs for review
+```bash
+tmux attach -t czarina-my-app
+# Navigate to stuck worker window
+# Check what they're doing
+# You can type directly to the worker
+```
 
-**Your workflow repo is ready to orchestrate at scale!** 💪
+---
+
+## Next Steps
+
+- **[docs/HOPPER.md](docs/HOPPER.md)** — Full Hopper integration guide
+- **[docs/guides/CZAR_ROLE.md](docs/guides/CZAR_ROLE.md)** — How to be an effective Czar
+- **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** — Complete config reference
+- **[AGENT_COMPATIBILITY.md](AGENT_COMPATIBILITY.md)** — Choose the right agent for each role
+- **[docs/MULTI_PHASE_ORCHESTRATION.md](docs/MULTI_PHASE_ORCHESTRATION.md)** — Multi-phase guide
+- **[CHANGELOG.md](CHANGELOG.md)** — What's new in each version

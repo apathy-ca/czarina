@@ -38,6 +38,10 @@ PROJECT_SLUG=$(jq -r '.project.slug' "$CONFIG_FILE")
 PROJECT_ROOT=$(jq -r '.project.repository' "$CONFIG_FILE")
 WORKTREES_DIR="${PROJECT_ROOT}/.czarina/worktrees"
 
+# Source hopper integration (required)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/hopper-integration.sh"
+
 echo -e "${BLUE}🎭 Czarina Project Closeout${NC}"
 echo "   Project: $PROJECT_NAME"
 echo "   Slug: $PROJECT_SLUG"
@@ -253,7 +257,7 @@ ALL_FILES_CHANGED=$(git diff --name-status main...HEAD 2>/dev/null | head -50 ||
 BRANCH_STATUS=$(git branch -a 2>/dev/null | head -20 || echo "No branches")
 
 # Get workers config
-WORKERS_CONFIG=$(jq -r '.workers[] | "### \(.id)\n- **Role:** \(.description)\n- **Agent:** \(.agent // "claude-code")\n"' "$CONFIG_FILE")
+WORKERS_CONFIG=$(jq -r '.workers[] | "### \(.id)\n- **Role:** \(.description)\n- **Agent:** \(.agent // "opencode")\n"' "$CONFIG_FILE")
 
 # Get config JSON (prettified)
 CONFIG_JSON=$(jq '.' "$CONFIG_FILE" 2>/dev/null || echo "{}")
@@ -406,7 +410,13 @@ PHASE
 echo -e "   ${GREEN}✅ Phase archived to: $PHASE_ARCHIVE${NC}"
 echo ""
 
-# 7. Summary
+# 7. Close hopper tasks
+if declare -f hopper_closeout_orchestration &>/dev/null; then
+  hopper_closeout_orchestration "$CZARINA_DIR"
+  echo ""
+fi
+
+# 8. Summary
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}✅ Closeout complete!${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

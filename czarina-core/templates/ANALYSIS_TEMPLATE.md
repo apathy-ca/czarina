@@ -160,31 +160,31 @@ Recommend workers based on:
 
 **Worker types by role:**
 - **Architect**: System design, high-level architecture
-  - Best agent: claude-code (better at big picture)
+  - Best agent: opencode (better at big picture)
   - Token budget: 100K-300K per architecture phase
 
 - **Backend Developer**: APIs, services, business logic
-  - Best agent: claude-code (comprehensive understanding)
+  - Best agent: opencode (comprehensive understanding)
   - Token budget: 150K-400K per version
 
 - **Frontend Developer**: UI components, state management
-  - Best agent: claude-code (excellent at UI/UX)
+  - Best agent: opencode (excellent at UI/UX)
   - Token budget: 120K-350K per version
 
 - **Full-Stack Developer**: Both backend and frontend
-  - Best agent: claude-code (handles full stack well)
+  - Best agent: opencode (handles full stack well)
   - Token budget: 200K-500K per version
 
 - **QA Engineer**: Testing, quality assurance
-  - Best agent: claude-code (good at test automation)
+  - Best agent: opencode (good at test automation)
   - Token budget: 100K-250K per version
 
 - **DevOps Engineer**: CI/CD, infrastructure
-  - Best agent: claude-code (shell scripting & config)
+  - Best agent: opencode (shell scripting & config)
   - Token budget: 80K-200K per version
 
 - **Documentation Writer**: Technical writing
-  - Best agent: claude-code (better prose)
+  - Best agent: opencode (better prose)
   - Token budget: 50K-150K per version
 
 **Worker count guidelines:**
@@ -199,7 +199,7 @@ Recommend workers based on:
 {
   "id": "<descriptive-id>",
   "role": "<role type>",
-  "agent": "claude-code",
+  "agent": "opencode",
   "description": "<clear role description>",
   "versions_assigned": ["v0.X.Y", "v0.X.Y-phaseN"],
   "total_token_budget": <sum across versions>,
@@ -332,7 +332,7 @@ Generate complete JSON following this schema:
     {
       "id": "string",
       "role": "string",
-      "agent": "claude-code",
+      "agent": "opencode",
       "description": "string",
       "versions_assigned": ["vX.Y.Z"],
       "total_token_budget": number,

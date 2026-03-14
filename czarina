@@ -120,13 +120,13 @@ def _create_czarina_readme(czarina_dir, config):
 
 ### For Workers
 
-**Claude Code / Desktop:**
+**OpenCode:**
 ```bash
 ./.czarina/.worker-init <worker-id>
 ```
 
-**Claude Code Web (auto-discovery):**
-Just say: "You are <worker-id>"
+**OpenCode (interactive TUI):**
+Run `opencode` then say: "You are <worker-id>"
 
 ### For Orchestrators
 
@@ -547,7 +547,8 @@ def cmd_plan(project_plan_file, output_file=None, style="balanced"):
     print(f"📝 Output: {output_file}")
     print(f"🎯 Style: {style}")
     print()
-    print("🚀 Launching Claude Code agent to analyze project plan...")
+    print("🚀 Launching OpenCode agent to analyze project plan...")
+    print()
     print("   The agent will:")
     print("   • Read your project plan")
     print("   • Identify milestones and deliverables")
@@ -582,7 +583,7 @@ Each worker must follow this format:
 ```markdown
 ### Worker N: `worker-id`
 **Role:** Code|QA|Docs|Integration
-**Agent:** Claude Code|Aider|Cursor|Windsurf (choose appropriate agent)
+**Agent:** OpenCode|Aider|Cursor|Windsurf (choose appropriate agent)
 **Branch:** cz1/feat/worker-id
 **Dependencies:** other-worker-id, another-worker-id (or "None")
 
@@ -608,10 +609,10 @@ Each worker must follow this format:
 - Avoid workers with >15 tasks (split into multiple workers if needed)
 
 **Roles & Agents:**
-- Code: Implementation work (use Aider for focused coding, Claude Code for complex design)
-- QA: Testing, validation, quality assurance (use Claude Code for comprehensive testing)
-- Docs: Documentation, guides, examples (use Claude Code for writing)
-- Integration: Merging, releasing, coordination (use Claude Code for orchestration)
+- Code: Implementation work (use Aider for focused coding, OpenCode for complex design)
+- QA: Testing, validation, quality assurance (use OpenCode for comprehensive testing)
+- Docs: Documentation, guides, examples (use OpenCode for writing)
+- Integration: Merging, releasing, coordination (use OpenCode for orchestration)
 - Choose agents based on task type, not arbitrarily
 
 **Dependencies & Parallelism:**
@@ -766,25 +767,18 @@ The user can then run: `czarina wiggum 'Fix auth tests' --verify-command 'npm te
 
 Please analyze the project plan and generate a high-quality implementation plan now."""
 
-    # Launch Claude Code agent
-    orchestrator_dir = get_orchestrator_dir()
-    claude_code_bin = orchestrator_dir / "bin" / "claude"
-
-    if not claude_code_bin.exists():
-        # Fallback to system claude command
-        claude_code_bin = "claude"
-
+    # Launch OpenCode agent
     try:
-        # Use os.execvp to replace current process with claude
+        # Use os.execvp to replace current process with opencode
         # This gives the user full interactive control
         import os
-        os.execvp(str(claude_code_bin), [str(claude_code_bin), "chat", prompt])
+        os.execvp("opencode", ["opencode", "run", prompt])
 
     except FileNotFoundError:
         print()
-        print("❌ Claude Code not found")
-        print("   Please install Claude Code CLI:")
-        print("   https://github.com/anthropics/claude-code")
+        print("❌ OpenCode not found")
+        print("   Please install OpenCode CLI:")
+        print("   https://opencode.ai/docs")
         sys.exit(1)
     except Exception as e:
         print()
@@ -1126,7 +1120,7 @@ You have access to comprehensive Czarina documentation and examples:
   "workers": [
     {{
       "id": "worker-id",  // kebab-case, descriptive
-      "agent": "claude",  // REQUIRED: claude, cursor, aider, etc.
+      "agent": "opencode",  // REQUIRED: opencode, claude, cursor, aider, etc.
       "role": "code|plan|test|review|integration",  // Worker type
       "branch": "cz1/feat/worker-id",  // MUST follow pattern!
       "description": "What this worker does",
@@ -1268,9 +1262,9 @@ Then review the API requirements and create a task list.
 {agent_knowledge_integration}
 Read the docs, study the examples, and create an excellent orchestration setup!"""
 
-    print("🚀 Launching Claude Code to analyze plan and create orchestration...")
+    print("🚀 Launching OpenCode to analyze plan and create orchestration...")
     print()
-    print("💡 Claude will help you create:")
+    print("💡 OpenCode will help you create:")
     print("   - .czarina/config.json")
     print("   - .czarina/workers/<worker-id>.md (identity files)")
     print("   - .czarina/workers/<worker-id>-knowledge.md (custom knowledge for each worker)")
@@ -1298,14 +1292,14 @@ Read the docs, study the examples, and create an excellent orchestration setup!"
         print("   AI will incorporate these when setting up workers")
         print()
 
-    # Launch Claude Code
+    # Launch OpenCode
     try:
-        result = subprocess.run(["claude", prompt], check=True)
+        result = subprocess.run(["opencode", "run", prompt], check=True)
 
         print()
         print("=" * 60)
         print()
-        print("✅ Claude Code session complete!")
+        print("✅ OpenCode session complete!")
         print()
         print("📋 Next steps:")
         print("   1. Verify .czarina/config.json was created")
@@ -1318,14 +1312,14 @@ Read the docs, study the examples, and create an excellent orchestration setup!"
 
     except FileNotFoundError:
         print()
-        print("❌ Error: 'claude' command not found")
-        print("   Please install Claude Code CLI: https://code.claude.com")
+        print("❌ Error: 'opencode' command not found")
+        print("   Please install OpenCode CLI: https://opencode.ai/docs")
         print()
         sys.exit(1)
 
     except Exception as e:
         print()
-        print(f"❌ Failed to launch Claude Code: {e}")
+        print(f"❌ Failed to launch OpenCode: {e}")
         print()
         sys.exit(1)
 
@@ -1419,6 +1413,7 @@ def cmd_launch(project_name=None):
         sys.exit(1)
 
     # Launch via embedded orchestration launcher
+    # (hopper registration runs inside launch-project-v2.sh before workers start)
     os.chdir(project_root)
     subprocess.run(["bash", str(launch_script), str(czarina_dir)])
 
@@ -1462,6 +1457,27 @@ def cmd_status(project_name=None):
     else:
         print(f"   Session: ❌ Not running")
         print(f"   Start: czarina launch")
+
+    # Show hopper task summary if available
+    project_slug = config["project"]["slug"]
+    orchestrator_dir = get_orchestrator_dir()
+    hopper_integration = orchestrator_dir / "czarina-core" / "hopper-integration.sh"
+    if hopper_integration.exists():
+        print()
+        print("📬 Hopper:")
+        hopper_result = subprocess.run(
+            ["bash", "-c",
+             f'source "{hopper_integration}" && '
+             f'CZARINA_DIR="{czarina_dir}" '
+             f'hopper_print_status "{project_slug}"'],
+            capture_output=True, text=True
+        )
+        if hopper_result.stdout.strip():
+            print(hopper_result.stdout.rstrip())
+        else:
+            print("   (no tasks — run czarina launch to register)")
+        if hopper_result.returncode != 0 and hopper_result.stderr:
+            print(f"   ⚠️  {hopper_result.stderr.strip()}")
 
 
 def cmd_dashboard(project_name=None):
@@ -2473,7 +2489,7 @@ def parse_worker_from_section(section_text, worker_num):
     worker = {
         "id": None,
         "role": "code",
-        "agent": "claude",
+        "agent": "opencode",
         "description": "",
         "dependencies": [],
         "mission": "",
@@ -2497,7 +2513,9 @@ def parse_worker_from_section(section_text, worker_num):
     if agent_match:
         agent = agent_match.group(1).strip()
         # Normalize agent names
-        if 'claude' in agent.lower():
+        if 'opencode' in agent.lower():
+            worker["agent"] = "opencode"
+        elif 'claude' in agent.lower():
             worker["agent"] = "claude"
         else:
             worker["agent"] = agent.lower()
@@ -2820,7 +2838,7 @@ def cmd_analyze(plan_file, output_file=None, auto_init=False, interactive=False,
         print("   ✅ Created .czarina/workers/")
         print()
 
-    # Build Claude Code prompt
+    # Build OpenCode prompt
     prompt = f"""Read the implementation plan at {plan_path} and help me set up a czarina orchestration.
 
 Please:
@@ -2833,7 +2851,7 @@ The config.json should include:
 - project metadata (name, slug, repository, version, phase, description)
   CRITICAL: The 'repository' field MUST be set to the absolute path of the project directory
 - worker definitions (id, agent, branch, description, dependencies)
-  CRITICAL: Each worker MUST have an 'agent' field (usually "claude")
+  CRITICAL: Each worker MUST have an 'agent' field (usually "opencode")
 - orchestration configuration (mode, omnibus_branch if applicable)
 - any special configuration (hopper, daemon settings, etc.)
 
@@ -2852,22 +2870,22 @@ Each worker markdown file should include:
 
 Let's get started!"""
 
-    print("🚀 Launching Claude Code to help with orchestration setup...")
+    print("🚀 Launching OpenCode to help with orchestration setup...")
     print()
-    print("💡 Claude will help you create:")
+    print("💡 OpenCode will help you create:")
     print("   - .czarina/config.json")
     print("   - .czarina/workers/*.md files")
     print()
 
-    # Launch Claude Code
+    # Launch OpenCode
     try:
         import subprocess
-        subprocess.run(["claude", prompt], check=True)
+        subprocess.run(["opencode", "run", prompt], check=True)
 
         print()
         print("=" * 60)
         print()
-        print("✅ Claude Code session complete!")
+        print("✅ OpenCode session complete!")
         print()
         print("📋 Next steps:")
         print("   1. Verify .czarina/config.json was created")
@@ -2878,14 +2896,14 @@ Let's get started!"""
 
     except FileNotFoundError:
         print()
-        print("❌ Error: 'claude' command not found")
-        print("   Please install Claude Code CLI: https://code.claude.com")
+        print("❌ Error: 'opencode' command not found")
+        print("   Please install OpenCode CLI: https://opencode.ai/docs")
         print()
         sys.exit(1)
 
     except Exception as e:
         print()
-        print(f"❌ Failed to launch Claude Code: {e}")
+        print(f"❌ Failed to launch OpenCode: {e}")
         print()
         sys.exit(1)
 

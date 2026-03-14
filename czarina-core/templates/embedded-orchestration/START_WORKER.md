@@ -1,8 +1,8 @@
 # 🎯 Czarina Worker Auto-Discovery
 
-## For Claude Code Web Users
+## For OpenCode Users
 
-When starting a Claude Code session in this repository, the human will tell you your worker identity with a simple phrase like:
+When starting an OpenCode session in this repository, the human will tell you your worker identity with a simple phrase like:
 
 > "You are Engineer 1"
 
@@ -91,7 +91,7 @@ Ask the human:
 > "I found these workers: [list from ls czarina-{{PROJECT_SLUG}}/workers/]. Which one am I?"
 
 Or have them specify directly:
-> "@czarina-{{PROJECT_SLUG}}/workers/engineer-1.md"
+> "Read czarina-{{PROJECT_SLUG}}/workers/engineer-1.md and follow the instructions"
 
 ## Helper Script
 

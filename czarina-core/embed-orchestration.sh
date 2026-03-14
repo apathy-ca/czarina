@@ -10,8 +10,8 @@ if [ $# -lt 1 ]; then
     echo "Usage: $0 <path-to-config.sh> [--agent=<agent-id>]"
     echo ""
     echo "Options:"
-    echo "  --agent=<agent-id>   Specify target AI agent (default: claude-code)"
-    echo "                       Available: claude-code, cursor, copilot, aider, windsurf"
+    echo "  --agent=<agent-id>   Specify target AI agent (default: opencode)"
+    echo "                       Available: opencode, claude-code, cursor, copilot, aider, windsurf"
     echo ""
     echo "Example:"
     echo "  $0 ../projects/sark-v2-orchestration/config.sh"
@@ -20,7 +20,7 @@ if [ $# -lt 1 ]; then
 fi
 
 CONFIG_FILE="$1"
-AGENT_ID="claude-code"  # Default agent
+AGENT_ID="opencode"  # Default agent
 
 # Parse optional --agent parameter
 if [ $# -ge 2 ]; then
@@ -258,7 +258,7 @@ rm -f /tmp/czarina-worker-list.$$
 
 echo "  ✅ START_WORKER.md"
 
-# Create a simple discovery file at project root for Claude Code Web
+# Create a simple discovery file at project root for agent discovery
 echo ""
 echo "📝 Creating root-level worker discovery..."
 
@@ -366,12 +366,12 @@ echo "   $AGENT_DISCOVERY_INSTRUCTION"
 echo ""
 echo "   Workers are in: czarina-$PROJECT_SLUG/workers/"
 echo ""
-if [ "$AGENT_ID" = "claude-code" ]; then
-echo "🎯 For Claude Code Web users:"
+if [ "$AGENT_ID" = "opencode" ]; then
+echo "🎯 For OpenCode users:"
 echo ""
-echo "   Just say: \"You are Engineer 1\""
+echo "   Run: opencode run 'You are Engineer 1'"
 echo ""
-echo "   Claude will:"
+echo "   OpenCode will:"
 echo "   1. Auto-discover from: czarina-$PROJECT_SLUG/START_WORKER.md"
 echo "   2. Load worker prompt from: czarina-$PROJECT_SLUG/workers/"
 echo "   3. Follow git workflow and start working"

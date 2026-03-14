@@ -5,6 +5,63 @@ All notable changes to Czarina will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+**Hopper Integration — Persistent Instruction Store**
+  - Hopper is now a **required dependency** (`pip install hopper-cli`)
+  - `czarina launch` registers all workers in Hopper before starting agents
+  - Each worker's full `.czarina/workers/<id>.md` brief stored as Hopper task body
+  - `WORKER_IDENTITY.md` rewritten: hopper-first with task ID, recovery commands,
+    lesson-filing template pre-filled with the worker's task ID
+  - All agent launch prompts updated to read from Hopper (`hopper --local task get`)
+  - Workers can recover from session loss with two commands, no orchestrator needed
+  - Lesson-filing instructions built into every task body and identity file
+
+**Lesson Propagation System**
+  - Workers file lessons with `hopper --local lesson add`
+  - Lessons tagged by domain, confidence, and project
+  - High-confidence lessons automatically injected into subsequent worker briefs
+  - Lessons persist across phase boundaries and are queryable at any time
+
+**Hopper Task Queue for Mid-Run Work**
+  - Add tasks to running workers via `hopper --local task add --tag worker-<id>`
+  - No re-launch required; workers poll for new queued tasks between existing tasks
+  - `czarina status` now includes Hopper task summary with per-worker status rows
+
+**OpenCode as Default Agent**
+  - OpenCode replaces Claude Code as the default agent
+  - New agent profile: `agents/profiles/opencode.json`
+  - `--brief-file` flag added to `hopper task add` for full brief storage
+  - `--with-lessons` flag added to `hopper task get` for lessons injection
+  - `--non-interactive` flag added to `hopper task add` for scripted use
+
+### Changed
+
+  - `validate-config.sh`: Hopper moved from optional integration to required
+    dependency (hard error if not installed)
+  - `launch-project-v2.sh`: Hopper registration now runs before any worker window
+    is created (ensures task IDs available at identity creation time)
+  - `closeout-project.sh`: Calls `hopper_closeout_orchestration` to mark all tasks
+    completed/cancelled at phase end
+  - `hopper-integration.sh`: All soft-fail `hopper_available ||` guards replaced
+    with `hopper_require` (hard exit); registration passes `--brief-file` for full
+    brief storage
+
+### Deprecated
+
+  - Internal `czarina hopper` commands (removed in v0.8.0, documented in
+    `docs/HOPPER.md` which now describes the Hopper tool integration)
+
+### Testing
+
+  - New test suite: `czarina-core/tests/test-hopper-instruction-store.sh`
+  - 52 assertions covering full lifecycle: registration, brief storage, status
+    transitions, session recovery, lesson injection, closeout, CLI flags
+
+---
+
 ## [0.9.0] - 2026-01-27
 
 ### Added

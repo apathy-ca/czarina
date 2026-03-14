@@ -1,8 +1,18 @@
 # Memory System Guide
 
 **Version:** 0.7.0
-**Status:** Production Ready
+**Status:** Partially deprecated — see note below
 **Last Updated:** 2025-12-28
+
+> **Deprecation Notice (v0.8.0+):** The `czarina memory` CLI commands documented
+> in this guide (`czarina memory init`, `query`, `extract`, `rebuild`, `status`)
+> were removed in v0.8.0. The `.czarina/memories.md` file still exists and
+> workers can still read it, but there is no longer a CLI for managing it.
+>
+> **For persistent knowledge and lesson accumulation across sessions and phases,
+> use the Hopper lessons system.** See [docs/HOPPER.md](docs/HOPPER.md).
+> Workers file lessons via `hopper --local lesson add` and they are automatically
+> injected into subsequent workers' briefs.
 
 ## Overview
 

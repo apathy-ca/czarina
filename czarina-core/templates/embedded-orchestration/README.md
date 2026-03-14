@@ -1,10 +1,10 @@
 # Czarina Embedded Orchestration
 
-This orchestration setup lives **inside your project repository** for easy access from Claude Code web.
+This orchestration setup lives **inside your project repository** for easy access from any AI agent.
 
-## Quick Start for Workers (Claude Code Web)
+## Quick Start for Workers (OpenCode)
 
-When starting a new Claude Code session in this repo, just say:
+When starting a new OpenCode session in this repo, just say:
 
 ```
 You are Engineer 1.
@@ -16,7 +16,7 @@ That's it! The worker will:
 3. Know which branch to use
 4. Start working
 
-## Quick Start for Local (Claude Desktop)
+## Quick Start for Local (OpenCode CLI)
 
 ```bash
 # In your project root
@@ -80,7 +80,7 @@ czarina-<projectname>/
 
 ## How Auto-Discovery Works
 
-When you tell Claude "You are Engineer 1", it should:
+When you tell OpenCode "You are Engineer 1", it should:
 
 1. Check for orchestration directory in repo root
 2. Run worker lookup to find worker ID
@@ -100,7 +100,7 @@ The worker prompt has EVERYTHING needed:
 If auto-discovery doesn't work, manually reference the prompt:
 
 ```
-@czarina-<projectname>/workers/engineer-1.md
+opencode run "Read czarina-<projectname>/workers/engineer-1.md and follow the instructions"
 ```
 
 ## Troubleshooting
@@ -130,15 +130,15 @@ git checkout -b <branch-name>
 ```
 Human: "You are Engineer 1"
    ↓
-Claude discovers: czarina-<projectname>/workers/engineer-1.md
+OpenCode discovers: czarina-<projectname>/workers/engineer-1.md
    ↓
-Claude reads prompt (includes task + git workflow)
+OpenCode reads prompt (includes task + git workflow)
    ↓
-Claude: git checkout -b <branch>
+OpenCode: git checkout -b <branch>
    ↓
-Claude: Works on task
+OpenCode: Works on task
    ↓
-Claude: Creates PR when done
+OpenCode: Creates PR when done
 ```
 
 Simple! 🚀

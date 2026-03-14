@@ -63,14 +63,14 @@ The **Czar** is the autonomous coordinator for your Czarina project - typically 
 ### Initial Setup
 
 ```bash
-# 1. Launch the orchestration
+# 1. Validate all requirements (hopper, agents, config)
 cd ~/my-projects/awesome-app
+czarina validate
+
+# 2. Launch — registers workers in Hopper and starts tmux session
 czarina launch
 
-# 2. Start the daemon
-czarina daemon start
-
-# 3. Attach to monitoring (optional)
+# 3. Attach to monitor
 tmux attach -t czarina-awesome-app
 ```
 
@@ -115,16 +115,16 @@ Show me the current status and what I should focus on first.
 ### Morning (Start of Session)
 
 ```bash
-# 1. Check project status
+# 1. Check project status + Hopper task state
 czarina status
 
-# 2. Review daemon
-czarina daemon status
-czarina daemon logs | tail -50
+# 2. Check Hopper task details directly
+hopper --local task list --tag awesome-app
+hopper --local lesson list --project awesome-app
 
 # 3. Check worker progress
 tmux attach -t czarina-awesome-app
-# Ctrl+b then arrow keys to switch panes
+# Ctrl+b then number to switch windows
 # Ctrl+b then d to detach
 
 # 4. Review git status
@@ -143,10 +143,10 @@ gh pr list
    - Any stuck on approval prompts?
    - Any errors in logs?
 
-2. **Daemon Status**
-   - Is daemon running?
-   - Auto-approvals working?
-   - Any alerts generated?
+2. **Hopper Task State**
+   - All workers still `in_progress`?
+   - Any workers `blocked`?
+   - New tasks queued?
 
 3. **Token Budgets**
    - Workers on track with budgets?
@@ -195,17 +195,23 @@ tmux send-keys -t czarina-awesome-app:0.1 "status" Enter
 tmux capture-pane -t czarina-awesome-app:0.1 -p
 ```
 
-### Check Daemon
+### Check Hopper Task State
 
 ```bash
-# Daemon status
-czarina daemon status
+# Summary for this project
+czarina status
 
-# Live daemon logs
-czarina daemon logs
+# All tasks with current status
+hopper --local task list --tag awesome-app
 
-# Check for stuck workers (daemon creates alerts)
-cat .czarina/status/alerts.json
+# Worker-specific
+hopper --local task list --tag worker-backend
+
+# Lessons filed so far
+hopper --local lesson list --project awesome-app
+
+# Block a worker task if stuck
+hopper --local task status task-abc12345 blocked --force
 ```
 
 ### Check Git Progress
@@ -263,19 +269,23 @@ gh pr view 123
 4. Update worker prompt if confusion
 5. Document in session notes
 
-### Daemon Not Working
+### Worker Lost Context Mid-Task
 
 **Symptoms:**
-- Workers constantly asking for approval
-- Daemon logs show errors
-- Auto-approvals not happening
+- Worker seems confused about what they're supposed to be doing
+- Worker restarted but doesn't know their task
 
 **Actions:**
-1. Check daemon status: `czarina daemon status`
-2. Review logs: `czarina daemon logs`
-3. Restart daemon: `czarina daemon stop && czarina daemon start`
-4. Verify tmux session names match config
-5. Check agent compatibility (Aider works best)
+The worker recovers themselves — no Czar action needed unless the tmux window is gone:
+```bash
+# Worker runs:
+hopper --local task list --tag worker-<id> --status in_progress
+hopper --local task get <task-id> --with-lessons
+
+# If you need to add a task mid-run:
+hopper --local task add "[worker-id] New instruction: ..." \
+  --tag czarina --tag awesome-app --tag worker-<id> --non-interactive
+```
 
 ### Token Budget Overrun
 
@@ -403,25 +413,22 @@ gh pr view 123
 
 ### DO ✅
 
-- **Check status regularly** (every 30-60 min)
-- **Keep daemon running** (for autonomy)
-- **Update token metrics** (real-time tracking)
-- **Document blockers** (for patterns)
-- **Coordinate workers** (avoid conflicts)
+- **Check status regularly** (`czarina status` every 30-60 min)
+- **Monitor Hopper task state** (`hopper --local task list --tag <project>`)
+- **Review learnings as they're filed** (`hopper --local lesson list`)
+- **Coordinate workers** (avoid file conflicts between workers)
 - **Review PRs promptly** (keep flow moving)
-- **Maintain session notes** (for handoffs)
-- **Use alerts.json** (daemon creates these)
+- **Maintain session notes** (for handoffs and learnings)
+- **Add mid-run tasks via Hopper** (not by editing worker files)
 
 ### DON'T ❌
 
 - Let workers run unsupervised for hours
-- Ignore daemon alerts
-- Skip token budget updates
+- Edit `.czarina/workers/<id>.md` mid-run (use Hopper tasks instead)
 - Merge PRs without review
-- Let workers overlap on same files
-- Forget to document learnings
-- Work without version plan
-- Ignore efficiency ratios > 1.3
+- Let workers overlap on the same files
+- Skip filing learnings at phase close
+- Work without a version plan
 
 ---
 
@@ -434,23 +441,20 @@ gh pr view 123
 # czar-quick-status.sh
 
 echo "=== Czarina Status ==="
-echo ""
-
-# Project status
 czarina status
 
 echo ""
-echo "=== Daemon Status ==="
-czarina daemon status
+echo "=== Hopper Tasks ==="
+PROJECT_SLUG=$(jq -r '.project.slug' .czarina/config.json)
+hopper --local task list --tag "$PROJECT_SLUG"
+
+echo ""
+echo "=== Lessons Filed ==="
+hopper --local lesson list --project "$PROJECT_SLUG"
 
 echo ""
 echo "=== Git PRs ==="
 gh pr list
-
-echo ""
-echo "=== Token Budget ==="
-# Parse from config.json
-jq '.version_plan | to_entries[] | select(.value.status == "in_progress") | {version: .key, tokens: .value.token_budget}' .czarina/config.json
 ```
 
 ### Worker Health Check
@@ -477,41 +481,38 @@ done
 - **[PROJECT_PLANNING_STANDARDS.md](../PROJECT_PLANNING_STANDARDS.md)** - Version and token planning
 - **[czarina-core/docs/DAEMON_SYSTEM.md](../../czarina-core/docs/DAEMON_SYSTEM.md)** - Daemon details
 - **[WORKER_SETUP_GUIDE.md](WORKER_SETUP_GUIDE.md)** - Worker configuration
-- **[czarina-inbox/README.md](../../czarina-inbox/README.md)** - Session notes and improvements
+- **[docs/HOPPER.md](../HOPPER.md)** - Hopper integration guide
 
 ---
 
 ## 🎯 Success Metrics for Czar
 
 **You're doing well as Czar when:**
-- ✅ Workers making steady progress
-- ✅ Daemon auto-approving 90%+ of requests
-- ✅ Token efficiency < 1.2 across workers
+- ✅ Workers making steady progress (commits visible in git log)
+- ✅ Hopper tasks show `in_progress` for all active workers
 - ✅ PRs created regularly and reviewed
 - ✅ No worker stuck > 1 hour
-- ✅ Session notes maintained
+- ✅ Lessons being filed (visible in `hopper lesson list`)
 - ✅ Version progression on track
 
 **Red flags to address:**
-- ❌ Worker idle > 30 minutes
-- ❌ Daemon not running
-- ❌ Token efficiency > 1.3
-- ❌ No commits in > 2 hours
-- ❌ Same error repeated
-- ❌ Worker prompts unclear
-- ❌ Merge conflicts accumulating
+- ❌ Worker Hopper task is `blocked` — investigate
+- ❌ No commits from a worker in > 2 hours
+- ❌ Same error repeated across sessions
+- ❌ Worker prompts unclear or contradictory
+- ❌ Merge conflicts accumulating between worker branches
+- ❌ No lessons filed at end of a completed phase
 
 ---
 
 ## 💡 Pro Tips
 
-1. **Use tmux zoom** - `Ctrl+b then z` to fullscreen worker pane
-2. **Keep daemon logs visible** - Tail in separate terminal
-3. **Auto-refresh git status** - Use watch command
-4. **Batch PR reviews** - Review 2-3 PRs together
-5. **Document patterns** - Drop notes in czarina-inbox/
-6. **Share learnings** - `czarina patterns pending`
-7. **Trust the process** - Workers are autonomous, you're the safety net
+1. **Use tmux zoom** - `Ctrl+b then z` to fullscreen a worker window
+2. **Keep `czarina status` running** - In a separate terminal with `watch -n 60 czarina status`
+3. **Batch PR reviews** - Review 2-3 PRs together at natural break points
+4. **Review lessons before closeout** - `hopper --local lesson list --project <slug>`
+5. **Add work via Hopper** - Never edit worker .md files mid-run; add Hopper tasks
+6. **Trust the process** - Workers are autonomous; you're the safety net and decision-maker
 
 ---
 
